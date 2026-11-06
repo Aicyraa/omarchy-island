@@ -99,7 +99,7 @@ WidgetPanel {
           radius: Theme.tileRadius
           color: card.themeBg
           border.width: card.selected ? 2 : 0; border.color: Theme.text
-          scale: card.selected ? 1.04 : 1
+          scale: card.selected ? 1.04 : (cardArea.containsMouse ? 1.025 : 1)
           Behavior on scale { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
 
           Image { visible: card.hasImage; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
@@ -125,7 +125,7 @@ WidgetPanel {
           Rectangle { visible: card.isCurrent; x: parent.width - 30; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accentFill
             Icon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText; strokeWidth: 2.4 } }
 
-          MouseArea { anchors.fill: parent; onClicked: { root.sel = card.index; root.apply(modelData) } }
+          MouseArea { id: cardArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.sel = card.index; root.apply(modelData) } }
         }
       }
 

@@ -90,7 +90,7 @@ Item {
           Icon { anchors.centerIn: parent; size: modelData.act === 1 ? Theme.iconLg - 6 : Theme.iconSm
             name: modelData.act === 1 ? (root.p && root.p.isPlaying ? "pause" : "play") : modelData.ic
             color: modelData.act === 1 ? Theme.accentText : root.fg }
-          MouseArea { anchors.fill: parent; enabled: root.p !== null; onClicked: {
+          MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: root.p !== null; onClicked: {
             if (modelData.act === 0) root.p.previous(); else if (modelData.act === 2) root.p.next(); else root.p.togglePlaying() } } }
       }
     }

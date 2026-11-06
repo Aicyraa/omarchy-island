@@ -31,7 +31,7 @@ WidgetPanel {
         Icon { name: Indicators.dnd ? "bell-off" : "bell"; size: Theme.iconSm; color: Indicators.dnd ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
         Text { textFormat: Text.PlainText; text: Indicators.dnd ? "Focus on" : "Focus off"; font.pixelSize: 12; font.weight: Theme.weightLabel
           color: Indicators.dnd ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter } }
-      MouseArea { anchors.fill: parent; onClicked: Indicators.toggleDnd() }
+      MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Indicators.toggleDnd() }
     }
   }
 

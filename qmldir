@@ -21,3 +21,4 @@ HoverPreview 1.0 components/HoverPreview.qml
 Scroller 1.0 components/Scroller.qml
 FocusRing 1.0 components/FocusRing.qml
 FocusTarget 1.0 components/FocusTarget.qml
+StatTile 1.0 components/StatTile.qml

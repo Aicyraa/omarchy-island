@@ -42,7 +42,7 @@ Item {
 
   Rectangle {
     anchors.fill: parent; radius: root.r
-    color: area.pressed ? Qt.lighter(root.fill, 1.12) : root.fill
+    color: area.pressed ? Qt.lighter(root.fill, 1.18) : (area.containsMouse ? Qt.lighter(root.fill, 1.09) : root.fill)
     Behavior on color { ColorAnimation { duration: 150 } }
   }
 
@@ -116,6 +116,7 @@ Item {
   MouseArea {
     id: area
     anchors.fill: parent
+    hoverEnabled: true; cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     onPressed: if (root.holdMs > 0) holdAnim.restart()
     onReleased: function (m) {

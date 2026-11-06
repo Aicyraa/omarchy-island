@@ -63,6 +63,7 @@ Item {
   // Click a slot to switch; scroll anywhere to step through workspaces.
   MouseArea {
     anchors.fill: parent; anchors.margins: -4       // larger hit area than the 5px dots
+    hoverEnabled: true; cursorShape: Qt.PointingHandCursor
     onClicked: function (m) {
       var i = Math.floor((m.x + 4) / root.slot)
       if (i >= 0 && i < root.ids.length) Hyprland.dispatch("workspace " + root.ids[i])

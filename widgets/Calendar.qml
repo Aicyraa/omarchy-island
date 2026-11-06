@@ -20,6 +20,17 @@ WidgetPanel {
   property bool hasKhal: false
   property var eventDays: ({})
   property string dayEvents: ""
+  Component.onCompleted: loadReminders()
+  // Reminders are Omarchy's own (`omarchy-reminder`, systemd timers): listed here, added with one click, cancelled one by one.
+  property var reminders: []
+  function loadReminders() { if (!remProc.running) remProc.running = true }
+  function addReminder(min) { Cmd.run(["omarchy-reminder", String(min)]); remRefresh.restart() }
+  function cancelReminder(timer) { if (/^omarchy-reminder-[A-Za-z0-9._@:\-]+\.timer$/.test(timer)) { Cmd.run(["systemctl", "--user", "stop", timer]); remRefresh.restart() } }
+  function clearReminders() { Cmd.run(["omarchy-reminder", "clear"]); remRefresh.restart() }
+  Timer { id: remRefresh; interval: 700; onTriggered: root.loadReminders() }
+  Timer { interval: 30000; repeat: true; running: true; onTriggered: root.loadReminders() }
+  Process { id: remProc; command: ["omarchy-reminder", "show", "--json"]
+    stdout: StdioCollector { onStreamFinished: { try { root.reminders = (JSON.parse(text).reminders || []).slice(0, 5) } catch (e) { root.reminders = [] } } } }
 
   readonly property var loc: Qt.locale()
   readonly property int firstDow: loc.firstDayOfWeek % 7
@@ -68,11 +79,11 @@ WidgetPanel {
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
       Rectangle { height: 30; width: todayLabel.implicitWidth + Theme.s16 * 2; radius: 15; color: Theme.surface
         Text { id: todayLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Today"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
-        MouseArea { anchors.fill: parent; onClicked: root.goToday() } }
+        MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.goToday() } }
       Repeater { model: [ { ic: "chevron-left", d: -1 }, { ic: "chevron-right", d: 1 } ]
         delegate: Rectangle { required property var modelData; width: 30; height: 30; radius: 15; color: Theme.surface
           Icon { anchors.centerIn: parent; name: modelData.ic; size: Theme.iconSm }
-          MouseArea { anchors.fill: parent; onClicked: root.shiftMonth(modelData.d) } } }
+          MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.shiftMonth(modelData.d) } } }
     }
   }
 
@@ -108,16 +119,56 @@ WidgetPanel {
           readonly property bool isSel: root.iso(modelData.date) === root.iso(root.selected)
           readonly property bool weekend: modelData.date.getDay() === 0 || modelData.date.getDay() === 6
           Rectangle { anchors.centerIn: parent; width: 30; height: 30; radius: 15
-            color: today ? Theme.accentFill : "transparent"
-            border.width: isSel && !today ? 2 : 0; border.color: Theme.text }
+            color: today ? (dayArea.containsMouse ? Qt.lighter(Theme.accentFill, 1.12) : Theme.accentFill) : (isSel ? Theme.mix(Theme.pill, Theme.text, 0.20) : (dayArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.12) : "transparent"))
+            border.width: 0 }
           Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: modelData.date.getDate()
             font.pixelSize: 12; font.weight: today ? Theme.weightLabel : Font.Normal
             color: today ? Theme.accentText : (!modelData.inMonth ? Theme.textMuted : (weekend ? Theme.textMuted : Theme.text))
             opacity: !modelData.inMonth && !today ? 0.75 : 1 }
-          Rectangle { visible: root.eventDays[root.iso(modelData.date)] === true
+          Rectangle { visible: root.eventDays[root.iso(modelData.date)] === true || (today && root.reminders.length > 0)
             anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 1
             width: 4; height: 4; radius: 2; color: today ? Theme.accentText : Theme.accentInk }
-          MouseArea { anchors.fill: parent; onClicked: root.select(modelData.date) }
+          MouseArea { id: dayArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.select(modelData.date) }
+        }
+      }
+    }
+  }
+
+  // ---- reminders ----
+  Column {
+    width: parent.width; spacing: Theme.s8
+    Item { width: parent.width; height: 24
+      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12; font.weight: Theme.weightLabel
+        text: root.reminders.length > 0 ? "Reminders · " + root.reminders.length : "Reminders" }
+      Rectangle { visible: root.reminders.length > 0; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+        height: 24; width: clr.implicitWidth + 20; radius: 12; color: clrArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.surface
+        Text { id: clr; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Clear all"; color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+        MouseArea { id: clrArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.clearReminders() } } }
+    Repeater {
+      model: root.reminders
+      delegate: Rectangle { required property var modelData
+        width: parent.width; height: 40; radius: Theme.tileRadius - 4; color: Theme.surface
+        Icon { x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "bell"; size: Theme.iconSm; color: Theme.accentInk }
+        Column { anchors.left: parent.left; anchors.leftMargin: Theme.s12 + Theme.iconSm + Theme.s8; anchors.right: cancel.left; anchors.rightMargin: Theme.s8
+          anchors.verticalCenter: parent.verticalCenter; spacing: 0
+          Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.label; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
+          Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: "in " + modelData.remaining + " · " + modelData.atTime; color: Theme.textMuted; font.pixelSize: 11 } }
+        Rectangle { id: cancel; anchors.right: parent.right; anchors.rightMargin: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13
+          color: xArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.16) : "transparent"
+          Icon { anchors.centerIn: parent; name: "x"; size: Theme.iconSm - 2; color: Theme.textMuted }
+          MouseArea { id: xArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.cancelReminder(modelData.timer) } }
+      }
+    }
+    Row { spacing: Theme.s8
+      Repeater {
+        model: [ { l: "+5 min", m: 5 }, { l: "+15 min", m: 15 }, { l: "+30 min", m: 30 }, { l: "+1 hour", m: 60 }, { l: "Custom…", m: 0 } ]
+        delegate: Rectangle { required property var modelData
+          height: 28; width: (root.width - 2 * root.pad - 4 * Theme.s8) / 5; radius: 14
+          color: chipArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.surface
+          Behavior on color { ColorAnimation { duration: 120 } }
+          Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: modelData.l; color: Theme.text; font.pixelSize: 11; font.weight: Theme.weightLabel }
+          MouseArea { id: chipArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: { if (modelData.m > 0) root.addReminder(modelData.m); else { Cmd.run(["omarchy-reminder", "-i"]); IslandState.closeWidget() } } }
         }
       }
     }

@@ -33,8 +33,9 @@ WidgetPanel {
     }
   }
 
-  // One side (Output or Input): header with the active device, the level slider, then the device list.
-  component Side: Column {
+  // One side (Output or Input) as a card: header (icon disc, title, mute button), the active device and level, the
+  // slider, then the device list. The panel's sliding highlight runs over the rows inside the card.
+  component Side: Rectangle {
     id: side
     required property bool isInput
     readonly property bool mine: root.inputSide === isInput
@@ -43,53 +44,73 @@ WidgetPanel {
     readonly property real vol: isInput ? Audio.micVolume : Audio.volume
     readonly property bool muted: isInput ? Audio.micMuted : Audio.muted
     width: (parent.width - root.colGap) / 2
-    spacing: Theme.s12
+    height: body.implicitHeight + 2 * Theme.s12
+    radius: Theme.tileRadius + 2
+    color: Theme.surface
 
-    // header: title on the left, the active device (what the slider controls) on the right
-    Item { width: parent.width; height: 20
-      Text { id: ttl; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
-        color: side.mine ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.weight: Theme.weightLabel }
-      Text { anchors.left: ttl.right; anchors.leftMargin: Theme.s8; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-        horizontalAlignment: Text.AlignRight; elide: Text.ElideRight; textFormat: Text.PlainText
-        text: side.muted ? "Muted" : (side.current ? Audio.label(side.current) : "No device")
-        color: side.muted ? Theme.warningInk : Theme.textMuted; font.pixelSize: 11 } }
-    PillSlider {
-      width: parent.width; showValue: true
-      icon: side.isInput ? (side.muted ? "mic-off" : "mic") : "volume"
-      iconItem: side.isInput ? null : volIcon
-      Component { id: volIcon; VolumeIcon { level: side.vol; muted: side.muted; size: Theme.iconMd; color: Theme.accentText } }
-      value: side.vol                       // the level stays visible even when muted
-      dimmed: side.muted; badge: side.muted ? "x" : ""
-      selected: side.mine && root.row === 0
-      onMoved: function (v) { root.inputSide = side.isInput; root.row = 0
-        side.isInput ? Audio.setMicVolume(v) : Audio.setVolume(v) }
-    }
     Column {
-      width: parent.width; spacing: Theme.rowGap
-      Repeater {
-        model: side.devs
-        delegate: ListRow {
-          required property var modelData
-          required property int index
-          width: parent.width
-          icon: side.isInput ? "mic" : (modelData.name && modelData.name.indexOf("bluez") >= 0 ? "headphones" : "volume")
-          title: Audio.label(modelData)
-          subtitle: active ? "Default" : ""
-          active: side.current !== null && side.current !== undefined && modelData.id === side.current.id
-          selected: side.mine && root.row === index + 1
-          onSelectedChanged: if (selected) root.reveal(this)
-          onClicked: { root.inputSide = side.isInput; root.row = index + 1
-            side.isInput ? Audio.setDefaultSource(modelData) : Audio.setDefaultSink(modelData) }
-        }
+      id: body
+      x: Theme.s16; y: Theme.s12; width: parent.width - 2 * Theme.s16; spacing: Theme.s12
+
+      // header
+      Item { width: parent.width; height: 36
+        Rectangle { id: disc; width: 36; height: 36; radius: 18
+          color: side.muted ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.accentFill
+          Behavior on color { ColorAnimation { duration: 150 } }
+          Icon { anchors.centerIn: parent; name: side.isInput ? (side.muted ? "mic-off" : "mic") : "volume"; size: Theme.iconMd
+            color: side.muted ? Theme.textMuted : Theme.accentText; visible: side.isInput } 
+          VolumeIcon { anchors.centerIn: parent; visible: !side.isInput; level: side.vol; muted: side.muted; size: Theme.iconMd
+            color: side.muted ? Theme.textMuted : Theme.accentText }
+          MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: { root.inputSide = side.isInput; root.row = 0; side.isInput ? Audio.toggleMicMute() : Audio.toggleMute() } } }
+        Column { anchors.left: disc.right; anchors.leftMargin: Theme.s12; anchors.right: pct.left; anchors.rightMargin: Theme.s8; anchors.verticalCenter: parent.verticalCenter; spacing: 0
+          Text { width: parent.width; textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
+            color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel }
+          Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+            text: side.muted ? "Muted" : (side.current ? Audio.label(side.current) : "No device")
+            color: side.muted ? Theme.warningInk : Theme.textMuted; font.pixelSize: 11 } }
+        Text { id: pct; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+          text: Math.round(side.vol * 100) + "%"; color: side.muted ? Theme.textMuted : Theme.text; font.pixelSize: 20; font.weight: Theme.weightStrong }
       }
-      Text { visible: side.devs.length === 0; textFormat: Text.PlainText
-        text: side.isInput ? "No input devices" : "No output devices"; color: Theme.textMuted; font.pixelSize: 12 }
+
+      PillSlider {
+        width: parent.width
+        icon: side.isInput ? "mic" : "volume"
+        iconItem: side.isInput ? null : volIcon
+        Component { id: volIcon; VolumeIcon { level: side.vol; muted: side.muted; size: Theme.iconMd; color: Theme.accentText } }
+        thin: false; value: side.vol                       // the level stays visible even when muted
+        dimmed: side.muted
+        selected: side.mine && root.row === 0
+        onMoved: function (v) { root.inputSide = side.isInput; root.row = 0
+          side.isInput ? Audio.setMicVolume(v) : Audio.setVolume(v) }
+      }
+
+      Text { textFormat: Text.PlainText; text: side.isInput ? "Microphones" : "Speakers and headphones"; color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+      Column {
+        width: parent.width; spacing: Theme.rowGap
+        Repeater {
+          model: side.devs
+          delegate: ListRow {
+            required property var modelData
+            required property int index
+            width: parent.width
+            icon: side.isInput ? "mic" : (modelData.name && modelData.name.indexOf("bluez") >= 0 ? "headphones" : "volume")
+            title: Audio.label(modelData)
+            subtitle: active ? "In use" : ""
+            active: side.current !== null && side.current !== undefined && modelData.id === side.current.id
+            selected: side.mine && root.row === index + 1
+            onSelectedChanged: if (selected) root.reveal(this)
+            onClicked: { root.inputSide = side.isInput; root.row = index + 1
+              side.isInput ? Audio.setDefaultSource(modelData) : Audio.setDefaultSink(modelData) }
+          }
+        }
+        Text { visible: side.devs.length === 0; textFormat: Text.PlainText
+          text: side.isInput ? "No input devices" : "No output devices"; color: Theme.textMuted; font.pixelSize: 12 }
+      }
     }
   }
 
-  // Both columns start at the same y, so their headers and sliders share a baseline. The gap is wide enough that the
-  // rows' 8px highlight bleed from the two sides never meets.
-  readonly property int colGap: Theme.s16 + 2 * Theme.s8
+  readonly property int colGap: Theme.s12
   Row {
     width: parent.width; spacing: root.colGap
     Side { isInput: false }

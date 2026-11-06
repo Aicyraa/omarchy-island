@@ -17,6 +17,10 @@ WidgetPanel {
   property bool hibernate: false          // only true if the system really supports it
   property string uptime: ""
   property bool restartNeeded: false
+  property string booted: ""
+  property string kernel: ""
+  property string profile: ""
+  property string session: ""
 
   readonly property var actions: [
     { icon: "power",   title: "Shutdown", destructive: true,  cmd: ["omarchy-system", "shutdown"] },
@@ -68,7 +72,28 @@ WidgetPanel {
     }
   }
 
+  // ---- details ----
+  Flow {
+    width: parent.width; spacing: Theme.s12
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Battery"; fraction: Power.present ? Power.level : -1
+      value: Power.present ? Math.round(Power.level * 100) + "%" + (Power.charging ? " · charging" : "") + (Power.secondsLeft > 0 ? " · " + Power.timeText(Power.secondsLeft) : "") : "No battery" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Power profile"; value: root.profile !== "" ? root.profile : "—" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Updates"; value: Indicators.updateAvailable ? "Update available" : "Up to date" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Last boot"; value: root.booted !== "" ? root.booted : "—" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Kernel"; value: root.kernel !== "" ? root.kernel : "—" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Session"; value: root.session !== "" ? root.session : "—" }
+  }
+
   // ---- data: runs only while this widget is loaded ----
+  Process { running: true
+    command: ["bash", "-c", "uptime -s; uname -r; powerprofilesctl get 2>/dev/null; echo \"$USER@$(hostname)\""]
+    stdout: StdioCollector { onStreamFinished: {
+      var l = text.split("\n")
+      var d = new Date((l[0] || "").replace(" ", "T"))
+      root.booted = isNaN(d.getTime()) ? "" : Qt.formatDateTime(d, "ddd d MMM, HH:mm")
+      root.kernel = l[1] || ""
+      var pr = l[2] || ""; root.profile = pr === "power-saver" ? "Saver" : pr === "performance" ? "Performance" : pr === "balanced" ? "Balanced" : pr
+      root.session = l[3] || "" } } }
   Process { running: true; command: ["omarchy-hibernation-available"]; onExited: function (code) { root.hibernate = (code === 0) } }
   Process { running: true; command: ["awk", "{print int($1)}", "/proc/uptime"]
     stdout: StdioCollector { onStreamFinished: {

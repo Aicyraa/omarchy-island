@@ -31,8 +31,10 @@ Item {
   readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.35) : Theme.accentFill
   readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
-  Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.surface }
-  FocusRing { z: 5; on: root.selected; radius: height / 2 }
+  // No outline: selection and hover only lift the track a little (the fill keeps the accent).
+  Rectangle { anchors.fill: parent; radius: height / 2
+    color: root.selected ? Theme.mix(Theme.surface, Theme.text, 0.14) : (area.containsMouse && root.interactive ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface)
+    Behavior on color { ColorAnimation { duration: 140 } } }
 
   Rectangle {
     id: fill
@@ -69,6 +71,7 @@ Item {
     id: area
     enabled: root.interactive
     anchors.fill: parent
+    hoverEnabled: true; cursorShape: Qt.PointingHandCursor
     function set(x) { root.moved(Math.max(0, Math.min(1, x / width))) }
     onPressed: function (m) { set(m.x) }
     onPositionChanged: function (m) { if (pressed) set(m.x) }

@@ -7,7 +7,8 @@ import ".."
 import "../services"
 
 // What the pill shows on hover: a preview of the essentials.
-//   profile header (current wallpaper as its background) · quick toggles (no names, one info line) · volume + brightness · media player.
+//   profile header (current wallpaper as its background) · Wi-Fi and Bluetooth tiles with live details beside a 2x2 grid
+//   of icon toggles · volume + brightness · media player.
 // Everything is live and clickable; right-click on a toggle opens its full widget. The media card only
 // takes space while a player exists. The pill sizes itself from implicitWidth/implicitHeight.
 Item {
@@ -79,47 +80,77 @@ Item {
         Text { anchors.right: parent.right; visible: Power.present; textFormat: Text.PlainText
           text: Math.round(Power.level * 100) + "%" + (Power.charging ? " · charging" : ""); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
       }
-      MouseArea { anchors.fill: parent; onClicked: IslandState.openWidget("calendar", root.screen()) }
+      MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: IslandState.openWidget("calendar", root.screen()) }
     }
 
     // ---------------- quick toggles ----------------
+    // Left: Wi-Fi and Bluetooth as wide tiles with live details. Right: the other toggles as a 2x2 grid of icons.
+    component QuickTile: Rectangle {
+      id: qt
+      property string icon; property bool on: false; property bool wide: false
+      property string line1; property string line2
+      signal toggled(); signal opened()
+      radius: Theme.tileRadius; height: 52
+      color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
+      readonly property color fill: on ? Theme.accentFill : Theme.surface
+      Behavior on color { ColorAnimation { duration: 140 } }
+      readonly property color fg: on ? Theme.accentText : Theme.text
+      readonly property color fgMuted: on ? Theme.textOnAccentMuted : Theme.textMuted
+      Rectangle {                                          // icon disc (wide tiles)
+        visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 34; height: 34; radius: 17
+        color: qt.on ? Qt.rgba(1, 1, 1, 0.16) : Theme.mix(Theme.surface, Theme.text, 0.10)
+        Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconMd; color: qt.fg } }
+      Icon { visible: !qt.wide; anchors.centerIn: parent; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
+      Column {
+        visible: qt.wide
+        anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 34 + Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s12
+        anchors.verticalCenter: parent.verticalCenter; spacing: 1
+        Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line1
+          color: qt.fg; font.pixelSize: 13; font.weight: Theme.weightLabel }
+        Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line2
+          color: qt.fgMuted; font.pixelSize: 11 }
+      }
+      MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (m) { if (m.button === Qt.RightButton) qt.opened(); else qt.toggled() } }
+    }
+
     Row {
       id: toggles
       width: parent.width; spacing: Theme.s8
-      readonly property var items: [
-        { icon: Net.enabled ? "wifi" : "wifi-off", title: "Wi-Fi", show: Net.hasWifi, on: Net.enabled,
-          sub: !Net.enabled ? "Off" : (Net.connected ? Net.ssid : "Not connected"), toggle: function () { Net.toggle() }, open: "wifi" },
-        { icon: "bluetooth", title: "Bluetooth", show: Bt.hasAdapter, on: Bt.enabled,
-          sub: !Bt.enabled ? "Off" : (Bt.connectedName !== "" ? Bt.connectedName : "On"), toggle: function () { Bt.toggle() }, open: "bluetooth" },
-        { icon: Indicators.dnd ? "bell-off" : "bell", title: "Focus", show: true, on: Indicators.dnd,
-          sub: Indicators.dnd ? "On" : (Notifs.liveCount > 0 ? Notifs.liveCount + " new" : "Off"), toggle: function () { Indicators.toggleDnd() }, open: "notifications" },
-        { icon: "moon", title: "Night light", show: true, on: Indicators.nightLight,
-          sub: Indicators.nightLight ? "On" : "Off", toggle: function () { Indicators.toggleNightLight() }, open: "display" },
-        { icon: "coffee", title: "Awake", show: true, on: Indicators.stayAwake,
-          sub: Indicators.stayAwake ? "On" : "Off", toggle: function () { Indicators.toggleStayAwake() }, open: "battery" },
-        { icon: "mic-dictate", title: "Dictation", show: Indicators.dictationAvailable, on: Indicators.dictation !== "idle",
-          sub: Indicators.dictation === "idle" ? "Off" : Indicators.dictation, toggle: function () { Indicators.toggleDictation() }, open: "" }
-      ]
-      readonly property int count: Math.max(1, items.filter(function (t) { return t.show }).length)
-      Repeater {
-        model: toggles.items
-        delegate: Rectangle {
-          required property var modelData
-          visible: modelData.show
-          width: (toggles.width - (toggles.count - 1) * Theme.s8) / toggles.count; height: 60; radius: Theme.tileRadius
-          color: modelData.on ? Theme.accentFill : Theme.surface
-          Behavior on color { ColorAnimation { duration: 150 } }
-          // No names: the icon says what it is; the line under it says what it is doing or connected to.
-          Column {
-            anchors.centerIn: parent; width: parent.width - 10; spacing: 4
-            Icon { anchors.horizontalCenter: parent.horizontalCenter; name: modelData.icon; size: Theme.iconMd
-              color: modelData.on ? Theme.accentText : Theme.text }
-            Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-              text: modelData.sub; color: modelData.on ? Theme.textOnAccentMuted : Theme.textMuted; font.pixelSize: 10; font.weight: Theme.weightLabel }
-          }
-          MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton
-            onClicked: function (m) { if (m.button === Qt.RightButton) { if (modelData.open !== "") IslandState.openWidget(modelData.open, root.screen()) } else modelData.toggle() } }
+      readonly property real gridW: 2 * 52 + Theme.s8
+
+      Column {
+        width: toggles.width - toggles.gridW - Theme.s8; spacing: Theme.s8
+        QuickTile {
+          width: parent.width; wide: true; visible: Net.hasWifi
+          icon: Net.enabled ? "wifi" : "wifi-off"; on: Net.enabled
+          line1: !Net.enabled ? "Wi-Fi off" : (Net.connected ? Net.ssid : "Not connected")
+          line2: !Net.enabled ? "Tap to turn on" : (Net.connected
+                   ? (Net.strength > 0.75 ? "Excellent" : Net.strength > 0.5 ? "Good" : Net.strength > 0.25 ? "Fair" : "Weak") + " · " + Math.round(Net.strength * 100) + "%"
+                   : "Choose a network")
+          onToggled: Net.toggle(); onOpened: IslandState.openWidget("wifi", root.screen())
         }
+        QuickTile {
+          width: parent.width; wide: true; visible: Bt.hasAdapter
+          icon: "bluetooth"; on: Bt.enabled
+          readonly property var dev: Bt.connectedDevices.length > 0 ? Bt.connectedDevices[0] : null
+          line1: !Bt.enabled ? "Bluetooth off" : (dev ? Bt.connectedName : "No device connected")
+          line2: !Bt.enabled ? "Tap to turn on" : (dev
+                   ? (dev.batteryAvailable ? Math.round(dev.battery * 100) + "% battery" : "Connected") + (Bt.connectedDevices.length > 1 ? " · +" + (Bt.connectedDevices.length - 1) + " more" : "")
+                   : Bt.sorted.length + " paired")
+          onToggled: Bt.toggle(); onOpened: IslandState.openWidget("bluetooth", root.screen())
+        }
+      }
+      Grid {
+        columns: 2; spacing: Theme.s8; width: toggles.gridW
+        QuickTile { width: 52; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
+          onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
+        QuickTile { width: 52; icon: "moon"; on: Indicators.nightLight
+          onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
+        QuickTile { width: 52; icon: "coffee"; on: Indicators.stayAwake
+          onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
+        QuickTile { width: 52; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
+          onToggled: Indicators.toggleDictation() }
       }
     }
 

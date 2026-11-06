@@ -71,7 +71,8 @@ Item {
         function onYChanged() { hl.place() } function onHeightChanged() { hl.place() } function onWidthChanged() { hl.place() } }
       Connections { target: col; function onImplicitHeightChanged() { hl.place() } }
       x: tx; y: ty; width: tw; height: th
-      radius: Theme.tileRadius; color: Theme.surfaceRaised
+      radius: Theme.tileRadius; color: Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.09)   // translucent: also reads over cards
+      z: 1
       opacity: has ? 1 : 0
       Behavior on opacity { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140 } }
       // Slides and resizes with a small overshoot. The first placement (no previous item) just appears.

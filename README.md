@@ -180,12 +180,12 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | home          | the hover form, pinned (profile header, icon-only quick toggles, volume and brightness, media player) |
 | wifi          | SSID, signal, band, IP, speed, network list (scans only while open) |
 | bluetooth     | radio switch, known devices with battery, connect/disconnect |
-| audio         | output and input sliders, device pickers |
+| audio         | Output and Input cards: mute button, level, active device, device list |
 | display       | brightness, night light, text size |
 | battery       | charge, time left, draw, health, power profile, stay awake |
-| calendar      | month grid, locale first weekday, ISO weeks, khal events if khal exists |
+| calendar      | month grid, Omarchy reminders (list, quick add, cancel), optional khal events |
 | worldclock    | zones from `~/.local/state/island/world-clock.json`, fuzzy add, system `date` for DST |
-| power         | 1 Shutdown, 2 Reboot, 3 Sleep, 4 Lock, uptime, restart-needed badge, hibernate chip if supported |
+| power         | shutdown, reboot, sleep, lock, plus battery, profile, updates, last boot, kernel, session |
 | notifications | history (read from the shell's state files), Focus toggle, dismiss, replay |
 | system        | CPU, memory, temperature charts; load, uptime, CPU clock, disk, swap, network rate; three busiest processes |
 | tray          | status-notifier icons |

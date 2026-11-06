@@ -41,7 +41,7 @@ WidgetPanel {
         Rectangle { anchors.fill: parent; radius: Theme.tileRadius; color: Theme.surface
           border.width: root.sel === index ? 2 : 0; border.color: Theme.text }
         Image { anchors.centerIn: parent; width: 28; height: 28; source: modelData.icon; sourceSize: Qt.size(56, 56); asynchronous: true }
-        MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton
+        MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
           onClicked: function (m) { root.sel = index; if (m.button === Qt.RightButton) modelData.secondaryActivate(); else modelData.activate() } }
       }
     }

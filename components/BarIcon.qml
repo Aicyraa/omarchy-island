@@ -17,7 +17,12 @@ Item {
   implicitHeight: box.childrenRect.height
   Item { id: box; width: childrenRect.width; height: childrenRect.height }
 
+  // Hover: a soft rounded backing behind the glyph.
+  Rectangle { anchors.fill: parent; anchors.margins: -3; radius: 7; z: -1; color: Theme.text; opacity: hit.containsMouse ? 0.12 : 0
+    Behavior on opacity { NumberAnimation { duration: 120 } } }
   MouseArea {
+    id: hit
+    hoverEnabled: true; cursorShape: Qt.PointingHandCursor
     anchors.fill: parent; anchors.margins: -5          // a bit bigger than the glyph: easier to hit
     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
     onClicked: function (m) {

@@ -29,19 +29,6 @@ WidgetPanel {
     return d > 0 ? d + "d " + h + "h" : (h > 0 ? h + "h " + m + "m" : m + "m") }
   Timer { interval: 3000; repeat: true; running: true; triggeredOnStart: true; onTriggered: SysInfo.refresh() }
 
-  // A small stat tile: muted label over a value.
-  component Tile2: Rectangle {
-    id: t
-    property string label; property string value; property real fraction: -1
-    width: (parent.width - 2 * Theme.s12) / 3; height: 50; radius: Theme.tileRadius - 4; color: Theme.surface
-    Text { x: Theme.s12; y: 8; textFormat: Text.PlainText; text: t.label; color: Theme.textMuted; font.pixelSize: 11 }
-    Text { x: Theme.s12; y: 25; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight; textFormat: Text.PlainText
-      text: t.value; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
-    Rectangle { visible: t.fraction >= 0; x: Theme.s12; width: parent.width - 2 * Theme.s12; y: parent.height - 6; height: 3; radius: 1.5; color: Theme.mix(Theme.surface, Theme.text, 0.16)
-      Rectangle { height: parent.height; radius: 1.5; width: parent.width * Math.min(1, t.fraction)
-        color: t.fraction >= 0.9 ? Theme.dangerInk : (t.fraction >= 0.75 ? Theme.warningInk : Theme.accentInk) } }
-  }
-
   component Card: Rectangle {
     id: card
     property string icon; property string label; property string value; property string unit
@@ -70,12 +57,12 @@ WidgetPanel {
   // ---- detail tiles ----
   Flow {
     width: parent.width; spacing: Theme.s12
-    Tile2 { label: "Load average"; value: root.load1.toFixed(2) + " · " + root.load5.toFixed(2) + " · " + root.load15.toFixed(2); fraction: root.cores > 0 ? root.load1 / root.cores : -1 }
-    Tile2 { label: "Uptime"; value: root.dur(root.uptimeSec) }
-    Tile2 { label: "CPU clock"; value: root.freqMHz > 0 ? (root.freqMHz / 1000).toFixed(2) + " GHz · " + root.cores + " cores" : "—" }
-    Tile2 { label: "Disk /"; value: root.bytes(root.diskUsed) + " / " + root.bytes(root.diskSize); fraction: root.diskUsed / root.diskSize }
-    Tile2 { label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
-    Tile2 { label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Load average"; value: root.load1.toFixed(2) + " · " + root.load5.toFixed(2) + " · " + root.load15.toFixed(2); fraction: root.cores > 0 ? root.load1 / root.cores : -1 }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Uptime"; value: root.dur(root.uptimeSec) }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "CPU clock"; value: root.freqMHz > 0 ? (root.freqMHz / 1000).toFixed(2) + " GHz · " + root.cores + " cores" : "—" }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Disk /"; value: root.bytes(root.diskUsed) + " / " + root.bytes(root.diskSize); fraction: root.diskUsed / root.diskSize }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
+    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
   }
 
   // ---- busiest processes (share of the whole CPU) ----

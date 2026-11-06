@@ -103,7 +103,7 @@ WidgetPanel {
     Rectangle { visible: !root.searching; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
       height: 28; width: addLabel.implicitWidth + Theme.s16 * 2; radius: 14; color: Theme.surface
       Text { id: addLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
-      MouseArea { anchors.fill: parent; onClicked: { root.query = ""; root.pick = 0; root.searching = true } } } }
+      MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.query = ""; root.pick = 0; root.searching = true } } } }
 
   // ---- rows (hidden while searching) ----
   Column {
