@@ -7,7 +7,7 @@ import ".."
 import "../services"
 
 // What the pill shows on hover: a preview of the essentials.
-//   profile header (current wallpaper as its background) · quick toggles · volume + brightness · media player.
+//   profile header (current wallpaper as its background) · quick toggles (icons only) · volume + brightness · media player.
 // Everything is live and clickable; right-click on a toggle opens its full widget. The media card only
 // takes space while a player exists. The pill sizes itself from implicitWidth/implicitHeight.
 Item {
@@ -96,28 +96,22 @@ Item {
         { icon: "moon", title: "Night light", show: true, on: Indicators.nightLight,
           sub: Indicators.nightLight ? "On" : "Off", toggle: function () { Indicators.toggleNightLight() }, open: "display" },
         { icon: "coffee", title: "Awake", show: true, on: Indicators.stayAwake,
-          sub: Indicators.stayAwake ? "On" : "Off", toggle: function () { Indicators.toggleStayAwake() }, open: "battery" }
+          sub: Indicators.stayAwake ? "On" : "Off", toggle: function () { Indicators.toggleStayAwake() }, open: "battery" },
+        { icon: "mic-dictate", title: "Dictation", show: Indicators.dictationAvailable, on: Indicators.dictation !== "idle",
+          sub: "", toggle: function () { Indicators.toggleDictation() }, open: "" }
       ]
+      readonly property int count: Math.max(1, items.filter(function (t) { return t.show }).length)
       Repeater {
         model: toggles.items
         delegate: Rectangle {
           required property var modelData
           visible: modelData.show
-          width: (toggles.width - 4 * Theme.s8) / 5; height: 62; radius: Theme.tileRadius
+          width: (toggles.width - (toggles.count - 1) * Theme.s8) / toggles.count; height: 48; radius: Theme.tileRadius
           color: modelData.on ? Theme.accentFill : Theme.surface
           Behavior on color { ColorAnimation { duration: 150 } }
-          readonly property color fg: modelData.on ? Theme.accentText : Theme.text
-          readonly property color fgMuted: modelData.on ? Theme.textOnAccentMuted : Theme.textMuted
-          Column {
-            anchors.centerIn: parent; width: parent.width - 10; spacing: 3
-            Icon { anchors.horizontalCenter: parent.horizontalCenter; name: modelData.icon; size: Theme.iconMd; color: parent.parent.fg }
-            Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-              text: modelData.title; color: parent.parent.fg; font.pixelSize: 11; font.weight: Theme.weightLabel }
-            Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-              text: modelData.sub; color: parent.parent.fgMuted; font.pixelSize: 10 }
-          }
+          Icon { anchors.centerIn: parent; name: modelData.icon; size: Theme.iconLg - 2; color: modelData.on ? Theme.accentText : Theme.text }
           MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton
-            onClicked: function (m) { if (m.button === Qt.RightButton) IslandState.openWidget(modelData.open, root.screen()); else modelData.toggle() } }
+            onClicked: function (m) { if (m.button === Qt.RightButton) { if (modelData.open !== "") IslandState.openWidget(modelData.open, root.screen()) } else modelData.toggle() } }
         }
       }
     }

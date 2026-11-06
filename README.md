@@ -177,7 +177,7 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 
 | id            | what it shows |
 |---------------|---------------|
-| home          | quick settings: Wi-Fi, Bluetooth, Focus (DND), Night light, Stay awake, Dictation + volume and brightness sliders |
+| home          | the hover form, pinned (profile header, icon-only quick toggles, volume and brightness, media player) |
 | wifi          | SSID, signal, band, IP, speed, network list (scans only while open) |
 | bluetooth     | radio switch, known devices with battery, connect/disconnect |
 | audio         | output and input sliders, device pickers |
