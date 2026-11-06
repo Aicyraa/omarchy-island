@@ -15,3 +15,6 @@ IconButton 1.0 components/IconButton.qml
 WifiIcon 1.0 components/WifiIcon.qml
 Sparkline 1.0 components/Sparkline.qml
 IdleForm 1.0 components/IdleForm.qml
+Visualizer 1.0 components/Visualizer.qml
+MediaCard 1.0 components/MediaCard.qml
+HoverPreview 1.0 components/HoverPreview.qml

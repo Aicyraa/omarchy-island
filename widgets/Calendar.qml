@@ -67,7 +67,7 @@ WidgetPanel {
       text: root.monthNames[root.month] + " " + root.year }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
       Rectangle { height: 30; width: todayLabel.implicitWidth + Theme.s16 * 2; radius: 15; color: Theme.surface
-        Text { id: todayLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Today  T"; color: Theme.text; font.pixelSize: 12; font.bold: true }
+        Text { id: todayLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Today"; color: Theme.text; font.pixelSize: 12; font.bold: true }
         MouseArea { anchors.fill: parent; onClicked: root.goToday() } }
       Repeater { model: [ { ic: "chevron-left", d: -1 }, { ic: "chevron-right", d: 1 } ]
         delegate: Rectangle { required property var modelData; width: 30; height: 30; radius: 15; color: Theme.surface

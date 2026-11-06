@@ -79,7 +79,6 @@ WidgetPanel {
         iconCircle: false
         icon: modelData.icon; title: modelData.label
         on: root.active === modelData.id
-        keyHint: String(index + 1)
         onClicked: root.setProfile(index)
       }
     }

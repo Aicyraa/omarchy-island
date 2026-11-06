@@ -100,8 +100,10 @@ WidgetPanel {
   // ---- header ----
   Item { width: parent.width; height: 28
     Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "World clock"; color: Theme.text; font.pixelSize: 15; font.bold: true }
-    Text { visible: !root.searching; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: "A add · D remove"; color: Theme.textMuted; font.pixelSize: 11 } }
+    Rectangle { visible: !root.searching; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+      height: 28; width: addLabel.implicitWidth + Theme.s16 * 2; radius: 14; color: Theme.surface
+      Text { id: addLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.bold: true }
+      MouseArea { anchors.fill: parent; onClicked: { root.query = ""; root.pick = 0; root.searching = true } } } }
 
   // ---- rows (hidden while searching) ----
   Column {

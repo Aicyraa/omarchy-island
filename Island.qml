@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import "."
 import "services"
+import Quickshell.Services.Mpris
 import "widgets/Registry.js" as Registry
 
 // One Island per screen (created by Variants in Bar.qml).
@@ -40,13 +41,19 @@ PanelWindow {
       return Qt.size(Math.min(Theme.panelMaxWidth, it.implicitWidth), it.implicitHeight)
     return Qt.size(Registry.width(name), Registry.height(name))
   }
+  // The hover preview sizes itself; before it is loaded, estimate from whether a player exists.
+  function hoverSize() {
+    var it = hoverLoader.item
+    if (it && it.implicitHeight > 0) return Qt.size(it.implicitWidth, it.implicitHeight)
+    return Qt.size(440, Mpris.players.values.some(function (q) { return q.isPlaying }) ? 388 : 236)
+  }
   function sizeFor(m) {
     switch (m) {
-    case "hover":        return Qt.size(idleForm.widthFor(true), 38)
+    case "hover":        return hoverSize()
     case "widget":       return widgetSizeOf(IslandState.widgetName)
     case "hud":          return Qt.size(300, 42)
     case "notification": return Qt.size(420, 52)
-    default:             return Qt.size(idleForm.widthFor(false), 26)     // idle
+    default:             return Qt.size(idleForm.widthFor(), 26)     // idle
     }
   }
   readonly property size target: sizeFor(myMode)
@@ -302,8 +309,17 @@ PanelWindow {
         id: idleForm
         win: win
         anchors.fill: parent
-        visible: pill.shownMode === "idle" || pill.shownMode === "hover"
-        expanded: pill.shownMode === "hover"
+        visible: pill.shownMode === "idle"
+      }
+
+      // ---------- hover form: preview of the essentials (loaded only while shown) ----------
+      Loader {
+        id: hoverLoader
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: win.shownSize.width
+        active: pill.shownMode === "hover"
+        sourceComponent: HoverPreview { win: win }
       }
 
       // ---------- HUD form: icon-in-track slider + right-aligned percentage, nothing else ----------

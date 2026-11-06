@@ -71,7 +71,7 @@ WidgetPanel {
         visible: modelData.show
         width: (parent.width - Theme.s8) / 2
         icon: modelData.icon; title: modelData.title; subtitle: modelData.sub
-        on: modelData.on; selected: root.sel === index; keyHint: String(index + 1)
+        on: modelData.on; selected: root.sel === index
         onClicked: { root.sel = index; modelData.toggle() }
         onRightClicked: if (modelData.open !== "") IslandState.openWidget(modelData.open, "")
       }

@@ -57,7 +57,7 @@ WidgetPanel {
         required property int index
         width: (parent.width - 3 * Theme.s12) / 4
         compact: true
-        icon: modelData.icon; title: modelData.title; keyHint: String(index + 1)
+        icon: modelData.icon; title: modelData.title
         selected: root.sel === index; danger: modelData.destructive
         holdMs: modelData.destructive ? 600 : 0
         subtitle: modelData.destructive ? (selected ? "Enter to confirm" : "Hold to confirm")

@@ -82,7 +82,7 @@ Singleton {
     return Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
   }
 
-  // ---- hover intent: open after 120ms, close after 300ms ----
+  // ---- hover intent: open after 170ms, close after 380ms ----
   function hoverIntent(over, screenName) {
     var h = Object.assign({}, hovered)   // reassign, so bindings notice
     if (over) h[screenName] = true; else delete h[screenName]
@@ -163,9 +163,9 @@ Singleton {
   }
 
   // Timers exist but only RUN when started, so nothing ticks while idle.
-  Timer { id: openTimer; interval: 120
+  Timer { id: openTimer; interval: 170
     onTriggered: { root.hoverScreen = root.pendingHoverScreen; root.hoverOpen = true } }
-  Timer { id: closeTimer; interval: 300; onTriggered: root.hoverOpen = false }
+  Timer { id: closeTimer; interval: 380; onTriggered: root.hoverOpen = false }
   Timer { id: hudTimer; interval: 1500; onTriggered: root.hudActive = false }
   Timer { id: idleTimer
     interval: root.timeoutFor(root.widgetName)

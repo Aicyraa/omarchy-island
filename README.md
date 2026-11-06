@@ -203,11 +203,12 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 ### Pill actions
 Idle shows workspaces, the clock (exactly centred) and Wi-Fi + battery, plus an icon for any Omarchy
 indicator that is on (recording with a timer, Focus, night light, stay awake, update, dictation).
-Hovering for ~120 ms expands it: window title and workspaces on the left, time with the date to its right
-(the time does not move), then "All caught up" + bell, volume, brightness, Wi-Fi, battery. In the hover
-form: scroll the volume or sun icon to change them, middle-click volume mutes, click or right-click any icon
-to open its widget. Click the clock for the calendar, scroll the workspaces to switch.
-Indicator state is refreshed on events (startup, widget open/close, `omarchy-shell omarchy.indicators refresh`), not by polling.
+Hovering for ~170 ms replaces the bar with a preview of the essentials (`components/HoverPreview.qml`): a profile header
+(your avatar from `~/.face`, greeting, user, host and uptime, clock, battery, on top of the current wallpaper), five quick
+toggles (Wi-Fi, Bluetooth, Focus, Night light, Awake; click toggles, right-click opens the full widget), volume and
+brightness sliders, and, only while something is playing or paused with a track, a media player (`components/MediaCard.qml`):
+the cover art as a lightly blurred background, controls, progress and a real spectrum visualizer from `cava`
+(`assets/cava.conf`; it runs only while a track plays and the card is visible). The Media widget uses the same card.
 
 ### How to add a widget
 1. Create `widgets/MyThing.qml`: a `WidgetPanel` with `preferredWidth`, an optional `hint` string (documentation only) and a `Keys.onPressed` handler; put content inside it.
@@ -283,6 +284,6 @@ Measured (rig, 3 themes unless noted; numbers and before/after images are in `~/
 - khal events (not installed), Bluetooth connect/disconnect/scan, Wi-Fi connect, tray context menus (right click sends the secondary action only)
 - "Restart needed" uses a limited check (running kernel's modules missing); Omarchy exposes no flag file
 - Weather location "Ermita" comes from wttr.in's IP geolocation (it matches your Asia/Manila time zone); set `weatherLocation` in state.json to pin it
-- Hover pill is wider than the reference's proportions (681 px vs 181 idle) because it carries the date, bell text, volume, brightness, Wi-Fi and battery
+- (old) Hover pill was wider than the reference's proportions (681 px vs 181 idle) because it carries the date, bell text, volume, brightness, Wi-Fi and battery
 - Spring values are tuned by eye on one screen; Omarchy's guide discourages bounce and over 300 ms, the island overrides that on purpose
 - Deploying a changed bar plugin needs `omarchy restart shell`; the running shell caches its QML
