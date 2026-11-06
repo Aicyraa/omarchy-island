@@ -33,6 +33,7 @@ WidgetPanel {
     }
   }
 
+  // One side (Output or Input): header with the active device, the level slider, then the device list.
   component Side: Column {
     id: side
     required property bool isInput
@@ -41,11 +42,17 @@ WidgetPanel {
     readonly property var current: isInput ? Audio.source : Audio.sink
     readonly property real vol: isInput ? Audio.micVolume : Audio.volume
     readonly property bool muted: isInput ? Audio.micMuted : Audio.muted
-    width: (parent.width - Theme.s16) / 2
-    spacing: Theme.sectionGap
+    width: (parent.width - root.colGap) / 2
+    spacing: Theme.s12
 
-    Text { textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
-      color: side.mine ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.weight: Theme.weightLabel }
+    // header: title on the left, the active device (what the slider controls) on the right
+    Item { width: parent.width; height: 20
+      Text { id: ttl; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
+        color: side.mine ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.weight: Theme.weightLabel }
+      Text { anchors.left: ttl.right; anchors.leftMargin: Theme.s8; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+        horizontalAlignment: Text.AlignRight; elide: Text.ElideRight; textFormat: Text.PlainText
+        text: side.muted ? "Muted" : (side.current ? Audio.label(side.current) : "No device")
+        color: side.muted ? Theme.warningInk : Theme.textMuted; font.pixelSize: 11 } }
     PillSlider {
       width: parent.width; showValue: true
       icon: side.isInput ? (side.muted ? "mic-off" : "mic") : "volume"
@@ -80,9 +87,11 @@ WidgetPanel {
     }
   }
 
-  // Both columns start at the same y, so their headers and sliders share a baseline.
+  // Both columns start at the same y, so their headers and sliders share a baseline. The gap is wide enough that the
+  // rows' 8px highlight bleed from the two sides never meets.
+  readonly property int colGap: Theme.s16 + 2 * Theme.s8
   Row {
-    width: parent.width; spacing: Theme.s16
+    width: parent.width; spacing: root.colGap
     Side { isInput: false }
     Side { isInput: true }
   }

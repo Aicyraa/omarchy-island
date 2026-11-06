@@ -19,6 +19,9 @@ Item {
   property real preferredWidth: 480
   property bool compact: false             // small toast: tighter minimum height
   property alias flick: flick
+  // The shared, animated focus highlight (see FocusTarget): rows register themselves here.
+  readonly property bool focusHost: true
+  property Item focusItem: null
   readonly property var column: col        // exposed for the layout measurement tool
 
   readonly property int pad: Theme.panelPadding
@@ -52,6 +55,31 @@ Item {
     boundsBehavior: Flickable.StopAtBounds
     interactive: panel.scrollable
     Behavior on contentY { enabled: !flick.moving && !flick.dragging && !bar.dragging; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 120; easing.type: Easing.OutCubic } }
+
+    // The sliding highlight lives in the scrolled content, behind the rows. It bleeds 8px like the old per-row one.
+    Rectangle {
+      id: hl
+      readonly property bool has: panel.focusItem !== null && panel.focusItem.visible
+      property real tx: 0; property real ty: 0; property real tw: 0; property real th: 0
+      function place() {
+        var it = panel.focusItem; if (!it) return
+        var p = it.mapToItem(flick.contentItem, 0, 0)
+        tx = p.x - Theme.s8; ty = p.y; tw = it.width + 2 * Theme.s8; th = it.height
+      }
+      Connections { target: panel; function onFocusItemChanged() { hl.place() } }
+      Connections { target: panel.focusItem; ignoreUnknownSignals: true
+        function onYChanged() { hl.place() } function onHeightChanged() { hl.place() } function onWidthChanged() { hl.place() } }
+      Connections { target: col; function onImplicitHeightChanged() { hl.place() } }
+      x: tx; y: ty; width: tw; height: th
+      radius: Theme.tileRadius; color: Theme.surfaceRaised
+      opacity: has ? 1 : 0
+      Behavior on opacity { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140 } }
+      // Slides and resizes with a small overshoot. The first placement (no previous item) just appears.
+      Behavior on x { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
+      Behavior on y { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
+      Behavior on width { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
+      Behavior on height { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
+    }
 
     Column {
       id: col

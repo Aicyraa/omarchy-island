@@ -63,7 +63,7 @@ omarchy-shell island mode
 ```
 Hyprland global shortcuts (no process spawned) are registered as `island:<widget>`:
 `home wifi bluetooth audio display battery calendar worldclock power notifications
-media system tray theme`. Bind with
+system tray theme`. Bind with
 `o.bind("SUPER + CTRL + Q", "Power", hl.dsp.global("island:power"))`.
 
 ## Theming
@@ -187,8 +187,7 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | worldclock    | zones from `~/.local/state/island/world-clock.json`, fuzzy add, system `date` for DST |
 | power         | 1 Shutdown, 2 Reboot, 3 Sleep, 4 Lock, uptime, restart-needed badge, hibernate chip if supported |
 | notifications | history (read from the shell's state files), Focus toggle, dismiss, replay |
-| media         | MPRIS player, controls, progress |
-| system        | CPU, memory, CPU temperature with real line charts (shared 2 s ring buffer; never touches the discrete GPU) |
+| system        | CPU, memory, temperature charts; load, uptime, CPU clock, disk, swap, network rate; three busiest processes |
 | tray          | status-notifier icons |
 | theme         | ONE horizontal strip of theme cards (720 x ~188 px, scrolls sideways): wallpaper, name on a scrim in the theme's own colours, swatches, light/dark chip, check on the current theme; applies with `omarchy-theme-set` |
 | weather       | temperature, condition icon (sun/moon/cloud/rain...), high/low; location auto by IP or `weatherLocation` in state.json |
@@ -208,7 +207,7 @@ Hovering for ~170 ms replaces the bar with a preview of the essentials (`compone
 toggles (Wi-Fi, Bluetooth, Focus, Night light, Awake; click toggles, right-click opens the full widget), volume and
 brightness sliders, and, only while something is playing or paused with a track, a media player (`components/MediaCard.qml`):
 the cover art as a lightly blurred background, controls, progress and a real spectrum visualizer from `cava`
-(`assets/cava.conf`; it runs only while a track plays and the card is visible). The Media widget uses the same card.
+(`assets/cava.conf`; it runs only while a track plays and the card is visible).
 
 ### How to add a widget
 1. Create `widgets/MyThing.qml`: a `WidgetPanel` with `preferredWidth`, an optional `hint` string (documentation only) and a `Keys.onPressed` handler; put content inside it.
@@ -232,8 +231,7 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | ALT + E | Elsewhen world clock (`rebind`) | world clock |
 | Z | free | world clock |
 | Q | free | power (shutdown, reboot, sleep, lock) |
-| Y | free | media |
-| U | free | system usage |
+| Y | free | U | free | system usage |
 | G | free | tray |
 | T and SHIFT + SPACE | Omarchy theme menu (`rebind`) | island theme picker |
 | SHIFT + A | Omarchy Agent (`omarchy-agent --pick`) | Omarchy Agent, launches the default agent in a terminal (the island agent widget is on SUPER + ALT + A) |
@@ -298,5 +296,5 @@ results are cached for the session. Delete the `ArtLookup.request` calls in `com
 - `Theme.pillBase` lifts a near-black theme background (luminance < 0.01) toward the surface colour so the pill is never pure black.
 
 ## Focus animation and scrollbar
-- Moving the selection animates: `FocusRing` (tiles, sliders, icon buttons) springs in from slightly larger and fades out of the old item; list rows get a vertical focus marker (the workspace indicator's shape) that springs open, and their highlight settles in with a small overshoot. `reducedMotion` turns it all off.
+- Moving the selection animates: `FocusRing` (tiles, sliders, icon buttons) springs in from slightly larger and fades out of the old item; list rows share ONE highlight background (`FocusTarget` + the panel's `hl` rectangle) that slides and resizes from the old row to the new one with a small overshoot. `reducedMotion` turns it all off.
 - `Scroller` replaces the plain indicator: a slim pill, dim when idle (a cue that there is more), brighter and thicker while scrolling or hovered, accent while dragged; drag it, click the track to jump, or wheel over it.

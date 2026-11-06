@@ -24,24 +24,14 @@ Item {
   implicitHeight: Theme.rowHeight
   height: Theme.rowHeight
 
-  // Bleeding highlight.
+  // The selected-row highlight is the panel's shared sliding one (FocusTarget). Only the "active" tint is drawn here.
+  FocusTarget { selected: root.selected; target: root }
   Rectangle {
     anchors.fill: parent
     anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8      // bleeds 8px, leaving 8px to the pill edge
     radius: Theme.tileRadius
-    color: root.selected ? Theme.surfaceRaised : (root.active ? Qt.rgba(Theme.accentFill.r, Theme.accentFill.g, Theme.accentFill.b, 0.14) : "transparent")
+    color: root.active && !root.selected ? Qt.rgba(Theme.accentFill.r, Theme.accentFill.g, Theme.accentFill.b, 0.14) : "transparent"
     Behavior on color { ColorAnimation { duration: 120 } }
-    scale: (root.selected || root.active) ? 1 : 0.97
-    Behavior on scale { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
-  }
-  // Focus marker: a vertical pill (the workspace indicator's shape) that springs open on the selected row.
-  Rectangle {
-    x: -Theme.s8 + 4; anchors.verticalCenter: parent.verticalCenter
-    width: 3; radius: 1.5; color: Theme.accentInk
-    height: root.selected ? 20 : 0
-    opacity: root.selected ? 1 : 0
-    Behavior on height { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 4.5; damping: 0.30; epsilon: 0.3 } }
-    Behavior on opacity { NumberAnimation { duration: 120 } }
   }
 
   Loader { id: lead; x: 0; anchors.verticalCenter: parent.verticalCenter

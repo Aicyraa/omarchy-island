@@ -20,3 +20,4 @@ MediaCard 1.0 components/MediaCard.qml
 HoverPreview 1.0 components/HoverPreview.qml
 Scroller 1.0 components/Scroller.qml
 FocusRing 1.0 components/FocusRing.qml
+FocusTarget 1.0 components/FocusTarget.qml
