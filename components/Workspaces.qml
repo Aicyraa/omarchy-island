@@ -2,18 +2,20 @@ import QtQuick
 import Quickshell.Hyprland
 import ".."
 
-// Workspace dots with a "liquid" capsule for the focused one.
+// Workspace indicator: one small dot per workspace; the FOCUSED one stretches
+// VERTICALLY into a tall pill (taller, not wider, so the row stays compact and
+// fits inside the bar's height).
 //
-// The capsule is drawn from two edges, left (l) and right (r), each driven by
-// its own spring. The LEADING edge (the one in the direction of travel) gets a
-// stiff, fast spring and the TRAILING edge a softer one, so the capsule
-// stretches toward the target and then catches up, like a drop of liquid.
+// Each dot owns its own shape, and the stretch is a spring on its height: when
+// focus moves, the old pill springs back down to a dot while the new one springs
+// up, so the two motions overlap like a liquid handing over. Slots never move.
 Item {
   id: root
 
-  readonly property int slot: 12        // width of one workspace slot
-  readonly property int dot: 5
-  readonly property int capW: 17        // capsule width (centered on its slot)
+  readonly property int slot: 11        // width of one workspace slot
+  readonly property int dot: 5          // resting diameter
+  readonly property int activeW: 6      // the focused pill is a touch wider than a dot
+  readonly property int capH: 14        // the focused pill's height (fits the 26px idle bar with 6px to spare)
 
   // Workspaces to show: all real ones (id > 0), sorted, with a minimum of 4 so
   // the idle pill isn't empty on a fresh session.
@@ -29,57 +31,40 @@ Item {
     return out
   }
   readonly property int focusedId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
-  readonly property int focusedSlot: Math.max(0, ids.indexOf(focusedId))
 
   implicitWidth: ids.length * slot
-  implicitHeight: dot          // exactly the ink height, so a stacked layout stays vertically symmetric
-
-  // Target edges for the capsule.
-  readonly property real tl: focusedSlot * slot + (slot - capW) / 2
-  readonly property real tr: tl + capW
-  property real l: tl
-  property real r: tr
-  // Which way are we moving? Compared against the previous target.
-  property bool movingRight: true
-  property real prevTl: tl
-  onTlChanged: { movingRight = tl > prevTl; prevTl = tl }
-
-  Behavior on l {
-    enabled: !IslandState.reducedMotion
-    SpringAnimation { spring: root.movingRight ? 2.0 : 5.0; damping: root.movingRight ? 0.30 : 0.38; epsilon: 0.25 }
-  }
-  Behavior on r {
-    enabled: !IslandState.reducedMotion
-    SpringAnimation { spring: root.movingRight ? 5.0 : 2.0; damping: root.movingRight ? 0.38 : 0.30; epsilon: 0.25 }
-  }
+  implicitHeight: capH                  // room for the tall pill, so the layout never shifts when focus moves
 
   Repeater {
     model: root.ids
     delegate: Rectangle {
       required property int modelData
       required property int index
-      x: index * root.slot + (root.slot - root.dot) / 2
+      readonly property bool active: modelData === root.focusedId
+      x: index * root.slot + (root.slot - width) / 2
       anchors.verticalCenter: parent.verticalCenter
-      width: root.dot; height: root.dot; radius: root.dot / 2
-      color: Theme.textMuted
-      opacity: 0.55
-    }
-  }
+      width: active ? root.activeW : root.dot
+      height: active ? root.capH : root.dot
+      radius: width / 2
+      color: active ? Theme.text : Theme.textMuted
+      opacity: active ? 1 : 0.55
 
-  Rectangle {                           // the capsule
-    x: Math.min(root.l, root.r)
-    width: Math.abs(root.r - root.l)
-    anchors.verticalCenter: parent.verticalCenter
-    height: root.dot
-    radius: height / 2
-    color: Theme.text
+      // Height is the stretch: a spring (stiff, slightly bouncy). Width and colour just ease.
+      Behavior on height {
+        enabled: !IslandState.reducedMotion
+        SpringAnimation { spring: 4.5; damping: 0.30; epsilon: 0.2 }
+      }
+      Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+      Behavior on color { ColorAnimation { duration: 200 } }
+      Behavior on opacity { NumberAnimation { duration: 200 } }
+    }
   }
 
   // Click a slot to switch; scroll anywhere to step through workspaces.
   MouseArea {
     anchors.fill: parent; anchors.margins: -4       // larger hit area than the 5px dots
     onClicked: function (m) {
-      var i = Math.floor(m.x / root.slot)
+      var i = Math.floor((m.x + 4) / root.slot)
       if (i >= 0 && i < root.ids.length) Hyprland.dispatch("workspace " + root.ids[i])
     }
     onWheel: function (w) { Hyprland.dispatch(w.angleDelta.y > 0 ? "workspace e-1" : "workspace e+1") }

@@ -151,7 +151,7 @@ Item {
       BarIcon { visible: Net.hasWifi; anchors.verticalCenter: parent.verticalCenter
         onClicked: IslandState.toggleWidget("wifi", form.win ? form.win.screenName : "")
         onRightClicked: IslandState.toggleWidget("wifi", form.win ? form.win.screenName : "")
-        WifiIcon { level: Net.connected ? Net.strength : 0; off: !Net.enabled; size: Theme.iconMd } }
+        WifiIcon { level: Net.connected ? Net.strength : 0; off: !Net.enabled; size: Theme.iconMd; matchBattery: true } }
       BarIcon { visible: Power.present; anchors.verticalCenter: parent.verticalCenter
         onClicked: IslandState.toggleWidget("battery", form.win ? form.win.screenName : "")
         onRightClicked: IslandState.toggleWidget("battery", form.win ? form.win.screenName : "")

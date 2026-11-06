@@ -88,8 +88,7 @@ A `SpringAnimation` pulls a value toward its target like a spring pulls a weight
 |-------------------------|--------|---------|-----|
 | Pill width              | 3.4    | 0.26    | leads; a little overshoot reads as "springy" |
 | Pill height             | 3.0    | 0.28    | follows 40 ms later and slightly softer |
-| Capsule leading edge    | 5.0    | 0.38    | stiff + well damped: shoots ahead without wobble |
-| Capsule trailing edge   | 2.0    | 0.30    | soft: lags, then catches up, which is the "liquid" stretch |
+| Workspace pill height | 4.5 | 0.30 | the focused workspace stretches UP into a 14px pill; the old one springs back down at the same time, so they overlap like a hand-over |
 | HUD                     | (uses pill width/height) | | HUD is just another pill size |
 
 Rules of thumb: more bounce -> lower damping. Snappier -> raise spring. If it feels
