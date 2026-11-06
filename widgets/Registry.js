@@ -12,6 +12,12 @@ var widgets = {
   calendar:  { file: "Calendar.qml",  w: 400, h: 330 },
   worldclock:{ file: "WorldClock.qml",w: 620, h: 340 },
   system:    { file: "System.qml",    w: 620, h: 190 },
+  notifications: { file: "Notifications.qml", w: 460, h: 360 },
+  media:     { file: "Media.qml",     w: 480, h: 196 },
+  tray:      { file: "Tray.qml",      w: 460, h: 170 },
+  theme:     { file: "ThemePicker.qml", w: 720, h: 390 },
+  weather:   { file: "Weather.qml",   w: 440, h: 140 },
+  agent:     { file: "Agent.qml",     w: 560, h: 300 },
   power: { file: "Power.qml", w: 580, h: 236 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }

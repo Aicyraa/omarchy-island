@@ -13,7 +13,9 @@ import Quickshell.Io
 Singleton {
   id: root
 
-  readonly property string themeDir: Quickshell.env("HOME") + "/.local/state/omarchy/current"
+  // ISLAND_THEME_DIR lets tests point at a fake "current" dir without touching the
+  // user's real theme. It is unset in normal use.
+  readonly property string themeDir: Quickshell.env("ISLAND_THEME_DIR") || (Quickshell.env("HOME") + "/.local/state/omarchy/current")
 
   // ---- Fallback block: the only hex literals in the plugin. Used until the
   // palette file loads, or if a key is missing from it. ----

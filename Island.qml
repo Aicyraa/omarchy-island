@@ -201,7 +201,7 @@ PanelWindow {
           Text {                                   // placeholder until the notification service is wired (milestone 3)
             visible: parent.parent.expanded
             textFormat: Text.PlainText
-            text: "All caught up"
+            text: Notifs.summary
             color: Theme.textMuted
             font.pixelSize: 11
           }

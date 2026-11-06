@@ -36,7 +36,7 @@ Item {
   // The keypress goes straight to this process: nothing is spawned.
   Variants {
     model: ["home", "wifi", "bluetooth", "audio", "display", "battery", "calendar",
-            "worldclock", "power", "notifications", "media", "system", "tray", "theme"]
+            "worldclock", "power", "notifications", "media", "system", "tray", "theme", "weather", "agent"]
     GlobalShortcut {
       required property string modelData
       appid: "island"
