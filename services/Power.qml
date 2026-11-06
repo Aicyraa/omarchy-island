@@ -17,4 +17,14 @@ Singleton {
   }
   readonly property bool charging: present && dev.state === UPowerDeviceState.Charging
   readonly property bool low: present && level <= 0.2 && !charging
+
+  // Details for the Battery widget. UPower reports seconds and watts.
+  readonly property real watts: present ? Math.abs(dev.changeRate) : 0
+  readonly property real health: present ? dev.healthPercentage : 0   // 0..100
+  readonly property real secondsLeft: !present ? 0 : (charging ? dev.timeToFull : dev.timeToEmpty)
+  function timeText(sec) {
+    if (!sec || sec <= 0) return ""
+    var h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60)
+    return h > 0 ? h + "h " + m + "m" : m + "m"
+  }
 }

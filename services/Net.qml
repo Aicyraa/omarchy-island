@@ -29,4 +29,17 @@ Singleton {
   readonly property string ssid: active ? active.name : ""
   // 0..1. Quickshell reports signalStrength as a fraction; clamp defensively.
   readonly property real strength: active ? Math.max(0, Math.min(1, active.signalStrength)) : 0
+
+  // Radio on/off (rfkill-level, handled by NetworkManager).
+  readonly property bool enabled: Networking.wifiEnabled
+  function setEnabled(on) { Networking.wifiEnabled = on }
+  function toggle() { Networking.wifiEnabled = !Networking.wifiEnabled }
+
+  // Visible networks, strongest first, connected on top.
+  readonly property var networks: {
+    if (!device || !device.networks) return []
+    var n = device.networks.values.slice()
+    n.sort(function (a, b) { return (b.connected ? 2 : 0) + b.signalStrength - ((a.connected ? 2 : 0) + a.signalStrength) })
+    return n
+  }
 }

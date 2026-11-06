@@ -8,3 +8,5 @@ BatteryIcon 1.0 components/BatteryIcon.qml
 Icon 1.0 components/Icon.qml
 Tile 1.0 components/Tile.qml
 PillSlider 1.0 components/PillSlider.qml
+VolumeIcon 1.0 components/VolumeIcon.qml
+ListItem 1.0 components/ListItem.qml

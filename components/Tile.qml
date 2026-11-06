@@ -19,6 +19,7 @@ Item {
   property int holdMs: 0
   signal clicked()
   signal held()
+  signal rightClicked()
 
   readonly property color fill: on ? Theme.accent : Theme.surface
   readonly property color fg: on ? Theme.accentText : Theme.text
@@ -94,8 +95,10 @@ Item {
     Column {
       anchors.verticalCenter: parent.verticalCenter
       spacing: 1
-      Text { textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 13; font.bold: true }
+      Text { width: root.width - 34 - 14 - 10 - 14 - (root.keyHint !== "" ? 14 : 0); elide: Text.ElideRight
+        textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 13; font.bold: true }
       Text {
+        visible: root.subtitle !== ""
         width: root.width - 34 - 14 - 10 - 14; elide: Text.ElideRight
         textFormat: Text.PlainText; text: root.subtitle; color: root.fgMuted; font.pixelSize: 11
       }
@@ -107,7 +110,9 @@ Item {
     id: area
     anchors.fill: parent
     onPressed: if (root.holdMs > 0) holdAnim.restart()
-    onReleased: {
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    onReleased: function (m) {
+      if (m.button === Qt.RightButton) { root.rightClicked(); return }
       if (holdAnim.running) { holdAnim.stop(); root.holdProgress = 0; root.clicked() }
       else if (root.holdMs === 0) root.clicked()
       root.holdProgress = 0

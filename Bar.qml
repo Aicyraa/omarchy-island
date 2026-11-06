@@ -17,7 +17,6 @@ Item {
   property var pluginRegistry: null
   property string omarchyPath: ""
   property bool rig: false              // true only in the test rig
-  Component.onCompleted: Cmd.dryRun = rig   // rig never runs power commands for real
 
   // One Island window per screen. When monitors are plugged/unplugged,
   // Variants creates/destroys the matching windows for us.
@@ -29,6 +28,8 @@ Item {
   // Scriptable control. In the shell: `omarchy-shell island toggle power`.
   // In the rig: `qs ipc -p rig.qml call island toggle power`.
   Loader { source: root.rig ? "ipc/PlainIpc.qml" : "ipc/HostIpc.qml" }
+  Loader { active: !root.rig; source: "ipc/HostIndicatorsIpc.qml" }   // event-driven indicator refresh
+  Component.onCompleted: { Cmd.dryRun = rig; Indicators.refresh(); Indicators.checkUpdates() }
 
   // One Hyprland global shortcut per widget. Bind a key to it in bindings.lua:
   //   o.bind("SUPER + CTRL + Q", "Power", hl.dsp.global("island:power"))

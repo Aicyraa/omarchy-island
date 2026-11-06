@@ -10,6 +10,7 @@ Item {
   property real value: 0
   property real step: 0.05
   property bool selected: false
+  property Component iconItem: null     // optional custom icon (e.g. the animated VolumeIcon)
   signal moved(real v)
   implicitHeight: 44
 
@@ -23,8 +24,11 @@ Item {
     height: parent.height; radius: height / 2
     color: Theme.accent
     Behavior on width { enabled: !area.pressed; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
-    Icon { anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter
-      name: root.icon; size: 20; color: Theme.accentText }
+    Loader {
+      anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter
+      sourceComponent: root.iconItem ? root.iconItem : plainIcon
+    }
+    Component { id: plainIcon; Icon { name: root.icon; size: 20; color: Theme.accentText } }
   }
 
   MouseArea {
