@@ -138,9 +138,10 @@ PanelWindow {
         bt = Math.min(bt, p.y); bb = Math.max(bb, p.y + k.height); bl = Math.min(bl, p.x); br = Math.max(br, p.x + k.width)
       }
       scrolls = it.scrollable === true
-      var footer = it.footerH || 0
-      blocks = { top: Math.round(bt), bottom: scrolls ? null : Math.round(pill.height - footer - bb),
-                 left: Math.round(bl), right: Math.round(pill.width - br), footer: footer, scrolls: scrolls }
+      // A scrolling panel's bottom padding is its content padding at the end of the scroll: contentH - (pad + column).
+      var endPad = scrolls ? Math.round(it.contentH - (it.pad + it.column.implicitHeight)) : null
+      blocks = { top: Math.round(bt), bottom: scrolls ? endPad : Math.round(pill.height - bb),
+                 left: Math.round(bl), right: Math.round(pill.width - br), scrolls: scrolls }
     }
     var clock = all.filter(function (r) { return r.name === "clockText" })[0]
     return JSON.stringify({
@@ -239,7 +240,7 @@ PanelWindow {
       height: win.sizeFor(pill.shownMode).height
       focus: win.myMode === "widget"
       // BeforeItem: we see every key first (to reset the inactivity timer and
-      // handle Esc and "?"), then unhandled keys fall through to the widget.
+      // handle Esc), then unhandled keys fall through to the widget.
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function (e) {
         IslandState.touch(true)
@@ -247,7 +248,6 @@ PanelWindow {
         // by exposing `capturesEscape: true`; otherwise Esc closes the widget.
         var claimed = widgetLoader.item && widgetLoader.item.capturesEscape === true
         if (e.key === Qt.Key_Escape && !claimed) { IslandState.closeWidget(); e.accepted = true }
-        else if (e.text === "?") { IslandState.hintsVisible = !IslandState.hintsVisible; e.accepted = true }
       }
 
       // Beat 1: old content fades out fast (80ms). Beat 2: swap, new fades in.

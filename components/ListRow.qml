@@ -5,8 +5,8 @@ import ".."
 // icon, title, subtitle, and a trailing area (text, optional icon, optional check).
 //
 // The row's CONTENT sits on the panel's shared left edge (x = 0 of the column).
-// Its hover/selection highlight BLEEDS outward by panelPadding on both sides, so
-// the highlight reaches the pill edge while icons and text stay on the shared inset.
+// Its hover/selection highlight BLEEDS outward by 8px (half the padding) on both sides, so
+// the highlight stays 8px short of the pill edge while icons and text stay on the shared inset.
 // Give every row in a list a subtitle (or none of them) so row heights match.
 Item {
   id: root
@@ -27,7 +27,7 @@ Item {
   // Bleeding highlight.
   Rectangle {
     anchors.fill: parent
-    anchors.leftMargin: -Theme.panelPadding; anchors.rightMargin: -Theme.panelPadding
+    anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8      // bleeds 8px, leaving 8px to the pill edge
     radius: Theme.tileRadius
     color: root.selected ? Theme.surfaceRaised : (root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14) : "transparent")
     Behavior on color { ColorAnimation { duration: 120 } }
@@ -58,5 +58,5 @@ Item {
     Icon { visible: root.active; name: "check"; size: Theme.iconSm; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
   }
 
-  MouseArea { anchors.fill: parent; anchors.leftMargin: -Theme.panelPadding; anchors.rightMargin: -Theme.panelPadding; onClicked: root.clicked() }
+  MouseArea { anchors.fill: parent; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8; onClicked: root.clicked() }
 }

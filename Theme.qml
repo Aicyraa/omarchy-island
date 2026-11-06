@@ -89,7 +89,6 @@ Singleton {
   readonly property int rowHeight: 44
   readonly property int sliderHeight: 44
   readonly property int tileHeight: 56
-  readonly property int footerHeight: 28   // the key-hint row
   readonly property int tileRadius: 18
   readonly property int pillRadius: IslandState.cornerRadius + 4   // matches the Compass menu
   readonly property int panelMaxHeight: 420    // the fixed layer window is sized for this

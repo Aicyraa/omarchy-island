@@ -114,7 +114,7 @@ WidgetPanel {
         required property int index
         width: parent.width; height: 48
         // Highlight first (it bleeds to the pill edge) ...
-        Rectangle { anchors.fill: parent; anchors.leftMargin: -Theme.panelPadding; anchors.rightMargin: -Theme.panelPadding
+        Rectangle { anchors.fill: parent; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8
           radius: Theme.tileRadius; color: root.sel === index ? Theme.surfaceRaised : "transparent" }
         Icon { x: 0; anchors.verticalCenter: parent.verticalCenter; name: modelData.night ? "moon" : "sun"; size: Theme.iconMd
           color: modelData.night ? Theme.textMuted : Theme.warningInk }

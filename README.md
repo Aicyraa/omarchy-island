@@ -116,7 +116,7 @@ Everything that has a size comes from `Theme`, nothing is hard-coded in a widget
 | `s4 s8 s12 s16 s20` | 4 8 12 16 20 | spacing scale |
 | `panelPadding` | 16 | ONE padding on all four sides of every panel (it used to be 14 to 24) |
 | `rowGap` / `sectionGap` | 4 / 12 | between rows / between sections |
-| `rowHeight` `sliderHeight` `tileHeight` `footerHeight` | 44 44 56 28 | |
+| `rowHeight` `sliderHeight` `tileHeight` | 44 44 56 | |
 | `tileRadius` / `pillRadius` | 18 / Hyprland rounding + 4 | `pillRadius` matches the Compass menu |
 | `panelMaxHeight` `panelMinHeight` `panelMaxWidth` | 420 48 720 | the fixed layer window is sized for these |
 | `iconSm iconMd iconLg` | 16 20 24 | icon sizes |
@@ -130,12 +130,12 @@ black/white. `omarchy-shell island debug contrast` audits 21 pairs; all pass in 
 
 ### Content-sized panels (the mechanism)
 `WidgetPanel.qml` is the base of every widget. Children go in its inner column; its
-`implicitHeight` is `content + 2*panelPadding + footer`, clamped to `[panelMinHeight, panelMaxHeight]`.
+`implicitHeight` is `content + 2*panelPadding`, clamped to `[panelMinHeight, panelMaxHeight]`.
 `Island.qml` reads the loaded widget's `implicitWidth/implicitHeight` (`widgetSize()`), so the pill's
 target size IS the content size, and the existing width-leads/height-follows spring retargets whenever it
 changes (a list filling in, a zone being added). Until the widget is loaded, `Registry.js` supplies an
 estimate for the first frames only. Taller content scrolls in a `Flickable` with a fade at each clipped
-edge and a thin indicator; `reveal(item)` keeps the selected row in view. Hidden sections (khal events,
+edge and a thin indicator; `reveal(item)` keeps the selected row in view. The scrolling area is inset 8px from the top and bottom of the pill, so rows are clipped before they touch the pill edge and the padding is visible even mid-scroll. Hidden sections (khal events,
 the hibernate hint) take no space. A widget with nothing to show sets `compact: true` and becomes a small
 toast (Tray with no icons).
 
@@ -147,9 +147,8 @@ The layer window is fixed (`panelMaxWidth + ears` by `panelMaxHeight + 20`). The
 `Icon` (one 24-grid stroke family), `WifiIcon` (fan with signal levels, used in the pill AND panels),
 `VolumeIcon` (waves grow with level), `BatteryIcon`, `PillSlider` (icon inside the fill; value label, dimmed
 and badge states, thin variant; also the HUD), `Tile` (number badge in a safe inset of 0.4 x radius),
-`ListRow` (fixed height, content on the shared edge, highlight bleeds by `panelPadding`), `IconButton`,
-`Sparkline` (polyline + area fill), `WidgetPanel` (includes the footer hint row: on by default, `?`
-toggles, persisted).
+`ListRow` (fixed height, content on the shared edge, highlight bleeds only 8px so 8px always remains to the pill edge), `IconButton`,
+`Sparkline` (polyline + area fill), `WidgetPanel`.
 
 ### Debug overlay and measuring
 ```
@@ -185,7 +184,7 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | agent         | AI-agent usage limits close to their cap (reads Omarchy's usage files) |
 
 ### Conventions every widget follows
-- Esc closes (a widget can claim Esc for a sub-mode with `capturesEscape`); the `hint` footer is on by default and `?` toggles it.
+- Esc closes (a widget can claim Esc for a sub-mode with `capturesEscape`). There is no on-screen key guide; `hint` strings only document keys in the source.
 - Number keys pick tiles (1-6 Home, 1-4 Power, 1-3 Battery); arrows move; Enter activates.
 - Show `No adapter` / `Nothing playing` / loading / error states, never a blank panel; hide a control whose hardware is absent.
 - Plain text only (`textFormat: Text.PlainText`) for anything that comes from outside (SSIDs, titles, notifications).
@@ -200,7 +199,7 @@ to open its widget. Click the clock for the calendar, scroll the workspaces to s
 Indicator state is refreshed on events (startup, widget open/close, `omarchy-shell omarchy.indicators refresh`), not by polling.
 
 ### How to add a widget
-1. Create `widgets/MyThing.qml`: a `WidgetPanel` with `preferredWidth`, a `hint` string and a `Keys.onPressed` handler; put content inside it.
+1. Create `widgets/MyThing.qml`: a `WidgetPanel` with `preferredWidth`, an optional `hint` string (documentation only) and a `Keys.onPressed` handler; put content inside it.
 2. Add `mything: { file: "MyThing.qml", w: 460, h: 260 }` to `widgets/Registry.js` (w/h are only a first-frame estimate).
 3. Add `"mything"` to the shortcut list in `Bar.qml` and bind a key to `hl.dsp.global("island:mything")`.
 4. Sizes and colours only from `Theme` tokens, durations through `IslandState.reducedMotion`, processes inside the widget (they die with it). Use the `*Ink` colours for text/icons.
@@ -244,7 +243,7 @@ never repeated on its own. The update indicator runs `omarchy-update-available` 
 
 ## Tuning notes: reduced motion
 `omarchy-shell island reducedMotion true` sets every spring and fade to 0 and disables overshoot (persisted in
-`~/.local/state/island/state.json`, together with `hintsVisible` and `weatherLocation`).
+`~/.local/state/island/state.json`, together with `weatherLocation`).
 
 ## Rollback
 - Fast: `./rollback.sh` (re-enables `jee.bar` and stock OSD, disables the island, restarts the shell). One-liner without the script:

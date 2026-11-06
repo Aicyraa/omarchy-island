@@ -14,7 +14,6 @@ IpcHandler {
   function hudJson(payload: string): void { IslandState.showHudPayload(payload) }
   function reducedMotion(on: bool): void { IslandState.reducedMotion = on }
   function lastCommand(): string { return Cmd.last }
-  function hints(): string { return IslandState.hintsVisible ? "on" : "off" }
   function dryRun(): string { return Cmd.dryRun ? "yes" : "no" }
   // `debug layout` toggles the overlay, `debug measure` returns JSON, `debug off` hides it.
   function debug(what: string): string {

@@ -37,7 +37,6 @@ Singleton {
   readonly property bool pointerOver: Object.keys(hovered).length > 0
   property real lastKeyAt: 0
 
-  property bool hintsVisible: true    // key-hint footer: on by default, "?" toggles it, persisted
   // The stock "toggle bar" key (SUPER+SHIFT+SPACE) sets a flag file; the island honours it.
   property bool barHidden: false
   function syncHidden() { if (!hiddenProbe.running) hiddenProbe.running = true }
@@ -174,8 +173,7 @@ Singleton {
     } }
 
   // ---- persistence: ~/.local/state/island/state.json ----
-  // One small JSON file: the reduced-motion flag, whether the key-hint footer is
-  // shown, and the optional weather location override ("" = auto-detect by IP).
+  // One small JSON file: the reduced-motion flag and the optional weather location override ("" = auto-detect by IP).
   readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/island"
   property bool ready: false
   property string weatherLocation: ""
@@ -186,7 +184,6 @@ Singleton {
       try {
         var j = JSON.parse(text())
         root.reducedMotion = !!j.reducedMotion
-        if (j.hintsVisible !== undefined) root.hintsVisible = !!j.hintsVisible
         if (typeof j.weatherLocation === "string") root.weatherLocation = j.weatherLocation.slice(0, 80)
       } catch (e) {}
       root.ready = true
@@ -196,8 +193,7 @@ Singleton {
   Process { id: mkdir; command: ["mkdir", "-p", root.stateDir]; running: true }
   function save() {
     if (!ready) return
-    store.setText(JSON.stringify({ reducedMotion: reducedMotion, hintsVisible: hintsVisible, weatherLocation: weatherLocation }, null, 2))
+    store.setText(JSON.stringify({ reducedMotion: reducedMotion, weatherLocation: weatherLocation }, null, 2))
   }
   onReducedMotionChanged: save()
-  onHintsVisibleChanged: save()
 }
