@@ -3,6 +3,7 @@ import QtQuick.Effects
 import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import ".."
+import "../services"
 
 // The media player card, shared by the hover preview and the Media widget.
 // The track's art is the card background (cover-cropped, lightly blurred, darkened by a scrim so the
@@ -11,9 +12,19 @@ Item {
   id: root
   property var p: null                         // an MprisPlayer
   property bool live: true                     // card on screen (position ticks + visualizer run only then)
-  readonly property string art: p && p.trackArtUrl ? String(p.trackArtUrl) : ""
-  readonly property string title: p ? String(p.trackTitle || "").replace(/^\(\d+\)\s*/, "") : ""
-  readonly property string artist: p ? String(p.trackArtist || "").trim() : ""
+  // Browsers put "(3) Artist - Song (Official Video) - YouTube" in the title and send no artist or art.
+  readonly property string rawTitle: p ? String(p.trackTitle || "").replace(/^\(\d+\)\s*/, "").replace(/\s+-\s+YouTube( Music)?$/, "") : ""
+  readonly property string cleanTitle: rawTitle.replace(/\s*[\(\[](official|lyrics?|audio|music video|video|visuali[sz]er|hd|4k)[^\)\]]*[\)\]]/ig, "").trim()
+  readonly property string artist0: p ? String(p.trackArtist || "").trim() : ""
+  readonly property bool splitTitle: artist0 === "" && cleanTitle.indexOf(" - ") > 0
+  readonly property string artist: splitTitle ? cleanTitle.slice(0, cleanTitle.indexOf(" - ")) : artist0
+  readonly property string title: splitTitle ? cleanTitle.slice(cleanTitle.indexOf(" - ") + 3) : cleanTitle
+  readonly property string term: title === "" ? "" : (artist + " " + title).trim()
+  readonly property bool wantLookup: live && p !== null && !(p.trackArtUrl) && term !== ""
+  Component.onCompleted: if (wantLookup) ArtLookup.request(term)
+  onWantLookupChanged: if (wantLookup) ArtLookup.request(term)
+  onTermChanged: if (wantLookup) ArtLookup.request(term)
+  readonly property string art: p && p.trackArtUrl ? String(p.trackArtUrl) : (ArtLookup.cache[term] || "")
   readonly property bool hasArt: art !== "" && bg.status === Image.Ready
   // Over art the text is always light (the scrim guarantees it); without art it follows the theme.
   readonly property color fg: hasArt ? Qt.rgba(1, 1, 1, 0.96) : Theme.text
@@ -54,7 +65,7 @@ Item {
       id: cover
       width: 84; height: 84; radius: 14; color: Qt.rgba(1, 1, 1, root.hasArt ? 0.12 : 0.06)
       Image { anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; source: root.art
-        sourceSize.width: 168; sourceSize.height: 168; visible: status === Image.Ready }
+        sourceSize.width: 256; sourceSize.height: 256; visible: status === Image.Ready }
       Icon { anchors.centerIn: parent; name: "music"; size: 28; color: root.fgMuted; visible: !root.hasArt }
     }
     Column {

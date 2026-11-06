@@ -286,3 +286,8 @@ Measured (rig, 3 themes unless noted; numbers and before/after images are in `~/
 - Weather location "Ermita" comes from wttr.in's IP geolocation (it matches your Asia/Manila time zone); set `weatherLocation` in state.json to pin it
 - Spring values are tuned by eye on one screen; Omarchy's guide discourages bounce and over 300 ms, the island overrides that on purpose
 - Deploying a changed bar plugin needs `omarchy restart shell`; the running shell caches its QML
+
+## Cover art fallback (privacy note)
+Players that send no `mpris:artUrl` (a browser playing YouTube) get their cover from Apple's public iTunes Search API
+(`services/ArtLookup.qml`). The artist and title text is sent once per distinct track, only while a media card is on screen;
+results are cached for the session. Delete the `ArtLookup.request` calls in `components/MediaCard.qml` to turn it off.

@@ -11,7 +11,7 @@ Item {
   property bool active: false
   property int bars: 24
   property color color: Theme.accent
-  property var levels: []                       // 0..1 per bar
+  property var levels: []                       // 0..1 per bar (cava sends 0..~1000 whatever ascii_max_value says)
   visible: active                               // nothing to draw (no resting dotted line) unless playing
 
   implicitHeight: 28
@@ -25,7 +25,7 @@ Item {
     stdout: SplitParser {
       onRead: function (line) {
         var p = line.split(";"), out = []
-        for (var i = 0; i < root.bars; i++) out.push(Math.min(1, (parseInt(p[i]) || 0) / 100))
+        for (var i = 0; i < root.bars; i++) out.push(Math.min(1, (parseInt(p[i]) || 0) / 700))
         root.levels = out
       }
     }
