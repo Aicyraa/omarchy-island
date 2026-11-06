@@ -128,7 +128,10 @@ PanelWindow {
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function (e) {
         IslandState.touch(true)
-        if (e.key === Qt.Key_Escape) { IslandState.closeWidget(); e.accepted = true }
+        // A widget may claim Esc for its own sub-mode (e.g. closing a search box)
+        // by exposing `capturesEscape: true`; otherwise Esc closes the widget.
+        var claimed = widgetLoader.item && widgetLoader.item.capturesEscape === true
+        if (e.key === Qt.Key_Escape && !claimed) { IslandState.closeWidget(); e.accepted = true }
         else if (e.text === "?") { IslandState.hintsVisible = !IslandState.hintsVisible; e.accepted = true }
       }
 
@@ -257,7 +260,11 @@ PanelWindow {
         active: pill.shownMode === "widget"
         focus: true
         source: active ? "widgets/" + Registry.fileOf(IslandState.widgetName) : ""
-        onLoaded: item.forceActiveFocus()
+        onLoaded: {
+          item.forceActiveFocus()
+          // Widgets that need the window (e.g. tray context menus) declare `hostWindow`.
+          if (item.hasOwnProperty("hostWindow")) item.hostWindow = win
+        }
       }
       // Hint row (toggle with "?").
       Text {

@@ -9,6 +9,9 @@ var widgets = {
   audio:     { file: "Audio.qml",     w: 680, h: 340 },
   display:   { file: "Display.qml",   w: 460, h: 246 },
   battery:   { file: "Battery.qml",   w: 460, h: 236 },
+  calendar:  { file: "Calendar.qml",  w: 400, h: 330 },
+  worldclock:{ file: "WorldClock.qml",w: 620, h: 340 },
+  system:    { file: "System.qml",    w: 620, h: 190 },
   power: { file: "Power.qml", w: 580, h: 236 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }
