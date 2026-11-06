@@ -284,6 +284,5 @@ Measured (rig, 3 themes unless noted; numbers and before/after images are in `~/
 - khal events (not installed), Bluetooth connect/disconnect/scan, Wi-Fi connect, tray context menus (right click sends the secondary action only)
 - "Restart needed" uses a limited check (running kernel's modules missing); Omarchy exposes no flag file
 - Weather location "Ermita" comes from wttr.in's IP geolocation (it matches your Asia/Manila time zone); set `weatherLocation` in state.json to pin it
-- (old) Hover pill was wider than the reference's proportions (681 px vs 181 idle) because it carries the date, bell text, volume, brightness, Wi-Fi and battery
 - Spring values are tuned by eye on one screen; Omarchy's guide discourages bounce and over 300 ms, the island overrides that on purpose
 - Deploying a changed bar plugin needs `omarchy restart shell`; the running shell caches its QML
