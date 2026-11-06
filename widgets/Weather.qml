@@ -70,7 +70,7 @@ WidgetPanel {
   Row { visible: root.state === "error"; spacing: Theme.s8
     Icon { name: "alert"; size: Theme.iconLg; color: Theme.warningInk; anchors.verticalCenter: parent.verticalCenter }
     Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter
-      text: "Couldn't load weather (offline?)  ·  R to retry"; color: Theme.textMuted; font.pixelSize: 12 } }
+      text: "Couldn't load weather. Check your connection."; color: Theme.textMuted; font.pixelSize: 12 } }
 
   Row { visible: root.state === "ok"; width: parent.width; spacing: Theme.s16
     Icon { name: root.w.icon; size: 44; color: root.w.icon === "sun" ? Theme.warningInk : Theme.text; anchors.verticalCenter: parent.verticalCenter }
@@ -78,13 +78,13 @@ WidgetPanel {
     Column { anchors.verticalCenter: parent.verticalCenter
       Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
       Text { textFormat: Text.PlainText; text: root.w.place; color: Theme.text; font.pixelSize: 12 }
-      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 10
-        text: root.location !== "" ? "location set in state.json" : "auto-detected by IP" } }
+      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
+        text: root.location !== "" ? "custom location" : "from your IP address" } }
   }
   Row { visible: root.state === "ok"; width: parent.width
     Repeater { model: [ { k: "High", v: root.w.hi + "°" }, { k: "Low", v: root.w.lo + "°" },
                         { k: "Feels like", v: root.w.feels + "°" }, { k: "Humidity", v: root.w.humidity + "%" } ]
       delegate: Column { required property var modelData; width: parent.width / 4
-        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
+        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
         Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel } } } }
 }

@@ -62,7 +62,7 @@ WidgetPanel {
         return m
       }
       delegate: Column { required property var modelData
-        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
+        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
         Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel } }
     }
   }

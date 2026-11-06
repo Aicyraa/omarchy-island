@@ -60,8 +60,8 @@ WidgetPanel {
         icon: modelData.icon; title: modelData.title
         selected: root.sel === index; danger: modelData.destructive
         holdMs: modelData.destructive ? 600 : 0
-        subtitle: modelData.destructive ? (selected ? "Enter to confirm" : "Hold to confirm")
-                  : (modelData.title === "Sleep" && root.hibernate ? "Runs now · H hibernate" : "Runs now")
+        subtitle: modelData.destructive ? "Hold to confirm"
+                  : "Runs now"
         onClicked: { if (modelData.destructive) root.sel = index; else root.pick(index) }
         onHeld: root.run(index)
       }

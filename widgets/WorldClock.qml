@@ -122,8 +122,8 @@ WidgetPanel {
           color: modelData.night ? Theme.textMuted : Theme.warningInk }
         Column { x: Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter
           Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
-          Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 10
-            text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · ") || " " } }
+          Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
+            text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · "); visible: text !== "" } }
         Text { x: 170; width: 88; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
           text: modelData.time; color: Theme.text; font.pixelSize: 17; font.weight: Theme.weightStrong }
         // ... then the 24h strip ABOVE it, so every row (including the selected one) shows its track:

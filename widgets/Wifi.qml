@@ -55,7 +55,7 @@ WidgetPanel {
         text: !Net.hasWifi ? "No Wi-Fi adapter" : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? Net.ssid : "Not connected")) }
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
         text: !Net.hasWifi ? "Nothing to manage on this machine"
-            : (!Net.enabled ? "Press W to turn it on" : (Net.connected ? quality(Net.strength) + " signal" : "Pick a network below")) }
+            : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? quality(Net.strength) + " signal" : "Pick a network below")) }
     }
     Row { id: buttons; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8; visible: Net.hasWifi
       IconButton { icon: "power"; on: Net.enabled; onClicked: Net.toggle() }
@@ -72,7 +72,7 @@ WidgetPanel {
                { k: "Band", v: root.band(root.info.freq) || "—" },
                { k: "Speed", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "—" } ]
       delegate: Column { required property var modelData; width: parent.width / 4
-        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
+        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
         Text { width: parent.width - Theme.s8; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel } }
     }
   }
