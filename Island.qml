@@ -99,7 +99,7 @@ PanelWindow {
     y: 0
     width: win.target.width + 2 * win.ear
     height: win.topMargin + win.target.height + (win.myMode === "widget" ? 0 : 6)
-    HoverHandler { onHoveredChanged: IslandState.hoverIntent(hovered, win.screenName) }
+    HoverHandler { onHoveredChanged: { IslandState.hoverIntent(hovered, win.screenName); if (hovered) Prefetch.touch() } }
   }
 
   // ---- debug: measure + overlay (inactive unless `island debug ...` is used) ----

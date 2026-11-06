@@ -298,3 +298,13 @@ results are cached for the session. Delete the `ArtLookup.request` calls in `com
 ## Focus animation and scrollbar
 - Moving the selection animates: `FocusRing` (tiles, sliders, icon buttons) springs in from slightly larger and fades out of the old item; list rows share ONE highlight background (`FocusTarget` + the panel's `hl` rectangle) that slides and resizes from the old row to the new one with a small overshoot. `reducedMotion` turns it all off.
 - `Scroller` replaces the plain indicator: a slim pill, dim when idle (a cue that there is more), brighter and thicker while scrolling or hovered, accent while dragged; drag it, click the track to jump, or wheel over it.
+
+## Cache and preloading
+Widgets never open empty. `services/Cache.qml` is a small persisted store (`~/.local/state/island/cache.json`, loaded synchronously at startup); the data services restore from it and refresh in the background (stale-while-revalidate):
+| service | data | refreshed |
+|---|---|---|
+| `Themes` | every theme (name, preview, colours), current theme; preview images decoded ahead of time | startup, hover, picker open |
+| `SysInfo` | load, uptime, disk, swap, clock, network rate, busiest processes | startup, hover (if older than 5 s), every 3 s while the System widget is open |
+| `AgentUsage` | per-agent usage | startup, hover (older than 60 s), widget open |
+| `WeatherData` | wttr.in reading (one bounded request when older than 10 min) | startup, hover, widget open |
+`services/Prefetch.qml` decides when: `start()` 2.5 s after the shell is up, `touch()` when the pointer reaches the island. The first-ever run has nothing cached (widgets then show their loading line once). Delete the cache file to reset.

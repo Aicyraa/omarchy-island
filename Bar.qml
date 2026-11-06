@@ -38,7 +38,7 @@ Item {
   Loader { source: root.rig ? "ipc/PlainIpc.qml" : "ipc/HostIpc.qml" }
   Loader { active: !root.rig; source: "ipc/HostIndicatorsIpc.qml" }
   Loader { active: !root.rig; source: "ipc/HostBarIpc.qml" }      // `omarchy-shell omarchy.bar syncHidden`   // event-driven indicator refresh
-  Component.onCompleted: { Cmd.dryRun = rig; Indicators.refresh(); Indicators.checkUpdates(); Brightness.refresh(); IslandState.syncHidden() }
+  Component.onCompleted: { Prefetch.start(); Cmd.dryRun = rig; Indicators.refresh(); Indicators.checkUpdates(); Brightness.refresh(); IslandState.syncHidden() }
 
   // One Hyprland global shortcut per widget. Bind a key to it in bindings.lua:
   //   o.bind("SUPER + CTRL + Q", "Power", hl.dsp.global("island:power"))

@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Io
 import ".."
 import "../services"
 
@@ -17,42 +16,18 @@ WidgetPanel {
 
   readonly property real tempWarn: Stats.temp > 80 ? 2 : (Stats.temp > 70 ? 1 : 0)
 
-  // ---- details: read by assets/sysinfo.sh every 3 s, only while this widget is open ----
-  property real load1: 0; property real load5: 0; property real load15: 0
-  property real uptimeSec: 0
-  property real diskUsed: 0; property real diskSize: 1
-  property real swapTotal: 0; property real swapUsed: 0
-  property real freqMHz: 0; property int cores: 0
-  property real rxRate: 0; property real txRate: 0
-  property var prevNet: null
-  property var procs: []
+  // ---- details: from the SysInfo service (kept warm by Prefetch); refreshed every 3 s while this is open ----
+  readonly property real load1: SysInfo.load1; readonly property real load5: SysInfo.load5; readonly property real load15: SysInfo.load15
+  readonly property real uptimeSec: SysInfo.uptimeSec
+  readonly property real diskUsed: SysInfo.diskUsed; readonly property real diskSize: SysInfo.diskSize
+  readonly property real swapTotal: SysInfo.swapTotal; readonly property real swapUsed: SysInfo.swapUsed
+  readonly property real freqMHz: SysInfo.freqMHz; readonly property int cores: SysInfo.cores
+  readonly property real rxRate: SysInfo.rxRate; readonly property real txRate: SysInfo.txRate
+  readonly property var procs: SysInfo.procs
   function bytes(n) { n = Number(n) || 0; var u = ["B", "KB", "MB", "GB", "TB"], i = 0; while (n >= 1000 && i < 4) { n /= 1000; i++ } return (n >= 100 || i === 0 ? Math.round(n) : n.toFixed(1)) + " " + u[i] }
   function dur(sec) { var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60)
     return d > 0 ? d + "d " + h + "h" : (h > 0 ? h + "h " + m + "m" : m + "m") }
-  Process {
-    id: info
-    command: ["bash", Qt.resolvedUrl("../assets/sysinfo.sh").toString().replace("file://", "")]
-    stdout: StdioCollector { onStreamFinished: {
-      var procs = [], now = Date.now()
-      text.split("\n").forEach(function (l) {
-        var p = l.split(" ")
-        if (p[0] === "load") { root.load1 = +p[1]; root.load5 = +p[2]; root.load15 = +p[3] }
-        else if (p[0] === "up") root.uptimeSec = +p[1]
-        else if (p[0] === "disk") { root.diskUsed = +p[1]; root.diskSize = Math.max(1, +p[2]) }
-        else if (p[0] === "swap") { root.swapTotal = (+p[1]) * 1024; root.swapUsed = (+p[1] - +p[2]) * 1024 }
-        else if (p[0] === "freq") { root.freqMHz = +p[1] }
-        else if (p[0] === "cores") root.cores = +p[1]
-        else if (p[0] === "net") {
-          var rx = +p[1], tx = +p[2], pv = root.prevNet
-          if (pv && now > pv.t) { root.rxRate = Math.max(0, (rx - pv.rx) / ((now - pv.t) / 1000)); root.txRate = Math.max(0, (tx - pv.tx) / ((now - pv.t) / 1000)) }
-          root.prevNet = { rx: rx, tx: tx, t: now }
-        }
-        else if (p[0] === "proc") procs.push({ name: String(p[1]).slice(0, 24), cpu: (+p[2]) / Math.max(1, root.cores), mem: +p[3] })
-      })
-      root.procs = procs
-    } }
-  }
-  Timer { interval: 3000; repeat: true; running: true; triggeredOnStart: true; onTriggered: if (!info.running) info.running = true }
+  Timer { interval: 3000; repeat: true; running: true; triggeredOnStart: true; onTriggered: SysInfo.refresh() }
 
   // A small stat tile: muted label over a value.
   component Tile2: Rectangle {
@@ -100,7 +75,7 @@ WidgetPanel {
     Tile2 { label: "CPU clock"; value: root.freqMHz > 0 ? (root.freqMHz / 1000).toFixed(2) + " GHz · " + root.cores + " cores" : "—" }
     Tile2 { label: "Disk /"; value: root.bytes(root.diskUsed) + " / " + root.bytes(root.diskSize); fraction: root.diskUsed / root.diskSize }
     Tile2 { label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
-    Tile2 { label: "Network"; value: "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" }
+    Tile2 { label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
   }
 
   // ---- busiest processes (share of the whole CPU) ----

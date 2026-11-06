@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Io
 import ".."
 import "../services"
 
@@ -13,15 +12,15 @@ WidgetPanel {
   id: root
   preferredWidth: 600
   hint: "R refresh · Esc close"
-  property var agents: []
-  property bool loading: true
+  // From the AgentUsage service: cached at startup and refreshed in the background, so this opens with data.
+  readonly property var agents: AgentUsage.agents
+  readonly property bool loading: !AgentUsage.loaded
   readonly property real todayTokens: agents.reduce(function (s, a) { return s + a.today }, 0)
   readonly property real weekTokens: agents.reduce(function (s, a) { return s + a.week }, 0)
   readonly property int todayPrompts: agents.reduce(function (s, a) { return s + a.prompts }, 0)
 
-  function load() { loading = true; proc.running = true }
-  Keys.onPressed: function (e) { if (e.key === Qt.Key_R) { load(); e.accepted = true } }
-  Component.onCompleted: load()
+  Keys.onPressed: function (e) { if (e.key === Qt.Key_R) { AgentUsage.refresh(); e.accepted = true } }
+  Component.onCompleted: AgentUsage.refreshIfOlder(15000)
 
   // Original per-provider glyphs (not brand logos).
   function glyph(id) { return { claude: "spark", codex: "brackets", copilot: "plane", cursor: "pointer" }[String(id)] || "bot" }
@@ -38,39 +37,6 @@ WidgetPanel {
     return String(Math.round(n))
   }
   function shortModel(m) { return String(m).replace(/^claude-/, "").replace(/^gpt-/, "GPT-").slice(0, 22) }
-
-  Process {
-    id: proc
-    command: ["bash", "-c", "jq -c 'select(.ready==true or (.totalPrompts // 0) > 0) | {id, name, tier: .tierLabel, limits, todayTotalTokens, todayPrompts, todaySessions, recentDays, totalPrompts, totalSessions, activeDays, modelUsage}' \"$HOME\"/.local/state/omarchy/agents/usage/*.json 2>/dev/null"]
-    stdout: StdioCollector { onStreamFinished: {
-      var out = []
-      text.split("\n").forEach(function (l) {
-        if (!l.trim()) return
-        try {
-          var a = JSON.parse(l)
-          var lim = (a.limits || []).filter(function (x) { return x && typeof x === "object" }).slice(0, 3)
-          var known = lim.filter(function (x) { return typeof x.percent === "number" })
-          var inT = 0, outT = 0, cacheT = 0, top = "", topV = -1
-          var mu = a.modelUsage || {}
-          Object.keys(mu).forEach(function (k) {
-            var m = mu[k] || {}, i = +m.inputTokens || 0, o = +m.outputTokens || 0
-            inT += i; outT += o; cacheT += (+m.cacheReadInputTokens || 0) + (+m.cacheCreationInputTokens || 0)
-            if (i + o > topV) { topV = i + o; top = k }
-          })
-          var days = (a.recentDays || []).slice(-7).map(function (d) { return +d.messageCount || 0 })
-          out.push({ id: String(a.id || ""), name: String(a.name || "").slice(0, 30), tier: String(a.tier || "").slice(0, 20), limits: lim,
-                     top: known.length ? Math.max.apply(null, known.map(function (x) { return x.percent })) : -1,
-                     today: +a.todayTotalTokens || 0, prompts: +a.todayPrompts || 0, days: days,
-                     week: days.reduce(function (s, v) { return s + v }, 0), dayMax: Math.max.apply(null, days.concat([1])),
-                     inT: inT, outT: outT, cacheT: cacheT, topModel: top,
-                     totalPrompts: +a.totalPrompts || 0, sessions: +a.totalSessions || 0, activeDays: +a.activeDays || 0 })
-        } catch (e) {}
-      })
-      out.sort(function (a, b) { return (b.today - a.today) || (b.top - a.top) || (b.totalPrompts - a.totalPrompts) })
-      root.agents = out.slice(0, 4); root.loading = false
-    } }
-    onExited: root.loading = false
-  }
 
   compact: !loading && agents.length === 0
   // ---- summary ----

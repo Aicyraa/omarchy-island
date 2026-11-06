@@ -16,18 +16,20 @@ WidgetPanel {
   id: root
   preferredWidth: 720
   hint: "←/→ move · Home/End jump · Enter apply · Esc close"
-  property var themes: []
-  property string current: ""
+  // Data comes from the Themes service (cached, preloaded): the strip is populated on the first frame.
+  readonly property var themes: Themes.list
+  readonly property string current: Themes.current
+  property bool moved: false              // the user has moved the selection: stop re-syncing it to the current theme
   property string applying: ""            // name being applied (clears itself after a few seconds)
   property int sel: 0
-  property bool loading: true
+  readonly property bool loading: !Themes.loaded
   readonly property var debugState: ({ sel: sel, count: themes.length, contentX: Math.round(strip.contentX) })
 
   readonly property int cardW: 156
   readonly property int cardH: 108
 
   function apply(t) {
-    Cmd.run(["omarchy-theme-set", t.name]); current = t.name; applying = t.name; applyTimer.restart()
+    Cmd.run(["omarchy-theme-set", t.name]); Themes.setCurrent(t.name); applying = t.name; applyTimer.restart()
   }
   Timer { id: applyTimer; interval: 4000; onTriggered: root.applying = "" }
 
@@ -36,6 +38,7 @@ WidgetPanel {
   function centerSelected() { Qt.callLater(function () { strip.positionViewAtIndex(root.sel, ListView.Center) }) }
   Keys.onPressed: function (e) {
     var n = themes.length; if (n === 0) return
+    moved = true
     if (e.key === Qt.Key_Right) sel = Math.min(sel + 1, n - 1)
     else if (e.key === Qt.Key_Left) sel = Math.max(sel - 1, 0)
     else if (e.key === Qt.Key_Home) sel = 0
@@ -45,35 +48,16 @@ WidgetPanel {
     e.accepted = true
   }
 
-  // One batched read of every theme's name, preview image and key colours.
-  Process {
-    running: true
-    command: ["bash", "-c", `
-      for d in "$HOME/.config/omarchy/themes"/* "\${OMARCHY_PATH:-/usr/share/omarchy}/themes"/*; do
-        [ -d "$d" ] || continue
-        c="$d/colors.toml"; [ -f "$c" ] || continue
-        b=$(basename "$d"); name=$(echo "$b" | sed -E 's/(^|-)([a-z])/\\1\\u\\2/g; s/-/ /g')
-        g() { grep -E "^$1 *=" "$c" | head -1 | sed -E 's/.*"([^"]*)".*/\\1/'; }
-        p=""; for f in preview.png preview.jpg preview.webp; do [ -f "$d/$f" ] && p="$d/$f" && break; done
-        [ -z "$p" ] && p=$(ls "$d"/backgrounds/*.{png,jpg,jpeg,webp} 2>/dev/null | head -1)
-        printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "$name" "$p" "$(g background)" "$(g foreground)" "$(g accent)" "$(g red)" "$(g green)" "$(g mode)"
-      done | sort -u -t$'\\t' -k1,1`]
-    stdout: StdioCollector { onStreamFinished: {
-      var out = []
-      text.split("\n").forEach(function (l) {
-        var f = l.split("\t"); if (f.length < 8 || f[0] === "") return
-        out.push({ name: f[0], preview: f[1], bg: f[2], fg: f[3], accent: f[4], red: f[5], green: f[6], mode: f[7] })
-      })
-      root.themes = out; root.loading = false
-      for (var i = 0; i < out.length; i++) if (out[i].name === root.current) root.sel = i
-      root.centerSelected()
-    } }
+  // Start on the current theme, centred. A background refresh that finds a different current theme (changed outside
+  // the picker) re-syncs, unless the user has already started moving.
+  function syncToCurrent() {
+    if (moved) return
+    for (var i = 0; i < themes.length; i++) if (themes[i].name === current) { sel = i; break }
+    centerSelected()
   }
-  Process { running: true; command: ["omarchy-theme-current"]
-    stdout: StdioCollector { onStreamFinished: { root.current = text.trim()
-      for (var i = 0; i < root.themes.length; i++) if (root.themes[i].name === root.current) root.sel = i
-      root.centerSelected() } } }
-
+  Component.onCompleted: { syncToCurrent(); Themes.refreshCurrent(); Themes.refresh() }
+  onCurrentChanged: syncToCurrent()
+  onThemesChanged: syncToCurrent()
 
   // ---- header: title on the left, position / status on the right ----
   Item { width: parent.width; height: 24
