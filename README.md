@@ -143,6 +143,14 @@ The layer window is fixed (`panelMaxWidth + ears` by `panelMaxHeight + 20`). The
 `mask` is the `zone` item, which is exactly the pill's target size plus the 12px ears for a widget
 (a few px more for idle/hover so moving into the expanded pill does not close it).
 
+### Smooth widget switching
+A swap runs in two beats (old fades out in 80 ms, then the new one fades in), with two rules that keep it clean:
+the content is always laid out at the size of the widget that is actually on screen (`shownSize`, which lags the
+pill's target by the fade-out), so an outgoing widget is never stretched or squeezed toward the incoming size; and a
+**reveal gate** (`fit` in `Island.qml`) holds the incoming content back until the pill has nearly reached its size, so a
+wider widget is not clipped by a still-small pill and the idle form does not sit at the top of a still-tall pill.
+The gate only runs right after a swap (and times out after 500 ms), so a widget whose own content grows is never faded.
+
 ### Shared components
 `Icon` (one 24-grid stroke family), `WifiIcon` (fan with signal levels, used in the pill AND panels),
 `VolumeIcon` (waves grow with level), `BatteryIcon`, `PillSlider` (icon inside the fill; value label, dimmed

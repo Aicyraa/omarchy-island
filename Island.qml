@@ -34,8 +34,7 @@ PanelWindow {
   // (content + padding, clamped). Until the widget is loaded (the first ~100 ms
   // of an open, or while A is fading into B) we use the Registry's estimate; when
   // the real item appears the spring simply retargets, with no restart of the fade.
-  function widgetSize() {
-    var name = IslandState.widgetName
+  function widgetSizeOf(name) {
     var it = widgetLoader.item
     if (it && pill.shownWidget === name && it.implicitHeight > 0)
       return Qt.size(Math.min(Theme.panelMaxWidth, it.implicitWidth), it.implicitHeight)
@@ -44,13 +43,17 @@ PanelWindow {
   function sizeFor(m) {
     switch (m) {
     case "hover":        return Qt.size(idleForm.widthFor(true), 38)
-    case "widget":       return widgetSize()
+    case "widget":       return widgetSizeOf(IslandState.widgetName)
     case "hud":          return Qt.size(300, 42)
     case "notification": return Qt.size(420, 52)
     default:             return Qt.size(idleForm.widthFor(false), 26)     // idle
     }
   }
   readonly property size target: sizeFor(myMode)
+  // The size of what is actually ON SCREEN right now. It lags `target` by the fade-out beat, and it is
+  // what the content is laid out at. This is what keeps an outgoing widget at its OWN size while it
+  // fades (instead of being stretched or squeezed to the incoming form's size mid-transition).
+  readonly property size shownSize: pill.shownMode === "widget" ? widgetSizeOf(pill.shownWidget) : sizeFor(pill.shownMode)
   readonly property size idleSize: sizeFor("idle")
 
   color: "transparent"
@@ -232,12 +235,31 @@ PanelWindow {
     // it never visibly squishes while the pill springs around it.
     property string shownMode: "idle"
     property string shownWidget: ""        // the widget currently loaded (lags widgetName by the fade-out)
+
+    // REVEAL GATE. Right after a swap the new content must not show until the pill has (almost) reached
+    // its size: a bigger incoming widget would be clipped by the still-small pill, and the small idle form
+    // would sit at the top of a still-tall pill while it collapses. `fit` is 0 when the pill is far from the
+    // content's size and 1 when it is close. It only applies while `gating`, which is switched on by a swap
+    // and off once the content has fit (or after 500 ms), so a widget whose OWN content grows (a list
+    // filling in) is never faded out by it.
+    property bool gating: false
+    // How well the pill currently fits the content, 0..1. Deliberately independent of `gating`, so the
+    // handler below can switch `gating` off without creating a binding loop.
+    readonly property real rawFit: {
+      function f(r) { return r < 1 ? Math.max(0, Math.min(1, (r - 0.82) / 0.14)) : Math.max(0, Math.min(1, (1.30 - r) / 0.20)) }
+      return Math.min(f(width / Math.max(1, content.width)), f(height / Math.max(1, content.height)))
+    }
+    readonly property real fit: gating ? rawFit : 1
+    onRawFitChanged: if (gating && rawFit >= 0.98) gating = false
+    Timer { interval: 500; running: pill.gating; onTriggered: pill.gating = false }
     Item {
       id: content
       anchors.top: parent.top
       anchors.horizontalCenter: parent.horizontalCenter
-      width: win.sizeFor(pill.shownMode).width
-      height: win.sizeFor(pill.shownMode).height
+      width: win.shownSize.width
+      height: win.shownSize.height
+      property real fade: 1                 // animated by the swap; the real opacity also waits for the pill (fit)
+      opacity: fade * pill.fit
       focus: win.myMode === "widget"
       // BeforeItem: we see every key first (to reset the inactivity timer and
       // handle Esc), then unhandled keys fall through to the widget.
@@ -256,10 +278,11 @@ PanelWindow {
       // change AND when one widget is swapped for another (A -> B).
       SequentialAnimation {
         id: swap
-        NumberAnimation { target: content; property: "opacity"; to: 0
+        NumberAnimation { target: content; property: "fade"; to: 0
           duration: IslandState.reducedMotion ? 0 : 80 }
-        ScriptAction { script: { pill.shownMode = win.myMode; pill.shownWidget = win.myMode === "widget" ? IslandState.widgetName : "" } }
-        NumberAnimation { target: content; property: "opacity"; to: 1
+        ScriptAction { script: { pill.shownMode = win.myMode; pill.shownWidget = win.myMode === "widget" ? IslandState.widgetName : ""
+                                 pill.gating = !IslandState.reducedMotion } }
+        NumberAnimation { target: content; property: "fade"; to: 1
           duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic }
       }
       Connections { target: win; function onMyModeChanged() { swap.restart() } }
@@ -311,7 +334,7 @@ PanelWindow {
         id: widgetLoader
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
-        width: win.sizeFor("widget").width
+        width: win.shownSize.width
         height: item ? item.implicitHeight : Registry.height(pill.shownWidget)
         active: pill.shownMode === "widget"
         focus: true
