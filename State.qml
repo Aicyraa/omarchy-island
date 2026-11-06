@@ -173,8 +173,31 @@ Singleton {
       // Paused (re-armed) while the cursor is over the pill or a key was
       // pressed in the last 3s.
       if (root.pointerOver || Date.now() - root.lastKeyAt < 3000) restart()
-      else root.closeWidget()
+      else root.checkCursor()
     } }
+
+  // A cursor that sits still on the pill sends no hover events, so `pointerOver` can be false while it is right
+  // there. Before closing for inactivity, ask Hyprland where the cursor really is; if it is on the widget, stay open.
+  property var islands: ({})              // screen name -> its Island window (registered by Island.qml)
+  function checkCursor() {
+    var isl = islands[activeScreen]
+    if (!isl || cursorProbe.running) { closeWidget(); return }
+    var box = isl.pillBox()
+    cursorProbe.box = box
+    cursorProbe.command = ["bash", Qt.resolvedUrl("assets/cursorpos.sh").toString().replace("file://", ""), activeScreen]
+    cursorProbe.running = true
+  }
+  Process {
+    id: cursorProbe
+    property size box: Qt.size(0, 0)
+    stdout: StdioCollector { onStreamFinished: {
+      var p = text.trim().split(" ").map(Number)
+      var inside = p.length === 3 && !p.some(isNaN)
+        && Math.abs(p[0] - p[2] / 2) <= cursorProbe.box.width / 2 + 6 && p[1] >= 0 && p[1] <= cursorProbe.box.height + 6
+      if (inside && root.widgetName !== "") idleTimer.restart(); else root.closeWidget()
+    } }
+    onExited: function (code) { if (code !== 0) root.closeWidget() }
+  }
 
   // ---- persistence: ~/.local/state/island/state.json ----
   // One small JSON file: the reduced-motion flag and the optional weather location override ("" = auto-detect by IP).

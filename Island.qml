@@ -57,6 +57,10 @@ PanelWindow {
     }
   }
   readonly property size target: sizeFor(myMode)
+  // Used by State to decide whether a still cursor is on the widget (width includes the ears).
+  function pillBox() { return Qt.size(target.width + 2 * ear, target.height) }
+  Component.onCompleted: IslandState.islands[screenName] = win
+  Component.onDestruction: delete IslandState.islands[screenName]
   // The size of what is actually ON SCREEN right now. It lags `target` by the fade-out beat, and it is
   // what the content is laid out at. This is what keeps an outgoing widget at its OWN size while it
   // fades (instead of being stretched or squeezed to the incoming form's size mid-transition).

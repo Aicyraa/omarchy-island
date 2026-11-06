@@ -308,3 +308,6 @@ Widgets never open empty. `services/Cache.qml` is a small persisted store (`~/.l
 | `AgentUsage` | per-agent usage | startup, hover (older than 60 s), widget open |
 | `WeatherData` | wttr.in reading (one bounded request when older than 10 min) | startup, hover, widget open |
 `services/Prefetch.qml` decides when: `start()` 2.5 s after the shell is up, `touch()` when the pointer reaches the island. The first-ever run has nothing cached (widgets then show their loading line once). Delete the cache file to reset.
+
+## Staying open while the cursor is on it
+The inactivity timer (12 s, 15 s for Power) does not rely on hover events alone: a cursor that sits still on the widget sends none. Before closing, `State.checkCursor()` asks Hyprland where the cursor is (`assets/cursorpos.sh`) and stays open, restarting the countdown, while it is over the widget. Typing also keeps it open (3 s after the last key).
