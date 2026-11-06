@@ -155,6 +155,7 @@ PanelWindow {
       blocks: blocks,
       overflowX: over.length,
       zone: { w: Math.round(zone.width), h: Math.round(zone.height) },
+      layers: { hoverOpen: IslandState.hoverOpen, hovered: Object.keys(IslandState.hovered), hud: IslandState.hudActive },
       clockDX: clock ? +((clock.x + clock.w / 2) - pill.width / 2).toFixed(1) : null,
       items: all.length })
   }

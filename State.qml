@@ -87,6 +87,10 @@ Singleton {
     var h = Object.assign({}, hovered)   // reassign, so bindings notice
     if (over) h[screenName] = true; else delete h[screenName]
     hovered = h
+    // A widget outranks hover. While one is open, remember where the pointer is but do NOT run the hover
+    // timers: otherwise hoverOpen would turn true underneath the widget and the expanded form would flash
+    // when the widget closes.
+    if (widgetName !== "") return
     if (over) {
       if (hoverOpen) { if (screenName === hoverScreen) closeTimer.stop() }
       else { pendingHoverScreen = screenName; openTimer.restart() }
@@ -110,9 +114,9 @@ Singleton {
     if (widgetName === "") return
     widgetName = ""
     idleTimer.stop()
-    // Pointer still resting on the pill: bring the hover form back.
-    var names = Object.keys(hovered)
-    if (names.length > 0) { pendingHoverScreen = names[0]; openTimer.restart() }
+    // Straight back to idle. Hover does not resume by itself, so the pill never flashes its expanded form
+    // on the way back; moving the pointer off and onto it again opens hover as usual.
+    openTimer.stop(); closeTimer.stop(); hoverOpen = false
   }
   // Called on any input inside a widget; resets the inactivity countdown.
   function touch(isKey) {

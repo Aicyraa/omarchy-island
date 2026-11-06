@@ -21,6 +21,9 @@ IpcHandler {
     if (what === "off") { IslandState.debugLayout = false; return "off" }
     if (what === "measure") { IslandState.measureRequested(); return IslandState.measureResult }
     if (what === "contrast") return JSON.stringify(Theme.audit())
+    // Test hooks: inject the hover event a real pointer produces over the focused screen's pill.
+    if (what === "hover-on") { IslandState.hoverIntent(true, IslandState.focusedScreenName()); return "hover on" }
+    if (what === "hover-off") { IslandState.hoverIntent(false, IslandState.focusedScreenName()); return "hover off" }
     return "usage: debug layout|measure|contrast|off"
   }
   function mode(): string { return IslandState.mode }

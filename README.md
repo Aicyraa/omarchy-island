@@ -150,6 +150,8 @@ pill's target by the fade-out), so an outgoing widget is never stretched or sque
 **reveal gate** (`fit` in `Island.qml`) holds the incoming content back until the pill has nearly reached its size, so a
 wider widget is not clipped by a still-small pill and the idle form does not sit at the top of a still-tall pill.
 The gate only runs right after a swap (and times out after 500 ms), so a widget whose own content grows is never faded.
+Hover is also suppressed while a widget is open (`hoverIntent` records the pointer but starts no timers), and closing a widget
+returns straight to idle, so the expanded hover form can never flash on the way back.
 
 ### Shared components
 `Icon` (one 24-grid stroke family), `WifiIcon` (fan with signal levels, used in the pill AND panels),
@@ -163,6 +165,7 @@ and badge states, thin variant; also the HUD), `Tile` (number badge in a safe in
 omarchy-shell island debug layout      # toggle the overlay: pill (red), 16px inset (green), text (magenta), icons (cyan)
 omarchy-shell island debug measure     # JSON: pill size, content blocks' padding on 4 sides, clock offset from centre
 omarchy-shell island debug contrast    # JSON: every text/background pair with its ratio
+omarchy-shell island debug hover-on|hover-off   # inject the pointer-over-pill event (test hook; real pointers cannot be scripted here)
 ```
 `blocks` padding is the visual padding (the panel's rows/cards/tiles); `pad` is the ink padding.
 All widgets measure `top = bottom = left = right = 16` (scrolling panels report no bottom).
