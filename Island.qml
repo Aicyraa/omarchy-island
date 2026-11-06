@@ -155,6 +155,7 @@ PanelWindow {
       blocks: blocks,
       overflowX: over.length,
       zone: { w: Math.round(zone.width), h: Math.round(zone.height) },
+      widgetState: (widgetLoader.item && widgetLoader.item.debugState !== undefined) ? widgetLoader.item.debugState : null,
       layers: { hoverOpen: IslandState.hoverOpen, hovered: Object.keys(IslandState.hovered), hud: IslandState.hudActive },
       reveal: { shown: pill.shownMode, fade: +content.fade.toFixed(2), fit: +pill.fit.toFixed(2), gating: pill.gating, opacity: +content.opacity.toFixed(2), h: Math.round(pill.height), w: Math.round(pill.width) },
       clockDX: clock ? +((clock.x + clock.w / 2) - pill.width / 2).toFixed(1) : null,

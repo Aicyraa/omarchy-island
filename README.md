@@ -190,7 +190,7 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | media         | MPRIS player, controls, progress |
 | system        | CPU, memory, CPU temperature with real line charts (shared 2 s ring buffer; never touches the discrete GPU) |
 | tray          | status-notifier icons |
-| theme         | theme cards with swatches and wallpaper preview, applies with `omarchy-theme-set` |
+| theme         | ONE horizontal strip of theme cards (720 x ~188 px, scrolls sideways): wallpaper, name on a scrim in the theme's own colours, swatches, light/dark chip, check on the current theme; applies with `omarchy-theme-set` |
 | weather       | temperature, condition icon (sun/moon/cloud/rain...), high/low; location auto by IP or `weatherLocation` in state.json |
 | agent         | AI-agent usage limits close to their cap (reads Omarchy's usage files) |
 
