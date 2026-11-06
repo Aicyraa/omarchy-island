@@ -96,6 +96,7 @@ Item {
     }
     Visualizer {
       id: viz
+      visible: active                          // no resting dotted line unless playing
       anchors.left: controls.right; anchors.leftMargin: Theme.s12; anchors.right: parent.right
       y: cover.height - height; height: 30; bars: Math.max(8, Math.floor(width / 7))
       color: root.hasArt ? Qt.rgba(1, 1, 1, 0.9) : Theme.accentFill

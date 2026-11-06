@@ -24,6 +24,8 @@ ShellIpc {
     if (what === "measure") { IslandState.measureRequested(); return IslandState.measureResult }
     if (what === "contrast") return JSON.stringify(Theme.audit())
     // Test hooks: inject the hover event a real pointer produces over the focused screen's pill.
+    if (what === "indicators") return JSON.stringify({ dnd: Indicators.dnd, night: Indicators.nightLight, awake: Indicators.stayAwake, dictation: Indicators.dictation })
+    if (what === "toggle-awake") { Indicators.toggleStayAwake(); return "toggled" }
     if (what === "hover-on") { IslandState.hoverIntent(true, IslandState.focusedScreenName()); return "hover on" }
     if (what === "hover-off") { IslandState.hoverIntent(false, IslandState.focusedScreenName()); return "hover off" }
     return "usage: debug layout|measure|contrast|off"

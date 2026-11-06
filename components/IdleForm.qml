@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Services.Mpris
 import ".."
 import "../services"
 
@@ -27,10 +28,14 @@ Item {
   readonly property real timeW: timeM.advanceWidth
   readonly property real baseW: baseRow.implicitWidth
   readonly property real wsW: ws.implicitWidth
+  // Audio visualizer: while a player is playing, a few bars come out of the left side of the time.
+  readonly property bool playing: Quickshell.env("ISLAND_FORCE_VIZ") === "1" || Mpris.players.values.some(function (p) { return p.isPlaying })
+  readonly property real vizW: 32
+  readonly property real vizNeed: playing ? vizW + Theme.s8 : 0
 
   // Equal halves around the centred clock: the wider side decides.
   function widthFor() {
-    var left = timeW / 2 + gap + wsW
+    var left = timeW / 2 + gap + wsW + vizNeed
     var right = timeW / 2 + gap + baseW
     return Math.ceil(2 * (pad + Math.max(left, right)))
   }
@@ -58,6 +63,24 @@ Item {
     TapHandler { onTapped: IslandState.toggleWidget("calendar", form.win ? form.win.screenName : "") }
   }
 
+  // The bars sit against the time's left edge inside a clipping box whose width springs open, so they appear to
+  // slide out from behind the clock (and slide back in when the music stops).
+  Item {
+    id: vizBox
+    anchors.right: timeText.left; anchors.rightMargin: Theme.s8
+    anchors.verticalCenter: parent.verticalCenter
+    height: 14; clip: true
+    width: form.playing ? form.vizW : 0
+    opacity: form.playing ? 1 : 0
+    Behavior on width { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 4.5; damping: 0.38; epsilon: 0.3 } }
+    Behavior on opacity { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 200 } }
+    Visualizer {
+      anchors.right: parent.right; width: form.vizW; height: 14
+      bars: 7; color: Theme.text
+      active: form.playing && form.visible
+    }
+  }
+
   // ---------------- right: [hover extras] [indicators, Wi-Fi, battery] ----------------
   Row {
     id: right
@@ -74,7 +97,7 @@ Item {
         visible: Indicators.recording; anchors.verticalCenter: parent.verticalCenter
         onClicked: Cmd.run(["omarchy-capture-screenrecording", "--stop-recording"])
         Row { spacing: 4
-          Icon { name: "record"; size: Theme.iconSm; color: Theme.dangerInk; anchors.verticalCenter: parent.verticalCenter }
+          Icon { name: "record"; size: Theme.iconMd; matchBattery: true; color: Theme.dangerInk; anchors.verticalCenter: parent.verticalCenter }
           Text { id: recText; textFormat: Text.PlainText; color: Theme.dangerInk; font.pixelSize: 11; font.weight: Theme.weightLabel
             anchors.verticalCenter: parent.verticalCenter
             property real startedAt: Date.now() - Indicators.recSeconds * 1000
@@ -84,16 +107,16 @@ Item {
               onTriggered: recText.elapsed = Math.max(0, Math.floor((Date.now() - recText.startedAt) / 1000)) } } }
       }
       BarIcon { visible: Indicators.dictationAvailable && Indicators.dictation !== "idle"; anchors.verticalCenter: parent.verticalCenter
-        onClicked: Indicators.toggleDictation(); Icon { name: "mic-dictate"; size: Theme.iconMd; color: Theme.warningInk } }
+        onClicked: Indicators.toggleDictation(); Icon { name: "mic-dictate"; size: Theme.iconMd; matchBattery: true; color: Theme.warningInk } }
       BarIcon { visible: Indicators.dnd; anchors.verticalCenter: parent.verticalCenter
-        onClicked: Indicators.toggleDnd(); Icon { name: "bell-off"; size: Theme.iconMd; color: Theme.textMuted } }
+        onClicked: Indicators.toggleDnd(); Icon { name: "bell-off"; size: Theme.iconMd; matchBattery: true; color: Theme.textMuted } }
       BarIcon { visible: Indicators.nightLight; anchors.verticalCenter: parent.verticalCenter
-        onClicked: Indicators.toggleNightLight(); Icon { name: "moon"; size: Theme.iconMd; color: Theme.warningInk } }
+        onClicked: Indicators.toggleNightLight(); Icon { name: "moon"; size: Theme.iconMd; matchBattery: true; color: Theme.warningInk } }
       BarIcon { visible: Indicators.stayAwake; anchors.verticalCenter: parent.verticalCenter
-        onClicked: Indicators.toggleStayAwake(); Icon { name: "coffee"; size: Theme.iconMd; color: Theme.textMuted } }
+        onClicked: Indicators.toggleStayAwake(); Icon { name: "coffee"; size: Theme.iconMd; matchBattery: true; color: Theme.textMuted } }
       BarIcon { visible: Indicators.updateAvailable; anchors.verticalCenter: parent.verticalCenter
         onClicked: Cmd.run(["omarchy-launch-floating-terminal-with-presentation", "omarchy-update"])
-        Icon { name: "download"; size: Theme.iconMd; color: Theme.accentInk } }
+        Icon { name: "download"; size: Theme.iconMd; matchBattery: true; color: Theme.accentInk } }
       BarIcon { visible: Net.hasWifi; anchors.verticalCenter: parent.verticalCenter
         onClicked: IslandState.toggleWidget("wifi", form.win ? form.win.screenName : "")
         onRightClicked: IslandState.toggleWidget("wifi", form.win ? form.win.screenName : "")
