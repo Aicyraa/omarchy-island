@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import "."
 import "services"
+import "widgets/Registry.js" as Registry
 
 // One Island per screen (created by Variants in Bar.qml).
 //
@@ -30,7 +31,8 @@ PanelWindow {
   function sizeFor(m) {
     switch (m) {
     case "hover":        return Qt.size(560, 46)
-    case "widget":       return Qt.size(640, 400)
+    case "widget":       return Qt.size(Registry.width(IslandState.widgetName),
+                                        Registry.height(IslandState.widgetName) + (IslandState.hintsVisible ? 26 : 0))
     case "hud":          return Qt.size(300, 44)
     case "notification": return Qt.size(420, 52)
     default:             return Qt.size(250, 32)     // idle
@@ -121,9 +123,13 @@ PanelWindow {
       width: win.sizeFor(pill.shownMode).width
       height: win.sizeFor(pill.shownMode).height
       focus: win.myMode === "widget"
+      // BeforeItem: we see every key first (to reset the inactivity timer and
+      // handle Esc and "?"), then unhandled keys fall through to the widget.
+      Keys.priority: Keys.BeforeItem
       Keys.onPressed: function (e) {
         IslandState.touch(true)
         if (e.key === Qt.Key_Escape) { IslandState.closeWidget(); e.accepted = true }
+        else if (e.text === "?") { IslandState.hintsVisible = !IslandState.hintsVisible; e.accepted = true }
       }
 
       // Beat 1: old content fades out fast (80ms). Beat 2: swap, new fades in.
@@ -239,16 +245,28 @@ PanelWindow {
         }
       }
 
-      // ---------- widget placeholder (real widgets arrive in milestone 3) ----------
-      Item {
-        anchors.fill: parent
-        visible: pill.shownMode === "widget"
-        Text {
-          anchors.centerIn: parent
-          textFormat: Text.PlainText
-          text: IslandState.widgetName + "  (Esc to close)"
-          color: Theme.text; font.pixelSize: 16
-        }
+      // ---------- widget host ----------
+      // `active` is only true while a widget is on screen, so a closed widget
+      // is fully unloaded: its Timers and Processes are destroyed with it.
+      Loader {
+        id: widgetLoader
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: win.sizeFor("widget").width
+        height: Registry.height(IslandState.widgetName)
+        active: pill.shownMode === "widget"
+        focus: true
+        source: active ? "widgets/" + Registry.fileOf(IslandState.widgetName) : ""
+        onLoaded: item.forceActiveFocus()
+      }
+      // Hint row (toggle with "?").
+      Text {
+        visible: pill.shownMode === "widget" && IslandState.hintsVisible
+        anchors.bottom: parent.bottom; anchors.bottomMargin: 6
+        anchors.horizontalCenter: parent.horizontalCenter
+        textFormat: Text.PlainText
+        text: widgetLoader.item && widgetLoader.item.hint ? widgetLoader.item.hint : ""
+        color: Theme.textMuted; font.pixelSize: 11
       }
     }
   }

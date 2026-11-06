@@ -37,6 +37,7 @@ Singleton {
   readonly property bool pointerOver: Object.keys(hovered).length > 0
   property real lastKeyAt: 0
 
+  property bool hintsVisible: false   // "?" toggles the key-hint row under a widget
   property bool reducedMotion: false  // durations -> 0, no overshoot
 
   // ---- derived ----

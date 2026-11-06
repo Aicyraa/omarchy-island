@@ -16,7 +16,8 @@ Item {
   property var barWidgetRegistry: null
   property var pluginRegistry: null
   property string omarchyPath: ""
-  property bool rig: false              // true only in tools/rig
+  property bool rig: false              // true only in the test rig
+  Component.onCompleted: Cmd.dryRun = rig   // rig never runs power commands for real
 
   // One Island window per screen. When monitors are plugged/unplugged,
   // Variants creates/destroys the matching windows for us.

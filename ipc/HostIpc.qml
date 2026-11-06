@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons
 import ".."
+import "../services"
 
 // IPC inside the real Omarchy shell. `ShellIpc` is an IpcHandler that the
 // shell ALSO answers over its own socket, so `omarchy-shell island ...`
@@ -14,5 +15,8 @@ ShellIpc {
   function hud(kind: string, value: real): void { IslandState.showHud(kind, value, "", 0) }
   function hudJson(payload: string): void { IslandState.showHudPayload(payload) }
   function reducedMotion(on: bool): void { IslandState.reducedMotion = on }
+  function lastCommand(): string { return Cmd.last }
+  function hints(): string { return IslandState.hintsVisible ? "on" : "off" }
+  function dryRun(): string { return Cmd.dryRun ? "yes" : "no" }
   function mode(): string { return IslandState.mode }
 }
