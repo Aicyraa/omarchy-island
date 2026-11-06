@@ -25,7 +25,8 @@ Singleton {
   property string widgetName: ""      // "" = no widget open
   property bool hudActive: false
   property string hudKind: ""
-  property real hudValue: 0
+  property real hudValue: 0           // percent, 0..100
+  property string hudMessage: ""      // text-only HUD (no progress bar) when set
   property bool notifActive: false
   property bool hoverOpen: false
 
@@ -101,12 +102,40 @@ Singleton {
   function timeoutFor(name) { return name === "power" ? 15000 : 12000 }
 
   // ---- HUD: transient indicator, ~1.5s ----
-  function showHud(kind, value) {
+  // message !== "" -> text-only HUD; otherwise a progress bar at `value` percent.
+  function showHud(kind, value, message, ms) {
     if (widgetName !== "") return        // lower priority never interrupts higher
-    hudKind = kind; hudValue = value
+    hudKind = kind; hudValue = value; hudMessage = message || ""
+    hudTimer.interval = ms > 0 ? ms : 1500
     activeScreen = focusedScreenName()
     hudActive = true
     hudTimer.restart()
+  }
+  // Human label for an OSD icon key ("volume-high" -> "Volume"). Real icons
+  // replace this in milestone 3.
+  function hudLabel(kind) {
+    var k = String(kind || "").toLowerCase()
+    if (k.indexOf("volume") === 0 || k === "mute") return "Volume"
+    if (k.indexOf("micro") === 0 || k.indexOf("mic") === 0) return "Mic"
+    if (k === "brightness" || k === "display") return "Brightness"
+    if (k === "keyboard") return "Keyboard"
+    if (k === "charger") return "Power"
+    return k.length ? k.charAt(0).toUpperCase() + k.slice(1) : ""
+  }
+
+  // Payload as built by Omarchy's `omarchy-osd`:
+  //   {icon, message, value, max, progressText, duration}  (all strings)
+  // so the stock volume/brightness/etc. callers keep working unchanged.
+  function showHudPayload(json) {
+    try {
+      var p = JSON.parse(json || "{}")
+      var max = Math.max(1, parseInt(p.max || "100", 10))
+      var v = parseInt(p.value || "0", 10)
+      var hasProgress = p.value !== undefined && p.value !== "" && !isNaN(v) && !p.message
+      var pct = hasProgress ? Math.max(0, Math.min(100, v * 100 / max)) : 0
+      showHud(String(p.icon || ""), pct, hasProgress ? "" : String(p.message || ""),
+              parseInt(p.duration || "1500", 10))
+    } catch (e) { console.warn("island: bad HUD payload", e) }
   }
 
   // Timers exist but only RUN when started, so nothing ticks while idle.

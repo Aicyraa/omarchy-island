@@ -205,21 +205,36 @@ PanelWindow {
       Item {
         anchors.fill: parent
         visible: pill.shownMode === "hud"
+        // Number "ticks" toward the target instead of snapping.
+        property real shown: IslandState.hudValue
+        Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 120; easing.type: Easing.OutCubic } }
         Text {
           anchors.left: parent.left; anchors.leftMargin: 16
           anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText
-          text: IslandState.hudKind
+          width: IslandState.hudMessage !== "" ? 260 : 90
+          elide: Text.ElideRight
+          text: IslandState.hudMessage !== "" ? IslandState.hudMessage : IslandState.hudLabel(IslandState.hudKind)
           color: Theme.text; font.pixelSize: 12
         }
-        Rectangle {
+        Row {
+          visible: IslandState.hudMessage === ""
           anchors.right: parent.right; anchors.rightMargin: 16
           anchors.verticalCenter: parent.verticalCenter
-          width: 190; height: 8; radius: 4; color: Theme.surfaceRaised
+          spacing: 10
           Rectangle {
-            width: parent.width * Math.max(0, Math.min(1, IslandState.hudValue / 100))
-            height: parent.height; radius: 4; color: Theme.accent
-            Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 120 } }
+            width: 160; height: 8; radius: 4; color: Theme.surfaceRaised
+            anchors.verticalCenter: parent.verticalCenter
+            Rectangle {
+              width: parent.width * Math.max(0, Math.min(1, parent.parent.parent.shown / 100))
+              height: parent.height; radius: 4; color: Theme.accent
+            }
+          }
+          Text {
+            width: 30; horizontalAlignment: Text.AlignRight
+            textFormat: Text.PlainText
+            text: Math.round(parent.parent.shown) + "%"
+            color: Theme.text; font.pixelSize: 12; font.bold: true
           }
         }
       }

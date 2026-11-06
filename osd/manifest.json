@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.aicyraa.island-osd",
+  "name": "Island OSD bridge",
+  "version": "0.1.0",
+  "author": "aicyraa",
+  "description": "Routes Omarchy's volume/brightness/status OSD calls to the island HUD, so there is only ever one OSD.",
+  "kinds": ["panel"],
+  "keepLoaded": true,
+  "entryPoints": { "panel": "Osd.qml" },
+  "omarchy": { "clonedFrom": "omarchy.osd" }
+}
