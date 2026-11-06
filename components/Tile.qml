@@ -43,10 +43,10 @@ Item {
   Rectangle {
     anchors.fill: parent; radius: root.r
     color: area.pressed ? Qt.lighter(root.fill, 1.12) : root.fill
-    border.width: root.selected ? 2 : 0
-    border.color: root.danger ? Theme.dangerInk : Theme.text
     Behavior on color { ColorAnimation { duration: 150 } }
   }
+
+  FocusRing { on: root.selected; radius: root.r; ringColor: root.danger ? Theme.dangerInk : Theme.text }
 
   // Number badge in the safe inset.
   Text {

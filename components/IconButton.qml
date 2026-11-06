@@ -15,8 +15,8 @@ Item {
 
   Rectangle { anchors.fill: parent; radius: width / 2
     color: root.on ? Theme.accentFill : (area.pressed ? Theme.surfaceRaised : Theme.surface)
-    border.width: root.selected ? 2 : 0; border.color: Theme.text
-    Behavior on color { ColorAnimation { duration: 150 } } }
+    Behavior on color { ColorAnimation { duration: 150 } }
+    FocusRing { on: root.selected; radius: parent.radius } }
   Icon { id: ic; anchors.centerIn: parent; name: root.icon; size: Theme.iconMd; color: root.on ? Theme.accentText : Theme.text
     RotationAnimator on rotation { running: root.busy && !IslandState.reducedMotion; from: 0; to: 360; duration: 900; loops: Animation.Infinite }
     onVisibleChanged: if (!root.busy) rotation = 0 }

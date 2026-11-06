@@ -296,3 +296,7 @@ results are cached for the session. Delete the `ArtLookup.request` calls in `com
 - Weights: no Bold. `Theme.weightStrong` (DemiBold) for titles and big numbers, `Theme.weightLabel` (Medium) for small emphasised text, Normal otherwise (Adwaita Sans has real Medium/SemiBold cuts).
 - Text on accent fills is the normal light text colour on `Theme.accentFill` (the accent deepened toward the pill until it reaches 4.5:1), not near-black on the raw accent.
 - `Theme.pillBase` lifts a near-black theme background (luminance < 0.01) toward the surface colour so the pill is never pure black.
+
+## Focus animation and scrollbar
+- Moving the selection animates: `FocusRing` (tiles, sliders, icon buttons) springs in from slightly larger and fades out of the old item; list rows get a vertical focus marker (the workspace indicator's shape) that springs open, and their highlight settles in with a small overshoot. `reducedMotion` turns it all off.
+- `Scroller` replaces the plain indicator: a slim pill, dim when idle (a cue that there is more), brighter and thicker while scrolling or hovered, accent while dragged; drag it, click the track to jump, or wheel over it.

@@ -31,8 +31,8 @@ Item {
   readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.35) : Theme.accentFill
   readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
-  Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.surface
-    border.width: root.selected ? 2 : 0; border.color: Theme.text }
+  Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.surface }
+  FocusRing { z: 5; on: root.selected; radius: height / 2 }
 
   Rectangle {
     id: fill

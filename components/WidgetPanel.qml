@@ -51,7 +51,7 @@ Item {
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     interactive: panel.scrollable
-    Behavior on contentY { enabled: !flick.moving && !flick.dragging; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 120; easing.type: Easing.OutCubic } }
+    Behavior on contentY { enabled: !flick.moving && !flick.dragging && !bar.dragging; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 120; easing.type: Easing.OutCubic } }
 
     Column {
       id: col
@@ -67,8 +67,5 @@ Item {
   Rectangle { visible: panel.scrollable && flick.contentY < flick.contentHeight - flick.height - 2
     width: panel.width; height: 22; y: flick.y + flick.height - 22
     gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } GradientStop { position: 1; color: Theme.pill } } }
-  Rectangle { visible: panel.scrollable
-    x: panel.width - 6; width: 3; radius: 1.5; color: Theme.outline; opacity: 0.7
-    height: Math.max(24, flick.height * flick.height / flick.contentHeight)
-    y: flick.y + (flick.contentHeight > flick.height ? (flick.height - height) * flick.contentY / (flick.contentHeight - flick.height) : 0) }
+  Scroller { id: bar; flick: flick; visible: panel.scrollable; x: panel.width - 16; width: 16; y: flick.y; height: flick.height }
 }

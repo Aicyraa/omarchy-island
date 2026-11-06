@@ -18,3 +18,5 @@ IdleForm 1.0 components/IdleForm.qml
 Visualizer 1.0 components/Visualizer.qml
 MediaCard 1.0 components/MediaCard.qml
 HoverPreview 1.0 components/HoverPreview.qml
+Scroller 1.0 components/Scroller.qml
+FocusRing 1.0 components/FocusRing.qml
