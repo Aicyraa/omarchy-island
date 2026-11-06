@@ -30,12 +30,12 @@ PanelWindow {
   readonly property int topMargin: 6
   function sizeFor(m) {
     switch (m) {
-    case "hover":        return Qt.size(560, 46)
+    case "hover":        return Qt.size(600, 46)
     case "widget":       return Qt.size(Registry.width(IslandState.widgetName),
                                         Registry.height(IslandState.widgetName) + (IslandState.hintsVisible ? 26 : 0))
     case "hud":          return Qt.size(300, 44)
     case "notification": return Qt.size(420, 52)
-    default:             return Qt.size(250, 32)     // idle
+    default:             return Qt.size(310, 32)     // idle
     }
   }
   readonly property size target: sizeFor(myMode)
@@ -55,7 +55,7 @@ PanelWindow {
   WlrLayershell.keyboardFocus: myMode === "widget" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
   // Hide in fullscreen unless the user explicitly opened a widget.
-  visible: !(IslandState.fullscreen && myMode !== "widget")
+  visible: !IslandState.barHidden && !(IslandState.fullscreen && myMode !== "widget")
 
   // Click-outside closes a widget: while open, a focus grab watches for a click
   // elsewhere and reports `cleared`.
@@ -193,20 +193,72 @@ PanelWindow {
           }
         }
 
-        Row {                                      // right: status
+        // right: indicators (only when active), then volume / brightness / Wi-Fi / battery.
+        Row {
+          id: rightRow
           anchors.right: parent.right
           anchors.rightMargin: 14
           anchors.verticalCenter: parent.verticalCenter
-          spacing: 10
-          Text {                                   // placeholder until the notification service is wired (milestone 3)
+          spacing: 9
+          Text {                                   // notification summary (read from the shell's state files)
             visible: parent.parent.expanded
             textFormat: Text.PlainText
             text: Notifs.summary
             color: Theme.textMuted
             font.pixelSize: 11
+            anchors.verticalCenter: parent.verticalCenter
           }
-          WifiBars { anchors.verticalCenter: parent.verticalCenter }
-          BatteryIcon { anchors.verticalCenter: parent.verticalCenter }
+          // -- indicators: each shows only while its state is on; click = its action --
+          BarIcon {                                // screen recording with a ticking timer
+            visible: Indicators.recording
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: Cmd.run(["omarchy-capture-screenrecording", "--stop-recording"])
+            Row { spacing: 4
+              Icon { name: "record"; size: 14; color: Theme.danger; anchors.verticalCenter: parent.verticalCenter }
+              Text { id: recText; textFormat: Text.PlainText; color: Theme.danger; font.pixelSize: 11; font.bold: true
+                anchors.verticalCenter: parent.verticalCenter
+                property real startedAt: Date.now() - Indicators.recSeconds * 1000
+                property int elapsed: 0
+                text: Math.floor(elapsed / 60) + ":" + ("0" + elapsed % 60).slice(-2)
+                // The timer exists only while recording, so nothing ticks otherwise.
+                Timer { interval: 1000; repeat: true; running: Indicators.recording; triggeredOnStart: true
+                  onTriggered: recText.elapsed = Math.max(0, Math.floor((Date.now() - recText.startedAt) / 1000)) }
+              } }
+          }
+          BarIcon { visible: Indicators.dictationAvailable && Indicators.dictation !== "idle"; anchors.verticalCenter: parent.verticalCenter
+            onClicked: Indicators.toggleDictation(); Icon { name: "mic-dictate"; size: 14; color: Theme.warning } }
+          BarIcon { visible: Indicators.dnd; anchors.verticalCenter: parent.verticalCenter
+            onClicked: Indicators.toggleDnd(); Icon { name: "bell-off"; size: 14; color: Theme.textMuted } }
+          BarIcon { visible: Indicators.nightLight; anchors.verticalCenter: parent.verticalCenter
+            onClicked: Indicators.toggleNightLight(); Icon { name: "moon"; size: 14; color: Theme.warning } }
+          BarIcon { visible: Indicators.stayAwake; anchors.verticalCenter: parent.verticalCenter
+            onClicked: Indicators.toggleStayAwake(); Icon { name: "coffee"; size: 14; color: Theme.textMuted } }
+          BarIcon { visible: Indicators.updateAvailable; anchors.verticalCenter: parent.verticalCenter
+            onClicked: Cmd.run(["omarchy-launch-floating-terminal-with-presentation", "omarchy-update"])
+            Icon { name: "download"; size: 14; color: Theme.accent } }
+          // -- volume: scroll adjusts, middle-click mutes, click/right-click open the Audio widget --
+          BarIcon { anchors.verticalCenter: parent.verticalCenter; visible: Audio.hasSink
+            onScrolled: function (d) { Audio.setVolume(Audio.volume + d * 0.03)
+              IslandState.showHud("volume", Math.round(Audio.volume * 100), "", 0) }
+            onMiddleClicked: Audio.toggleMute()
+            onClicked: IslandState.toggleWidget("audio", win.screenName)
+            onRightClicked: IslandState.toggleWidget("audio", win.screenName)
+            VolumeIcon { level: Audio.volume; muted: Audio.muted; size: 15; color: Theme.text } }
+          // -- brightness (hover form only): scroll adjusts --
+          BarIcon { visible: parent.parent.expanded && Brightness.available; anchors.verticalCenter: parent.verticalCenter
+            onScrolled: function (d) { Brightness.set(Brightness.level + d * 0.05)
+              IslandState.showHud("brightness", Math.round(Brightness.level * 100), "", 0) }
+            onClicked: IslandState.toggleWidget("display", win.screenName)
+            onRightClicked: IslandState.toggleWidget("display", win.screenName)
+            Icon { name: "sun"; size: 15 } }
+          BarIcon { visible: Net.hasWifi; anchors.verticalCenter: parent.verticalCenter
+            onClicked: IslandState.toggleWidget("wifi", win.screenName)
+            onRightClicked: IslandState.toggleWidget("wifi", win.screenName)
+            WifiBars { } }
+          BarIcon { visible: Power.present; anchors.verticalCenter: parent.verticalCenter
+            onClicked: IslandState.toggleWidget("battery", win.screenName)
+            onRightClicked: IslandState.toggleWidget("battery", win.screenName)
+            BatteryIcon { } }
         }
       }
 

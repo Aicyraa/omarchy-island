@@ -10,3 +10,4 @@ Tile 1.0 components/Tile.qml
 PillSlider 1.0 components/PillSlider.qml
 VolumeIcon 1.0 components/VolumeIcon.qml
 ListItem 1.0 components/ListItem.qml
+BarIcon 1.0 components/BarIcon.qml

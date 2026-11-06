@@ -38,6 +38,14 @@ Singleton {
   property real lastKeyAt: 0
 
   property bool hintsVisible: false   // "?" toggles the key-hint row under a widget
+  // The stock "toggle bar" key (SUPER+SHIFT+SPACE) sets a flag file; the island honours it.
+  property bool barHidden: false
+  function syncHidden() { if (!hiddenProbe.running) hiddenProbe.running = true }
+  Process {
+    id: hiddenProbe
+    command: ["bash", "-c", "[[ -f $HOME/.local/state/omarchy/toggles/bar-off ]] && echo yes || echo no"]
+    stdout: StdioCollector { onStreamFinished: root.barHidden = text.trim() === "yes" }
+  }
   property bool reducedMotion: false  // durations -> 0, no overshoot
 
   // ---- derived ----

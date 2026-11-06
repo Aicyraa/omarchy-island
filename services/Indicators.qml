@@ -14,6 +14,7 @@ Singleton {
   property bool nightLight: false
   property bool stayAwake: false
   property bool recording: false
+  property real recSeconds: 0
   property string dictation: "idle"
   property bool dictationAvailable: false
   property bool updateAvailable: false
@@ -27,7 +28,7 @@ Singleton {
       "echo dnd=$(omarchy-shell -q notifications isDnd 2>/dev/null);" +
       "echo night=$(omarchy-toggle-nightlight --status 2>/dev/null | jq -r '.enabled' 2>/dev/null);" +
       "[ -f \"$HOME/.local/state/omarchy/indicators/stay-awake\" ] && echo awake=1 || echo awake=0;" +
-      "pgrep -f '^gpu-screen-recorder' >/dev/null && echo rec=1 || echo rec=0;" +
+      "p=$(pgrep -f '^gpu-screen-recorder' | head -1); if [ -n \"$p\" ]; then echo rec=1; echo recsec=$(ps -o etimes= -p $p | tr -d ' '); else echo rec=0; fi;" +
       "if command -v voxtype >/dev/null; then echo dictavail=1; echo dict=$(timeout 2 voxtype status 2>/dev/null | head -1); else echo dictavail=0; fi"]
     stdout: StdioCollector { onStreamFinished: {
       var kv = {}
@@ -36,6 +37,7 @@ Singleton {
       root.nightLight = kv.night === "true"
       root.stayAwake = kv.awake === "1"
       root.recording = kv.rec === "1"
+      root.recSeconds = parseInt(kv.recsec || "0") || 0
       root.dictationAvailable = kv.dictavail === "1"
       root.dictation = kv.dict || "idle"
     } }
