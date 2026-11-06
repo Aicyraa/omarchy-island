@@ -213,14 +213,13 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | A | Control center: Sound | audio |
 | B | Control center: Connect | bluetooth |
 | W | Control center: Connect | Wi-Fi |
-| N | Omarchy Network panel (`rebind`) | Wi-Fi |
+| N | Omarchy Network panel (`rebind`) | notifications |
 | P | Control center: Power | battery and power profile |
 | D | Control center: Power | display |
 | ALT + D | Control center: Time | calendar |
 | ALT + E | Elsewhen world clock (`rebind`) | world clock |
 | Z | free | world clock |
 | Q | free | power (shutdown, reboot, sleep, lock) |
-| ALT + N | free | notifications |
 | Y | free | media |
 | U | free | system usage |
 | G | free | tray |
