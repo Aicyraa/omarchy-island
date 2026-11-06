@@ -192,7 +192,7 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | tray          | status-notifier icons |
 | theme         | ONE horizontal strip of theme cards (720 x ~188 px, scrolls sideways): wallpaper, name on a scrim in the theme's own colours, swatches, light/dark chip, check on the current theme; applies with `omarchy-theme-set` |
 | weather       | temperature, condition icon (sun/moon/cloud/rain...), high/low; location auto by IP or `weatherLocation` in state.json |
-| agent         | AI-agent usage limits close to their cap (reads Omarchy's usage files) |
+| agent         | usage per agent: tokens today and over 7 days, 7-day bars, limits with reset times, output/input/cached tokens, prompts, sessions, top model |
 
 ### Conventions every widget follows
 - Esc closes (a widget can claim Esc for a sub-mode with `capturesEscape`). There is no on-screen key guide; `hint` strings only document keys in the source.
