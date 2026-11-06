@@ -45,7 +45,7 @@ PanelWindow {
   function hoverSize() {
     var it = hoverLoader.item
     if (it && it.implicitHeight > 0) return Qt.size(it.implicitWidth, it.implicitHeight)
-    return Qt.size(440, Mpris.players.values.some(function (q) { return q.isPlaying }) ? 388 : 236)
+    return Qt.size(440, Mpris.players.values.some(function (q) { return q.isPlaying || String(q.trackTitle || "") !== "" }) ? 434 : 284)
   }
   function sizeFor(m) {
     switch (m) {
@@ -70,7 +70,7 @@ PanelWindow {
   color: "transparent"
   anchors.top: true                     // top edge only -> centered horizontally
   implicitWidth: Theme.panelMaxWidth + 2 * ear + 16
-  implicitHeight: Theme.panelMaxHeight + 20
+  implicitHeight: Theme.windowHeight
   // Reserve exactly the collapsed height so tiled windows don't jump when the
   // pill grows (it overlays windows instead).
   exclusionMode: rig ? ExclusionMode.Ignore : ExclusionMode.Normal

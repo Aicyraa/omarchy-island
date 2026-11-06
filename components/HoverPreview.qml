@@ -41,11 +41,11 @@ Item {
 
   Column {
     id: col
-    x: root.pad; y: root.pad; width: root.width - 2 * root.pad; spacing: Theme.s12
+    x: root.pad; y: root.pad; width: root.width - 2 * root.pad; spacing: 10
 
     // ---------------- profile header ----------------
     ClippingRectangle {
-      width: parent.width; height: 88; radius: Theme.tileRadius; color: Theme.surface
+      width: parent.width; height: 84; radius: Theme.tileRadius; color: Theme.surface
       Image {
         anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true
         sourceSize.width: 960; sourceSize.height: 400
@@ -90,7 +90,7 @@ Item {
       property string icon; property bool on: false; property bool wide: false
       property string line1; property string line2
       signal toggled(); signal opened()
-      radius: Theme.tileRadius; height: 52
+      radius: Theme.tileRadius; height: 48
       color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
       readonly property color fill: on ? Theme.accentFill : Theme.surface
       Behavior on color { ColorAnimation { duration: 140 } }
@@ -117,7 +117,7 @@ Item {
     Row {
       id: toggles
       width: parent.width; spacing: Theme.s8
-      readonly property real gridW: 2 * 52 + Theme.s8
+      readonly property real gridW: 2 * 48 + Theme.s8
 
       Column {
         width: toggles.width - toggles.gridW - Theme.s8; spacing: Theme.s8
@@ -143,13 +143,13 @@ Item {
       }
       Grid {
         columns: 2; spacing: Theme.s8; width: toggles.gridW
-        QuickTile { width: 52; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
+        QuickTile { width: 48; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
           onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
-        QuickTile { width: 52; icon: "moon"; on: Indicators.nightLight
+        QuickTile { width: 48; icon: "moon"; on: Indicators.nightLight
           onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
-        QuickTile { width: 52; icon: "coffee"; on: Indicators.stayAwake
+        QuickTile { width: 48; icon: "coffee"; on: Indicators.stayAwake
           onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
-        QuickTile { width: 52; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
+        QuickTile { width: 48; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
           onToggled: Indicators.toggleDictation() }
       }
     }
