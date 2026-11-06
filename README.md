@@ -311,3 +311,4 @@ Widgets never open empty. `services/Cache.qml` is a small persisted store (`~/.l
 
 ## Staying open while the cursor is on it
 The inactivity timer (12 s, 15 s for Power) does not rely on hover events alone: a cursor that sits still on the widget sends none. Before closing, `State.checkCursor()` asks Hyprland where the cursor is (`assets/cursorpos.sh`) and stays open, restarting the countdown, while it is over the widget. Typing also keeps it open (3 s after the last key).
+Every close is logged with its reason (`qs log -p /usr/share/omarchy/shell | grep "widget closed"`): `Esc`, `idle timeout, cursor away`, `focus grab cleared, cursor away`, or `(explicit)` for a key press / IPC. The focus-grab path (another window took keyboard focus) is guarded the same way as the idle timeout: if the cursor is still on the widget it stays open and the grab is re-armed.

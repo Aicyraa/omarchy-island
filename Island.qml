@@ -85,10 +85,14 @@ PanelWindow {
 
   // Click-outside closes a widget: while open, a focus grab watches for a click
   // elsewhere and reports `cleared`.
+  // The grab also ends when another window takes keyboard focus on its own (a browser, a popup). That must not
+  // close the widget while the cursor is still on it: State.guard checks, and the grab is re-armed if we stay.
+  property bool grabHold: false
   HyprlandFocusGrab {
     windows: [win]
-    active: win.myMode === "widget"
-    onCleared: IslandState.closeWidget()
+    active: win.myMode === "widget" && !win.grabHold
+    onCleared: IslandState.guard("focus grab cleared", function (stayed) {
+      if (stayed) { win.grabHold = true; Qt.callLater(function () { win.grabHold = false }) } })
   }
 
   // ---- input region ----
@@ -288,7 +292,7 @@ PanelWindow {
         // A widget may claim Esc for its own sub-mode (e.g. closing a search box)
         // by exposing `capturesEscape: true`; otherwise Esc closes the widget.
         var claimed = widgetLoader.item && widgetLoader.item.capturesEscape === true
-        if (e.key === Qt.Key_Escape && !claimed) { IslandState.closeWidget(); e.accepted = true }
+        if (e.key === Qt.Key_Escape && !claimed) { IslandState.closeWidget("Esc"); e.accepted = true }
       }
 
       // Beat 1: old content fades out fast (80ms). Beat 2: swap, new fades in.

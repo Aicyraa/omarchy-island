@@ -110,8 +110,9 @@ Singleton {
   function toggleWidget(name, screenName) {
     if (widgetName === name) closeWidget(); else openWidget(name, screenName)
   }
-  function closeWidget() {
+  function closeWidget(reason) {
     if (widgetName === "") return
+    console.warn("island: widget closed:", widgetName, reason || "(explicit)")
     widgetName = ""
     idleTimer.stop()
     // Straight back to idle. Hover does not resume by itself, so the pill never flashes its expanded form
@@ -179,24 +180,34 @@ Singleton {
   // A cursor that sits still on the pill sends no hover events, so `pointerOver` can be false while it is right
   // there. Before closing for inactivity, ask Hyprland where the cursor really is; if it is on the widget, stay open.
   property var islands: ({})              // screen name -> its Island window (registered by Island.qml)
-  function checkCursor() {
+  // guard(reason, done): the widget is about to close for `reason`. If the cursor is on the widget it stays open
+  // (and the inactivity countdown restarts); otherwise it closes. `done(stayed)` is optional.
+  function guard(reason, done) {
     var isl = islands[activeScreen]
-    if (!isl || cursorProbe.running) { closeWidget(); return }
-    var box = isl.pillBox()
-    cursorProbe.box = box
+    if (!isl || cursorProbe.running || widgetName === "") { closeWidget(reason + ", no probe"); if (done) done(false); return }
+    cursorProbe.box = isl.pillBox()
+    cursorProbe.reason = reason
+    cursorProbe.done = done || null
     cursorProbe.command = ["bash", Qt.resolvedUrl("assets/cursorpos.sh").toString().replace("file://", ""), activeScreen]
     cursorProbe.running = true
   }
+  function checkCursor() { guard("idle timeout") }
   Process {
     id: cursorProbe
     property size box: Qt.size(0, 0)
+    property string reason: ""
+    property var done: null
+    function finish(inside) {
+      var cb = done; done = null
+      if (inside && root.widgetName !== "") { idleTimer.restart(); if (cb) cb(true) }
+      else { root.closeWidget(reason + ", cursor away"); if (cb) cb(false) }
+    }
     stdout: StdioCollector { onStreamFinished: {
       var p = text.trim().split(" ").map(Number)
-      var inside = p.length === 3 && !p.some(isNaN)
-        && Math.abs(p[0] - p[2] / 2) <= cursorProbe.box.width / 2 + 6 && p[1] >= 0 && p[1] <= cursorProbe.box.height + 6
-      if (inside && root.widgetName !== "") idleTimer.restart(); else root.closeWidget()
+      cursorProbe.finish(p.length === 3 && !p.some(isNaN)
+        && Math.abs(p[0] - p[2] / 2) <= cursorProbe.box.width / 2 + 6 && p[1] >= 0 && p[1] <= cursorProbe.box.height + 6)
     } }
-    onExited: function (code) { if (code !== 0) root.closeWidget() }
+    onExited: function (code) { if (code !== 0 && done) finish(false) }
   }
 
   // ---- persistence: ~/.local/state/island/state.json ----
