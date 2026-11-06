@@ -1,0 +1,2 @@
+singleton Net 1.0 Net.qml
+singleton Power 1.0 Power.qml
