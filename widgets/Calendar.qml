@@ -63,11 +63,11 @@ WidgetPanel {
   // ---- header: month title, Today button, month arrows ----
   Item {
     width: parent.width; height: 36
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 16; font.bold: true
+    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 16; font.weight: Theme.weightStrong
       text: root.monthNames[root.month] + " " + root.year }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
       Rectangle { height: 30; width: todayLabel.implicitWidth + Theme.s16 * 2; radius: 15; color: Theme.surface
-        Text { id: todayLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Today"; color: Theme.text; font.pixelSize: 12; font.bold: true }
+        Text { id: todayLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Today"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
         MouseArea { anchors.fill: parent; onClicked: root.goToday() } }
       Repeater { model: [ { ic: "chevron-left", d: -1 }, { ic: "chevron-right", d: 1 } ]
         delegate: Rectangle { required property var modelData; width: 30; height: 30; radius: 15; color: Theme.surface
@@ -108,10 +108,10 @@ WidgetPanel {
           readonly property bool isSel: root.iso(modelData.date) === root.iso(root.selected)
           readonly property bool weekend: modelData.date.getDay() === 0 || modelData.date.getDay() === 6
           Rectangle { anchors.centerIn: parent; width: 30; height: 30; radius: 15
-            color: today ? Theme.accent : "transparent"
+            color: today ? Theme.accentFill : "transparent"
             border.width: isSel && !today ? 2 : 0; border.color: Theme.text }
           Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: modelData.date.getDate()
-            font.pixelSize: 12; font.bold: today
+            font.pixelSize: 12; font.weight: today ? Theme.weightLabel : Font.Normal
             color: today ? Theme.accentText : (!modelData.inMonth ? Theme.textMuted : (weekend ? Theme.textMuted : Theme.text))
             opacity: !modelData.inMonth && !today ? 0.75 : 1 }
           Rectangle { visible: root.eventDays[root.iso(modelData.date)] === true

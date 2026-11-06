@@ -45,13 +45,13 @@ WidgetPanel {
   // ---- header ----
   Item {
     width: parent.width; height: 44
-    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Net.connected ? Theme.accent : Theme.surface
+    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Net.connected ? Theme.accentFill : Theme.surface
       WifiIcon { anchors.centerIn: parent; size: Theme.iconLg; off: !Net.enabled; level: Net.connected ? Net.strength : 0
         color: Net.connected ? Theme.accentText : Theme.text } }
     Column {
       anchors.left: badge.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
       anchors.right: buttons.left; anchors.rightMargin: Theme.s8
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.bold: true
+      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
         text: !Net.hasWifi ? "No Wi-Fi adapter" : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? Net.ssid : "Not connected")) }
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
         text: !Net.hasWifi ? "Nothing to manage on this machine"
@@ -73,7 +73,7 @@ WidgetPanel {
                { k: "Speed", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "—" } ]
       delegate: Column { required property var modelData; width: parent.width / 4
         Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
-        Text { width: parent.width - Theme.s8; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.bold: true } }
+        Text { width: parent.width - Theme.s8; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel } }
     }
   }
   Text { visible: Net.connected && root.loadingInfo; textFormat: Text.PlainText

@@ -45,7 +45,7 @@ WidgetPanel {
     spacing: Theme.sectionGap
 
     Text { textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
-      color: side.mine ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.bold: true }
+      color: side.mine ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.weight: Theme.weightLabel }
     PillSlider {
       width: parent.width; showValue: true
       icon: side.isInput ? (side.muted ? "mic-off" : "mic") : "volume"

@@ -72,7 +72,7 @@ Item {
       anchors.left: cover.right; anchors.leftMargin: Theme.s12; anchors.right: parent.right
       anchors.top: parent.top; spacing: 2
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-        text: root.title !== "" ? root.title : "Nothing playing"; color: root.fg; font.pixelSize: 15; font.bold: true }
+        text: root.title !== "" ? root.title : "Nothing playing"; color: root.fg; font.pixelSize: 15; font.weight: Theme.weightStrong }
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; visible: text !== ""
         text: root.artist !== "" ? root.artist : (root.p ? root.p.identity : ""); color: root.fgMuted; font.pixelSize: 12 }
     }
@@ -86,7 +86,7 @@ Item {
         delegate: Rectangle { required property var modelData
           width: modelData.act === 1 ? 40 : 32; height: width; radius: width / 2
           anchors.verticalCenter: parent.verticalCenter
-          color: modelData.act === 1 ? Theme.accent : Qt.rgba(1, 1, 1, root.hasArt ? 0.16 : 0.08)
+          color: modelData.act === 1 ? Theme.accentFill : Qt.rgba(1, 1, 1, root.hasArt ? 0.16 : 0.08)
           Icon { anchors.centerIn: parent; size: modelData.act === 1 ? Theme.iconLg - 6 : Theme.iconSm
             name: modelData.act === 1 ? (root.p && root.p.isPlaying ? "pause" : "play") : modelData.ic
             color: modelData.act === 1 ? Theme.accentText : root.fg }
@@ -98,7 +98,7 @@ Item {
       id: viz
       anchors.left: controls.right; anchors.leftMargin: Theme.s12; anchors.right: parent.right
       y: cover.height - height; height: 30; bars: Math.max(8, Math.floor(width / 7))
-      color: root.hasArt ? Qt.rgba(1, 1, 1, 0.9) : Theme.accent
+      color: root.hasArt ? Qt.rgba(1, 1, 1, 0.9) : Theme.accentFill
       active: root.live && root.p !== null && root.p.isPlaying
     }
     // progress

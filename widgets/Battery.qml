@@ -39,14 +39,14 @@ WidgetPanel {
     visible: Power.present; width: parent.width; spacing: 2
     property real shown: Power.level * 100
     Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
-    Text { textFormat: Text.PlainText; text: Math.round(parent.shown) + "%"; color: Theme.text; font.pixelSize: 32; font.bold: true }
+    Text { textFormat: Text.PlainText; text: Math.round(parent.shown) + "%"; color: Theme.text; font.pixelSize: 32; font.weight: Theme.weightStrong }
     Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
       text: Power.stateText + (Power.timeText(Power.secondsLeft) !== ""
             ? " · " + Power.timeText(Power.secondsLeft) + (Power.charging ? " to full" : " left") : "") }
   }
   Rectangle { visible: Power.present; width: parent.width; height: 10; radius: 5; color: Theme.surface
     Rectangle { height: parent.height; radius: 5; width: parent.width * Power.level
-      color: Power.low ? Theme.dangerInk : (Power.charging ? Theme.successInk : Theme.accent)
+      color: Power.low ? Theme.dangerInk : (Power.charging ? Theme.successInk : Theme.accentFill)
       Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } } } }
 
   // Only the metrics that actually have data.
@@ -63,7 +63,7 @@ WidgetPanel {
       }
       delegate: Column { required property var modelData
         Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
-        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 13; font.bold: true } }
+        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel } }
     }
   }
 

@@ -41,10 +41,10 @@ WidgetPanel {
   }
 
   Item { width: parent.width; height: 28
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Power"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Power"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
       Rectangle { visible: root.restartNeeded; height: 20; width: badge.width + 16; radius: 10; color: Theme.warning
-        Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: 10; font.bold: true } }
+        Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: 10; font.weight: Theme.weightLabel } }
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: root.uptime; color: Theme.textMuted; font.pixelSize: 12 } }
   }
 

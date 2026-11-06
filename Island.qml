@@ -346,7 +346,7 @@ PanelWindow {
           visible: parent.isText
           anchors.centerIn: parent; spacing: Theme.s8
           Icon { name: parent.parent.k.indexOf("mic") === 0 ? "mic-off" : "info"; size: Theme.iconMd; anchors.verticalCenter: parent.verticalCenter }
-          Text { textFormat: Text.PlainText; text: IslandState.hudMessage; color: Theme.text; font.pixelSize: 13; font.bold: true
+          Text { textFormat: Text.PlainText; text: IslandState.hudMessage; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel
             anchors.verticalCenter: parent.verticalCenter }
         }
       }

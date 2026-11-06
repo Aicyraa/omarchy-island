@@ -21,15 +21,15 @@ WidgetPanel {
 
   // Header: title and a Focus button that shows its state, on one centre line.
   Item { width: parent.width; height: 36
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Notifications"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Notifications"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Rectangle {
       anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
       height: 32; width: focusRow.implicitWidth + Theme.s16 * 2; radius: 16
-      color: Indicators.dnd ? Theme.accent : Theme.surface
+      color: Indicators.dnd ? Theme.accentFill : Theme.surface
       Behavior on color { ColorAnimation { duration: 150 } }
       Row { id: focusRow; anchors.centerIn: parent; spacing: Theme.s8
         Icon { name: Indicators.dnd ? "bell-off" : "bell"; size: Theme.iconSm; color: Indicators.dnd ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-        Text { textFormat: Text.PlainText; text: Indicators.dnd ? "Focus on" : "Focus off"; font.pixelSize: 12; font.bold: true
+        Text { textFormat: Text.PlainText; text: Indicators.dnd ? "Focus on" : "Focus off"; font.pixelSize: 12; font.weight: Theme.weightLabel
           color: Indicators.dnd ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter } }
       MouseArea { anchors.fill: parent; onClicked: Indicators.toggleDnd() }
     }

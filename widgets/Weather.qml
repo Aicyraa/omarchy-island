@@ -74,9 +74,9 @@ WidgetPanel {
 
   Row { visible: root.state === "ok"; width: parent.width; spacing: Theme.s16
     Icon { name: root.w.icon; size: 44; color: root.w.icon === "sun" ? Theme.warningInk : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-    Text { textFormat: Text.PlainText; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 44; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
+    Text { textFormat: Text.PlainText; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 44; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
     Column { anchors.verticalCenter: parent.verticalCenter
-      Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.bold: true }
+      Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
       Text { textFormat: Text.PlainText; text: root.w.place; color: Theme.text; font.pixelSize: 12 }
       Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 10
         text: root.location !== "" ? "location set in state.json" : "auto-detected by IP" } }
@@ -86,5 +86,5 @@ WidgetPanel {
                         { k: "Feels like", v: root.w.feels + "°" }, { k: "Humidity", v: root.w.humidity + "%" } ]
       delegate: Column { required property var modelData; width: parent.width / 4
         Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
-        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 14; font.bold: true } } } }
+        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel } } } }
 }

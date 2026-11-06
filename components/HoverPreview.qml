@@ -57,23 +57,23 @@ Item {
       ClippingRectangle {
         id: avatar
         x: Theme.s16; anchors.verticalCenter: parent.verticalCenter
-        width: 52; height: 52; radius: 26; color: Theme.accent
+        width: 52; height: 52; radius: 26; color: Theme.accentFill
         border.width: 2; border.color: Qt.rgba(1, 1, 1, 0.85)
         Image { id: face; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
           source: "file://" + Quickshell.env("HOME") + "/.face"; sourceSize.width: 104; sourceSize.height: 104 }
         Text { anchors.centerIn: parent; visible: face.status !== Image.Ready; textFormat: Text.PlainText
-          text: root.userName.charAt(0); color: Theme.accentText; font.pixelSize: 22; font.bold: true }
+          text: root.userName.charAt(0); color: Theme.accentText; font.pixelSize: 22; font.weight: Theme.weightStrong }
       }
       Column {
         anchors.left: avatar.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: 2
         Text { textFormat: Text.PlainText; text: root.greeting; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
-        Text { textFormat: Text.PlainText; text: root.userName; color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 18; font.bold: true }
+        Text { textFormat: Text.PlainText; text: root.userName; color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 18; font.weight: Theme.weightStrong }
         Text { textFormat: Text.PlainText; text: root.host + (root.uptime !== "" ? " · up " + root.uptime : ""); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
       }
       Column {
         anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
         Text { anchors.right: parent.right; textFormat: Text.PlainText; text: Qt.formatDateTime(clock.date, "HH:mm")
-          color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 24; font.bold: true }
+          color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 24; font.weight: Theme.weightStrong }
         Text { anchors.right: parent.right; textFormat: Text.PlainText; text: Qt.formatDateTime(clock.date, "ddd, MMM d")
           color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
         Text { anchors.right: parent.right; visible: Power.present; textFormat: Text.PlainText
@@ -104,7 +104,7 @@ Item {
           required property var modelData
           visible: modelData.show
           width: (toggles.width - 4 * Theme.s8) / 5; height: 62; radius: Theme.tileRadius
-          color: modelData.on ? Theme.accent : Theme.surface
+          color: modelData.on ? Theme.accentFill : Theme.surface
           Behavior on color { ColorAnimation { duration: 150 } }
           readonly property color fg: modelData.on ? Theme.accentText : Theme.text
           readonly property color fgMuted: modelData.on ? Theme.textOnAccentMuted : Theme.textMuted
@@ -112,7 +112,7 @@ Item {
             anchors.centerIn: parent; width: parent.width - 10; spacing: 3
             Icon { anchors.horizontalCenter: parent.horizontalCenter; name: modelData.icon; size: Theme.iconMd; color: parent.parent.fg }
             Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-              text: modelData.title; color: parent.parent.fg; font.pixelSize: 11; font.bold: true }
+              text: modelData.title; color: parent.parent.fg; font.pixelSize: 11; font.weight: Theme.weightLabel }
             Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
               text: modelData.sub; color: parent.parent.fgMuted; font.pixelSize: 10 }
           }

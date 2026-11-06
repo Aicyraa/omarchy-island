@@ -56,12 +56,12 @@ WidgetPanel {
   // ---- header ----
   Item {
     width: parent.width; height: 44
-    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Bt.enabled ? Theme.accent : Theme.surface
+    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Bt.enabled ? Theme.accentFill : Theme.surface
       Icon { anchors.centerIn: parent; size: Theme.iconLg; name: "bluetooth"; color: Bt.enabled ? Theme.accentText : Theme.text } }
     Column {
       anchors.left: badge.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
       anchors.right: buttons.left; anchors.rightMargin: Theme.s8
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.bold: true
+      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
         text: !Bt.hasAdapter ? "No Bluetooth adapter" : (!Bt.enabled ? "Bluetooth is off" : (Bt.connectedName !== "" ? Bt.connectedName : "On")) }
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
         text: !Bt.hasAdapter ? "Nothing to manage on this machine" : (!Bt.enabled ? "Press B to turn it on"
@@ -80,7 +80,7 @@ WidgetPanel {
     property int offset: 0
     width: parent.width; spacing: Theme.rowGap
     visible: devices.length > 0
-    Text { textFormat: Text.PlainText; text: g.label.toUpperCase(); color: Theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 0.8 }
+    Text { textFormat: Text.PlainText; text: g.label.toUpperCase(); color: Theme.textMuted; font.pixelSize: 10; font.weight: Theme.weightLabel; font.letterSpacing: 0.8 }
     Repeater {
       model: g.devices
       delegate: ListRow {

@@ -25,7 +25,7 @@ WidgetPanel {
       textFormat: Text.PlainText; text: card.label; color: Theme.textMuted; font.pixelSize: 12 }
     // value and unit share a baseline
     Item { x: Theme.s16; y: 46; width: parent.width - 2 * Theme.s16; height: 34
-      Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text; font.pixelSize: 26; font.bold: true }
+      Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text; font.pixelSize: 26; font.weight: Theme.weightStrong }
       Text { anchors.left: val.right; anchors.leftMargin: 4; anchors.baseline: val.baseline; textFormat: Text.PlainText
         text: card.unit; color: Theme.textMuted; font.pixelSize: 12 } }
     Sparkline { x: Theme.s16; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s16

@@ -95,6 +95,11 @@ Singleton {
   readonly property int panelMinHeight: 48
   readonly property int panelMaxWidth: 720
   readonly property int iconSm: 16
+  // Type weights. Bold (700) is too heavy on a dark surface; Adwaita Sans (the system font) has real Medium and
+  // SemiBold cuts. Hierarchy comes from size and colour first: Strong for titles and big numbers (> 14 px),
+  // Label for small emphasised text, Normal for everything else.
+  readonly property int weightStrong: Font.DemiBold
+  readonly property int weightLabel: Font.Medium
   readonly property int iconMd: 20
   readonly property int iconLg: 24
 
@@ -106,28 +111,38 @@ Singleton {
   property color outline: Qt.color(pick("muted"))
   property color text: readable(Qt.color(pick("foreground")), surface, 4.5)
   // Secondary text must stay legible (>= 4.5:1) on the pill AND on tiles/rows.
-  property color textMuted: lift(Qt.color(pick("dark_foreground")), [surface, surfaceRaised, background], Qt.color(pick("foreground")), 4.5)
+  property color textMuted: lift(Qt.color(pick("dark_foreground")), [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
   property color accent: Qt.color(pick("accent"))
-  property color accentText: readable(background, accent, 4.5)
+  // Text on an accent fill. The accent itself is often mid-tone, which forces near-black text (heavy, harsh).
+  // So the FILL is the accent deepened toward the pill just far enough for the normal light text colour to reach
+  // 4.5:1, and the text on it stays the normal text colour. Falls back to the old flip only if that fails.
+  property color accentFill: {
+    for (var t = 0; t <= 0.60001; t += 0.05) { var c = mix(accent, pillBase, t); if (contrast(text, c) >= 4.5) return c }
+    return accent
+  }
+  property color accentText: readable(text, accentFill, 4.5)
   // Secondary text ON an accent fill (tile subtitles, badges): slightly softer than
   // accentText but still >= 4.5:1 against the accent.
   // Accent/status colours as TEXT, ICONS or LINES: nudged toward the text colour until they reach
   // 4.5:1 on the pill, tiles and raised rows. Use the plain accent/success/warning/danger only for
   // FILLS (with accentText / textOnWarning / textOnDanger on top), never for text.
-  property color accentInk: lift(accent, [surface, surfaceRaised, background], Qt.color(pick("foreground")), 4.5)
-  property color successInk: lift(success, [surface, surfaceRaised, background], Qt.color(pick("foreground")), 4.5)
-  property color warningInk: lift(warning, [surface, surfaceRaised, background], Qt.color(pick("foreground")), 4.5)
-  property color dangerInk: lift(danger, [surface, surfaceRaised, background], Qt.color(pick("foreground")), 4.5)
+  property color accentInk: lift(accent, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
+  property color successInk: lift(success, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
+  property color warningInk: lift(warning, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
+  property color dangerInk: lift(danger, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
   property color textOnWarning: readable(background, warning, 4.5)
   property color textOnDanger: readable(background, danger, 4.5)
-  property color textOnAccentMuted: lift(mix(accentText, accent, 0.25), [accent], accentText, 4.5)
+  property color textOnAccentMuted: lift(mix(accentText, accentFill, 0.25), [accentFill], accentText, 4.5)
   // Small label colour on a normal (inactive) tile, e.g. the number badge.
   property color badgeText: lift(mix(text, surface, 0.4), [surface, surfaceRaised], text, 4.5)
   property color success: Qt.color(pick("green"))
   property color warning: Qt.color(pick("yellow"))
   property color danger: Qt.color(pick("red"))
   // The pill itself: the theme background, slightly see-through for blur.
-  property color pill: Qt.rgba(background.r, background.g, background.b, 0.94)
+  // A near-black theme background (e.g. #03050f) is harsh and flattens the tiles; lift it toward the surface colour so
+  // the pill is a deep tone, not pure black (Material dark guidance: ~#121212, never #000). Lighter backgrounds are kept.
+  property color pillBase: luminance(background) < 0.01 ? mix(background, surface, 0.65) : background
+  property color pill: Qt.rgba(pillBase.r, pillBase.g, pillBase.b, 0.94)
 
   Behavior on background { ColorAnimation { duration: 250 } }
   Behavior on surface { ColorAnimation { duration: 250 } }
@@ -136,6 +151,8 @@ Singleton {
   Behavior on text { ColorAnimation { duration: 250 } }
   Behavior on textMuted { ColorAnimation { duration: 250 } }
   Behavior on accent { ColorAnimation { duration: 250 } }
+  Behavior on accentFill { ColorAnimation { duration: 250 } }
+  Behavior on pillBase { ColorAnimation { duration: 250 } }
   Behavior on accentText { ColorAnimation { duration: 250 } }
   Behavior on accentInk { ColorAnimation { duration: 250 } }
   Behavior on successInk { ColorAnimation { duration: 250 } }
@@ -151,13 +168,13 @@ Singleton {
   // `omarchy-shell island debug contrast` prints this; anything under 4.5 is flagged.
   function audit() {
     var pairs = [
-      ["text/background", text, background], ["text/surface", text, surface], ["text/surfaceRaised", text, surfaceRaised],
-      ["textMuted/background", textMuted, background], ["textMuted/surface", textMuted, surface], ["textMuted/surfaceRaised", textMuted, surfaceRaised],
+      ["text/pill", text, pillBase], ["text/surface", text, surface], ["text/surfaceRaised", text, surfaceRaised],
+      ["textMuted/pill", textMuted, pillBase], ["textMuted/surface", textMuted, surface], ["textMuted/surfaceRaised", textMuted, surfaceRaised],
       ["badgeText/surface", badgeText, surface], ["badgeText/surfaceRaised", badgeText, surfaceRaised],
-      ["accentText/accent", accentText, accent], ["textOnAccentMuted/accent", textOnAccentMuted, accent],
-      ["accentInk/surface", accentInk, surface], ["accentInk/background", accentInk, background], ["accentInk/surfaceRaised", accentInk, surfaceRaised],
+      ["accentText/accentFill", accentText, accentFill], ["textOnAccentMuted/accentFill", textOnAccentMuted, accentFill],
+      ["accentInk/surface", accentInk, surface], ["accentInk/pill", accentInk, pillBase], ["accentInk/surfaceRaised", accentInk, surfaceRaised],
       ["successInk/surface", successInk, surface], ["warningInk/surface", warningInk, surface], ["dangerInk/surface", dangerInk, surface],
-      ["successInk/background", successInk, background], ["warningInk/background", warningInk, background], ["dangerInk/background", dangerInk, background],
+      ["successInk/pill", successInk, pillBase], ["warningInk/pill", warningInk, pillBase], ["dangerInk/pill", dangerInk, pillBase],
       ["textOnWarning/warning", textOnWarning, warning], ["textOnDanger/danger", textOnDanger, danger]
     ]
     return pairs.map(function (p) { var r = contrast(p[1], p[2]); return { pair: p[0], ratio: +r.toFixed(2), pass: r >= 4.5, fg: String(p[1]), bg: String(p[2]) } })

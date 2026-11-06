@@ -99,10 +99,10 @@ WidgetPanel {
 
   // ---- header ----
   Item { width: parent.width; height: 28
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "World clock"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "World clock"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Rectangle { visible: !root.searching; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
       height: 28; width: addLabel.implicitWidth + Theme.s16 * 2; radius: 14; color: Theme.surface
-      Text { id: addLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.bold: true }
+      Text { id: addLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
       MouseArea { anchors.fill: parent; onClicked: { root.query = ""; root.pick = 0; root.searching = true } } } }
 
   // ---- rows (hidden while searching) ----
@@ -121,11 +121,11 @@ WidgetPanel {
         Icon { x: 0; anchors.verticalCenter: parent.verticalCenter; name: modelData.night ? "moon" : "sun"; size: Theme.iconMd
           color: modelData.night ? Theme.textMuted : Theme.warningInk }
         Column { x: Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter
-          Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: 13; font.bold: true }
+          Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
           Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 10
             text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · ") || " " } }
         Text { x: 170; width: 88; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-          text: modelData.time; color: Theme.text; font.pixelSize: 17; font.bold: true }
+          text: modelData.time; color: Theme.text; font.pixelSize: 17; font.weight: Theme.weightStrong }
         // ... then the 24h strip ABOVE it, so every row (including the selected one) shows its track:
         // a shaded 09:00-17:00 working band and a "now" marker.
         Rectangle { x: 270; anchors.verticalCenter: parent.verticalCenter

@@ -31,7 +31,7 @@ Item {
   height: implicitHeight
 
   readonly property real r: compact ? Theme.tileRadius + 4 : height / 2
-  readonly property color fill: on ? Theme.accent : Theme.surface
+  readonly property color fill: on ? Theme.accentFill : Theme.surface
   readonly property color fg: on ? Theme.accentText : Theme.text
   readonly property color fgMuted: on ? Theme.textOnAccentMuted : Theme.textMuted
   readonly property color badgeColor: on ? Theme.textOnAccentMuted : Theme.badgeText
@@ -54,7 +54,7 @@ Item {
     anchors.top: parent.top; anchors.right: parent.right
     anchors.topMargin: root.badgeInset; anchors.rightMargin: root.badgeInset
     textFormat: Text.PlainText; text: root.keyHint
-    color: root.badgeColor; font.pixelSize: 11; font.bold: true
+    color: root.badgeColor; font.pixelSize: 11; font.weight: Theme.weightLabel
   }
 
   // Compact: big icon with hold ring, label underneath.
@@ -77,7 +77,7 @@ Item {
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.top: iconBox.bottom; anchors.topMargin: Theme.s4
-      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 13; font.bold: true
+      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 13; font.weight: Theme.weightLabel
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
@@ -106,7 +106,7 @@ Item {
       spacing: 1
       Text { width: Math.max(10, root.width - root.textX - (root.keyHint !== "" ? root.badgeInset + 14 : Theme.s16))
         elide: Text.ElideRight; textFormat: Text.PlainText; text: root.title
-        color: root.fg; font.pixelSize: 13; font.bold: true }
+        color: root.fg; font.pixelSize: 13; font.weight: Theme.weightLabel }
       Text { visible: root.subtitle !== ""
         width: Math.max(10, root.width - root.textX - Theme.s16); elide: Text.ElideRight
         textFormat: Text.PlainText; text: root.subtitle; color: root.fgMuted; font.pixelSize: 11 }

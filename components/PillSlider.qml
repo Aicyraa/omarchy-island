@@ -28,7 +28,7 @@ Item {
   implicitHeight: thin ? 6 : Theme.sliderHeight
   height: implicitHeight
 
-  readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accent, 0.35) : Theme.accent
+  readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.35) : Theme.accentFill
   readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
   Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.surface
@@ -62,7 +62,7 @@ Item {
     visible: root.showValue && !root.thin
     anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter
     textFormat: Text.PlainText; text: Math.round(root.value * 100) + "%"
-    color: Theme.text; font.pixelSize: 12; font.bold: true
+    color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel
   }
 
   MouseArea {

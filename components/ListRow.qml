@@ -29,7 +29,7 @@ Item {
     anchors.fill: parent
     anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8      // bleeds 8px, leaving 8px to the pill edge
     radius: Theme.tileRadius
-    color: root.selected ? Theme.surfaceRaised : (root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14) : "transparent")
+    color: root.selected ? Theme.surfaceRaised : (root.active ? Qt.rgba(Theme.accentFill.r, Theme.accentFill.g, Theme.accentFill.b, 0.14) : "transparent")
     Behavior on color { ColorAnimation { duration: 120 } }
   }
 
@@ -43,7 +43,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     spacing: 1
     Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText    // names come from outside: untrusted
-      text: root.title; color: Theme.text; font.pixelSize: 13; font.bold: root.active; opacity: root.pending ? 0.6 : 1 }
+      text: root.title; color: Theme.text; font.pixelSize: 13; font.weight: root.active ? Theme.weightLabel : Font.Normal; opacity: root.pending ? 0.6 : 1 }
     Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
       visible: root.subtitle !== ""; text: root.subtitle; color: root.active ? Theme.accentInk : Theme.textMuted; font.pixelSize: 11 }
   }

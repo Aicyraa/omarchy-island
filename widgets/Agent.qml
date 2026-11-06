@@ -52,7 +52,7 @@ WidgetPanel {
   }
 
   compact: !loading && agents.length === 0
-  Text { textFormat: Text.PlainText; text: "Agents"; color: Theme.text; font.pixelSize: 15; font.bold: true; visible: root.agents.length > 0 }
+  Text { textFormat: Text.PlainText; text: "Agents"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong; visible: root.agents.length > 0 }
   Text { visible: !root.loading && root.agents.length === 0; textFormat: Text.PlainText
     text: "No agents with usage limits"; color: Theme.textMuted; font.pixelSize: 13 }
   Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading usage…"; color: Theme.textMuted; font.pixelSize: 13 }
@@ -65,7 +65,7 @@ WidgetPanel {
       Row { spacing: Theme.s8
         Icon { name: root.glyph(modelData.id); size: Theme.iconMd; color: modelData.top >= 0.9 ? Theme.dangerInk : Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
         Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter
-          text: modelData.name + (modelData.tier !== "" ? "  ·  " + modelData.tier : ""); color: Theme.text; font.pixelSize: 13; font.bold: true } }
+          text: modelData.name + (modelData.tier !== "" ? "  ·  " + modelData.tier : ""); color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel } }
       Repeater {
         model: modelData.limits
         delegate: Item {
@@ -77,7 +77,7 @@ WidgetPanel {
           Text { id: rst; anchors.right: parent.right; width: 92; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter
             textFormat: Text.PlainText; text: known ? root.resets(modelData.resetsAt) : ""; color: Theme.textMuted; font.pixelSize: 11 }
           Text { id: pct; anchors.right: rst.left; anchors.rightMargin: Theme.s8; width: 38; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter
-            textFormat: Text.PlainText; text: known ? Math.round(modelData.percent * 100) + "%" : "—"; color: known ? Theme.text : Theme.textMuted; font.pixelSize: 11; font.bold: true }
+            textFormat: Text.PlainText; text: known ? Math.round(modelData.percent * 100) + "%" : "—"; color: known ? Theme.text : Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
           Rectangle { anchors.left: lbl.right; anchors.leftMargin: Theme.s8; anchors.right: pct.left; anchors.rightMargin: Theme.s8
             anchors.verticalCenter: parent.verticalCenter; height: 8; radius: 4; color: Theme.surface; opacity: known ? 1 : 0.5
             Rectangle { visible: known; height: parent.height; radius: 4; width: parent.width * Math.min(1, modelData.percent)

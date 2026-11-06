@@ -10,7 +10,7 @@ Item {
   id: root
   property bool active: false
   property int bars: 24
-  property color color: Theme.accent
+  property color color: Theme.accentFill
   property var levels: []                       // 0..1 per bar (cava sends 0..~1000 whatever ascii_max_value says)
   visible: active                               // nothing to draw (no resting dotted line) unless playing
 

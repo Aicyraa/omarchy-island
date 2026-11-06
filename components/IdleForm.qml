@@ -23,7 +23,7 @@ Item {
   readonly property int iconGap: Theme.s8
 
   // ---- measuring (TextMetrics works even while an item is hidden) ----
-  TextMetrics { id: timeM; font.pixelSize: 12; font.bold: true; text: "00:00" }
+  TextMetrics { id: timeM; font.pixelSize: 12; font.weight: Theme.weightLabel; text: "00:00" }
   readonly property real timeW: timeM.advanceWidth
   readonly property real baseW: baseRow.implicitWidth
   readonly property real wsW: ws.implicitWidth
@@ -54,7 +54,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     textFormat: Text.PlainText
     text: Qt.formatDateTime(clock.date, "HH:mm")
-    color: Theme.text; font.pixelSize: 12; font.bold: true
+    color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel
     TapHandler { onTapped: IslandState.toggleWidget("calendar", form.win ? form.win.screenName : "") }
   }
 
@@ -75,7 +75,7 @@ Item {
         onClicked: Cmd.run(["omarchy-capture-screenrecording", "--stop-recording"])
         Row { spacing: 4
           Icon { name: "record"; size: Theme.iconSm; color: Theme.dangerInk; anchors.verticalCenter: parent.verticalCenter }
-          Text { id: recText; textFormat: Text.PlainText; color: Theme.dangerInk; font.pixelSize: 11; font.bold: true
+          Text { id: recText; textFormat: Text.PlainText; color: Theme.dangerInk; font.pixelSize: 11; font.weight: Theme.weightLabel
             anchors.verticalCenter: parent.verticalCenter
             property real startedAt: Date.now() - Indicators.recSeconds * 1000
             property int elapsed: 0

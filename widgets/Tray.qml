@@ -28,7 +28,7 @@ WidgetPanel {
 
   Text { visible: root.entries.length === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
     text: "No tray icons"; color: Theme.textMuted; font.pixelSize: 13 }
-  Text { visible: root.entries.length > 0; textFormat: Text.PlainText; text: "Tray"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+  Text { visible: root.entries.length > 0; textFormat: Text.PlainText; text: "Tray"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
   Grid {
     visible: root.entries.length > 0
     columns: root.cols; spacing: Theme.s8

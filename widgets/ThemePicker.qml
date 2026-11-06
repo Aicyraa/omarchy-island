@@ -77,7 +77,7 @@ WidgetPanel {
 
   // ---- header: title on the left, position / status on the right ----
   Item { width: parent.width; height: 24
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Themes"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Themes"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
       text: root.applying !== "" ? "Applying " + root.applying + "…" : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length : "")
       color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: 12 }
@@ -128,7 +128,7 @@ WidgetPanel {
               GradientStop { position: 0.55; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.88) }
               GradientStop { position: 1; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.96) } } }
           Text { x: Theme.s12; y: parent.height - 38; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: modelData.name; color: card.themeFg; font.pixelSize: 12; font.bold: true }
+            text: modelData.name; color: card.themeFg; font.pixelSize: 12; font.weight: Theme.weightLabel }
           Row { x: Theme.s12; y: parent.height - 19; spacing: 4
             Repeater { model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
               delegate: Rectangle { required property string modelData; width: 10; height: 10; radius: 5; color: modelData
@@ -138,7 +138,7 @@ WidgetPanel {
           Rectangle { x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.45)
             Icon { anchors.centerIn: parent; name: modelData.mode === "light" ? "sun" : "moon"; size: 13; color: Qt.rgba(1, 1, 1, 0.92) } }
           // current-theme badge, top-right
-          Rectangle { visible: card.isCurrent; x: parent.width - 30; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accent
+          Rectangle { visible: card.isCurrent; x: parent.width - 30; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accentFill
             Icon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText; strokeWidth: 2.4 } }
 
           MouseArea { anchors.fill: parent; onClicked: { root.sel = card.index; root.apply(modelData) } }
