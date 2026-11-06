@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.aicyraa.island",
+  "name": "Island",
+  "version": "0.1.0",
+  "author": "aicyraa",
+  "description": "A single morphing pill bar: idle, hover, widget and HUD states.",
+  "kinds": ["bar"],
+  "entryPoints": { "bar": "Bar.qml" }
+}
