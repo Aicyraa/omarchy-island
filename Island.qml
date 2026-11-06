@@ -156,6 +156,7 @@ PanelWindow {
       overflowX: over.length,
       zone: { w: Math.round(zone.width), h: Math.round(zone.height) },
       layers: { hoverOpen: IslandState.hoverOpen, hovered: Object.keys(IslandState.hovered), hud: IslandState.hudActive },
+      reveal: { shown: pill.shownMode, fade: +content.fade.toFixed(2), fit: +pill.fit.toFixed(2), gating: pill.gating, opacity: +content.opacity.toFixed(2), h: Math.round(pill.height), w: Math.round(pill.width) },
       clockDX: clock ? +((clock.x + clock.w / 2) - pill.width / 2).toFixed(1) : null,
       items: all.length })
   }
@@ -209,13 +210,18 @@ PanelWindow {
 
     // SpringAnimation: `spring` = stiffness, `damping` = how fast bounce dies,
     // `epsilon` = stop threshold. See README tuning cheat sheet.
+    // GROWING is bouncy (spring 3.4/3.0, damping 0.26/0.28). SHRINKING uses a stiffer, better-damped spring
+    // (6.0, 0.55). A bouncy spring shrinking toward a small target dips BELOW it and then re-expands, which
+    // clips the idle bar's icons and makes them flash twice when a widget closes. Measured collapse of the
+    // Power widget to the 26px idle bar: heights 154 95 52 35 29 27 26 (never below 26). Note Qt's `damping`
+    // is not a damping ratio: 1.0 does not mean "critical", it just crawls (the collapse took ~0.7 s).
     Behavior on width {
       enabled: !IslandState.reducedMotion
-      SpringAnimation { spring: 3.4; damping: 0.26; epsilon: 0.5 }
+      SpringAnimation { spring: win.shrinkW ? 6.0 : 3.4; damping: win.shrinkW ? 0.55 : 0.26; epsilon: 0.5 }
     }
     Behavior on height {
       enabled: !IslandState.reducedMotion
-      SpringAnimation { spring: 3.0; damping: 0.28; epsilon: 0.5 }
+      SpringAnimation { spring: win.shrinkH ? 6.0 : 3.0; damping: win.shrinkH ? 0.55 : 0.28; epsilon: 0.5 }
     }
 
     // Debug overlay: every item's box (magenta = text, cyan = icon/shape, yellow = other),
@@ -351,7 +357,13 @@ PanelWindow {
 
   // The 40ms-late height (see below).
   property real delayedH: target.height
+  property size prevTarget: Qt.size(0, 0)
+  property bool shrinkW: false
+  property bool shrinkH: false
   onTargetChanged: {
+    shrinkW = target.width < prevTarget.width
+    shrinkH = target.height < prevTarget.height
+    prevTarget = target
     if (IslandState.reducedMotion) delayedH = target.height
     else heightGate.restart()
   }
