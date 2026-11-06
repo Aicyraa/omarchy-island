@@ -168,7 +168,7 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | U | free | system usage |
 | G | free | tray |
 | T and SHIFT + SPACE | Omarchy theme menu (`rebind`) | island theme picker |
-| SHIFT + A | Omarchy Agent (`omarchy-agent --pick`) | Omarchy Agent, launches the default agent in a terminal (no island widget key; use `omarchy-shell island toggle agent`) |
+| SHIFT + A | Omarchy Agent (`omarchy-agent --pick`) | Omarchy Agent, launches the default agent in a terminal (the island agent widget is on SUPER + ALT + A) |
 | ALT + W | free | weather |
 | ALT + ESCAPE | free | panic: `omarchy restart shell` |
 
