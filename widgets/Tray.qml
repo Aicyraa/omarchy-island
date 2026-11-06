@@ -3,15 +3,17 @@ import Quickshell.Services.SystemTray
 import ".."
 import "../services"
 
-// Tray: status icons from apps (StatusNotifierItem), as a grid.
-// Left click activates the app; right click sends its secondary action (many apps
-// use it for the context menu). Keys: arrows select, Enter activate, M secondary.
-Item {
+// Tray: status icons from apps (StatusNotifierItem) as a grid. With no icons it is
+// a small content-sized toast, not a full panel.
+// Left click activates; right click sends the app's secondary action (many apps use
+// it for the context menu). Keys: arrows select, Enter activate, M secondary.
+WidgetPanel {
   id: root
-  focus: true
-  property string hint: "arrows select · Enter activate · M secondary · Esc close"
-  property int sel: 0
   readonly property var entries: SystemTray.items.values
+  compact: entries.length === 0
+  preferredWidth: entries.length === 0 ? 200 : 460
+  hint: "arrows select · Enter activate · M secondary · Esc close"
+  property int sel: 0
   readonly property int cols: 6
 
   Keys.onPressed: function (e) {
@@ -24,16 +26,19 @@ Item {
     else if (e.key === Qt.Key_M) { entries[sel].secondaryActivate(); e.accepted = true }
   }
 
-  Text { x: 22; y: 14; textFormat: Text.PlainText; text: "Tray"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+  Text { visible: root.entries.length === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
+    text: "No tray icons"; color: Theme.textMuted; font.pixelSize: 13 }
+  Text { visible: root.entries.length > 0; textFormat: Text.PlainText; text: "Tray"; color: Theme.text; font.pixelSize: 15; font.bold: true }
   Grid {
-    x: 18; y: 50; columns: root.cols; spacing: 10
+    visible: root.entries.length > 0
+    columns: root.cols; spacing: Theme.s8
     Repeater {
       model: root.entries
       delegate: Item {
         required property var modelData
         required property int index
         width: 56; height: 56
-        Rectangle { anchors.fill: parent; radius: 18; color: Theme.surface
+        Rectangle { anchors.fill: parent; radius: Theme.tileRadius; color: Theme.surface
           border.width: root.sel === index ? 2 : 0; border.color: Theme.text }
         Image { anchors.centerIn: parent; width: 28; height: 28; source: modelData.icon; sourceSize: Qt.size(56, 56); asynchronous: true }
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -41,6 +46,4 @@ Item {
       }
     }
   }
-  Text { visible: root.entries.length === 0; anchors.centerIn: parent; textFormat: Text.PlainText
-    text: "No tray icons"; color: Theme.textMuted; font.pixelSize: 14 }
 }

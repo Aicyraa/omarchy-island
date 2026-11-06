@@ -3,11 +3,15 @@ singleton Theme 1.0 Theme.qml
 Island 1.0 Island.qml
 Bar 1.0 Bar.qml
 Workspaces 1.0 components/Workspaces.qml
-WifiBars 1.0 components/WifiBars.qml
 BatteryIcon 1.0 components/BatteryIcon.qml
 Icon 1.0 components/Icon.qml
 Tile 1.0 components/Tile.qml
 PillSlider 1.0 components/PillSlider.qml
 VolumeIcon 1.0 components/VolumeIcon.qml
-ListItem 1.0 components/ListItem.qml
 BarIcon 1.0 components/BarIcon.qml
+WidgetPanel 1.0 components/WidgetPanel.qml
+ListRow 1.0 components/ListRow.qml
+IconButton 1.0 components/IconButton.qml
+WifiIcon 1.0 components/WifiIcon.qml
+Sparkline 1.0 components/Sparkline.qml
+IdleForm 1.0 components/IdleForm.qml

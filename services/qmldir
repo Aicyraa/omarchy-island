@@ -6,3 +6,4 @@ singleton Brightness 1.0 Brightness.qml
 singleton Indicators 1.0 Indicators.qml
 singleton Bt 1.0 Bt.qml
 singleton Notifs 1.0 Notifs.qml
+singleton Stats 1.0 Stats.qml

@@ -19,9 +19,17 @@ Singleton {
   readonly property bool low: present && level <= 0.2 && !charging
 
   // Details for the Battery widget. UPower reports seconds and watts.
+  readonly property bool full: present && dev.state === UPowerDeviceState.FullyCharged
+  readonly property bool discharging: present && dev.state === UPowerDeviceState.Discharging
+  readonly property string stateText: !present ? "" : full ? "Fully charged" : charging ? "Charging"
+    : discharging ? "Discharging" : (dev.state === UPowerDeviceState.PendingCharge ? "Not charging" : "")
   readonly property real watts: present ? Math.abs(dev.changeRate) : 0
-  readonly property real health: present ? dev.healthPercentage : 0   // 0..100
-  readonly property real secondsLeft: !present ? 0 : (charging ? dev.timeToFull : dev.timeToEmpty)
+  // Health = energyFull / energyFullDesign. UPower exposes it as healthPercentage when it
+  // knows it, and as energyCapacity (the same ratio) otherwise.
+  // (Quickshell does not expose the design capacity, so when healthPercentage is unavailable the
+  // Battery widget reads it once from `upower -i`.)
+  readonly property real health: !present ? 0 : (dev.healthSupported && dev.healthPercentage > 0 ? dev.healthPercentage : 0)
+  readonly property real secondsLeft: !present ? 0 : (charging ? dev.timeToFull : (discharging ? dev.timeToEmpty : 0))
   function timeText(sec) {
     if (!sec || sec <= 0) return ""
     var h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60)

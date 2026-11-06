@@ -18,5 +18,13 @@ ShellIpc {
   function lastCommand(): string { return Cmd.last }
   function hints(): string { return IslandState.hintsVisible ? "on" : "off" }
   function dryRun(): string { return Cmd.dryRun ? "yes" : "no" }
+  // `debug layout` toggles the overlay, `debug measure` returns JSON, `debug off` hides it.
+  function debug(what: string): string {
+    if (what === "layout") { IslandState.debugLayout = !IslandState.debugLayout; return IslandState.debugLayout ? "on" : "off" }
+    if (what === "off") { IslandState.debugLayout = false; return "off" }
+    if (what === "measure") { IslandState.measureRequested(); return IslandState.measureResult }
+    if (what === "contrast") return JSON.stringify(Theme.audit())
+    return "usage: debug layout|measure|contrast|off"
+  }
   function mode(): string { return IslandState.mode }
 }

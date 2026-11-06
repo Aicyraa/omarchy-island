@@ -1,24 +1,28 @@
 .pragma library
 
-// name -> { file, w, h }. Sizes are the widget's panel size in px (the hint row
-// is added on top by Island). Names not listed here fall back to Placeholder.
+// name -> { file, w, h }.
+// w/h are only an ESTIMATE used for the first frames of an open (before the widget
+// is loaded and can report its real size). Each widget is built on WidgetPanel, whose
+// implicitWidth/implicitHeight (content + padding, clamped) is what actually sizes the
+// pill; the spring retargets when the real size arrives. Names not listed fall back
+// to Placeholder.
 var widgets = {
-  home:  { file: "Home.qml",  w: 480, h: 322 },
-  wifi:      { file: "Wifi.qml",      w: 480, h: 380 },
-  bluetooth: { file: "Bluetooth.qml", w: 460, h: 340 },
-  audio:     { file: "Audio.qml",     w: 680, h: 340 },
-  display:   { file: "Display.qml",   w: 460, h: 246 },
-  battery:   { file: "Battery.qml",   w: 460, h: 236 },
-  calendar:  { file: "Calendar.qml",  w: 400, h: 330 },
-  worldclock:{ file: "WorldClock.qml",w: 620, h: 340 },
-  system:    { file: "System.qml",    w: 620, h: 190 },
-  notifications: { file: "Notifications.qml", w: 460, h: 360 },
-  media:     { file: "Media.qml",     w: 480, h: 196 },
-  tray:      { file: "Tray.qml",      w: 460, h: 170 },
-  theme:     { file: "ThemePicker.qml", w: 720, h: 390 },
-  weather:   { file: "Weather.qml",   w: 440, h: 140 },
-  agent:     { file: "Agent.qml",     w: 560, h: 300 },
-  power: { file: "Power.qml", w: 580, h: 236 }
+  home: { file: "Home.qml", w: 480, h: 300 },
+  wifi: { file: "Wifi.qml", w: 480, h: 300 },
+  bluetooth: { file: "Bluetooth.qml", w: 480, h: 220 },
+  audio: { file: "Audio.qml", w: 640, h: 260 },
+  display: { file: "Display.qml", w: 460, h: 230 },
+  battery: { file: "Battery.qml", w: 480, h: 220 },
+  calendar: { file: "Calendar.qml", w: 400, h: 330 },
+  worldclock: { file: "WorldClock.qml", w: 620, h: 360 },
+  power: { file: "Power.qml", w: 600, h: 230 },
+  notifications: { file: "Notifications.qml", w: 480, h: 300 },
+  media: { file: "Media.qml", w: 480, h: 210 },
+  system: { file: "System.qml", w: 620, h: 214 },
+  tray: { file: "Tray.qml", w: 200, h: 72 },
+  theme: { file: "ThemePicker.qml", w: 720, h: 300 },
+  weather: { file: "Weather.qml", w: 440, h: 130 },
+  agent: { file: "Agent.qml", w: 560, h: 280 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }
 

@@ -1,38 +1,73 @@
 import QtQuick
 import ".."
 
-// A large pill slider with the icon INSIDE the filled track (Android style).
-// value is 0..1. Emits moved(v) while dragging; the owner writes the value back.
+// The ONE slider. A thick pill track with the icon INSIDE the filled part (the
+// Android quick-settings look). Used for volume, brightness, mic, the HUD, and
+// (thin variant) media progress.
+//
+//   value      0..1
+//   showValue  draws the percentage right-aligned inside the track
+//   dimmed     fill drawn muted (a muted mic still shows its level)
+//   badge      small icon on the leading icon (e.g. "x" for muted)
+//   thin       6px progress bar, no icon
 // The fill's leading edge stretches a little while dragged ("thumb stretch").
 Item {
   id: root
   property string icon: ""
+  property Component iconItem: null        // optional custom icon (e.g. the animated VolumeIcon)
   property real value: 0
   property real step: 0.05
   property bool selected: false
-  property Component iconItem: null     // optional custom icon (e.g. the animated VolumeIcon)
+  property bool showValue: false
+  property bool dimmed: false
+  property bool thin: false
+  property string badge: ""
+  property bool interactive: true
   signal moved(real v)
-  implicitHeight: 44
+
+  implicitHeight: thin ? 6 : Theme.sliderHeight
+  height: implicitHeight
+
+  readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accent, 0.35) : Theme.accent
+  readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
   Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.surface
     border.width: root.selected ? 2 : 0; border.color: Theme.text }
 
   Rectangle {
     id: fill
-    // Never narrower than the icon so it always stays inside the fill.
-    width: Math.max(height, root.width * root.value) + (area.pressed ? 6 : 0)
+    // Never narrower than the icon so the icon always stays inside the fill.
+    width: Math.max(root.thin ? 0 : height, root.width * root.value) + (area.pressed && !root.thin ? 6 : 0)
     height: parent.height; radius: height / 2
-    color: Theme.accent
+    color: root.fillColor
     Behavior on width { enabled: !area.pressed; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
-    Loader {
-      anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter
-      sourceComponent: root.iconItem ? root.iconItem : plainIcon
+    Behavior on color { ColorAnimation { duration: 200 } }
+
+    Item {
+      visible: !root.thin
+      anchors.left: parent.left; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
+      width: Theme.iconMd; height: Theme.iconMd
+      Loader { anchors.fill: parent; sourceComponent: root.iconItem ? root.iconItem : plainIcon }
+      Component { id: plainIcon; Icon { name: root.icon; size: Theme.iconMd; color: root.iconColor } }
+      Rectangle {                              // badge, e.g. the mute mark on the icon
+        visible: root.badge !== ""
+        x: parent.width - 9; y: parent.height - 9; width: 12; height: 12; radius: 6; color: Theme.danger
+        border.width: 1.5; border.color: root.fillColor
+        Icon { anchors.centerIn: parent; name: root.badge; size: 8; color: Theme.textOnDanger; strokeWidth: 3 }
+      }
     }
-    Component { id: plainIcon; Icon { name: root.icon; size: 20; color: Theme.accentText } }
+  }
+
+  Text {
+    visible: root.showValue && !root.thin
+    anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter
+    textFormat: Text.PlainText; text: Math.round(root.value * 100) + "%"
+    color: Theme.text; font.pixelSize: 12; font.bold: true
   }
 
   MouseArea {
     id: area
+    enabled: root.interactive
     anchors.fill: parent
     function set(x) { root.moved(Math.max(0, Math.min(1, x / width))) }
     onPressed: function (m) { set(m.x) }

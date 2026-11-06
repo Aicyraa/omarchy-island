@@ -4,17 +4,14 @@ import "../services"
 
 // Home: Android-style quick settings. A grid of toggle tiles with live state
 // plus large volume and brightness sliders.
-//
-// Keys: arrows move (←/→ on a slider adjusts it), Enter toggles the selected
-// tile, 1-6 toggle a tile directly, O opens the selected item's detail widget,
-// M mutes. Esc closes (Island).
-Item {
+// Keys: arrows move (←/→ on a slider adjusts it), Enter toggles, 1-6 toggle a tile,
+// O opens the selected item's detail widget, M mutes.
+WidgetPanel {
   id: root
-  focus: true
-  property string hint: "1-6 toggle · arrows move · Enter toggle · O details · M mute · Esc close"
+  preferredWidth: 480
+  hint: "1-6 toggle · arrows move · Enter toggle · O details · M mute · Esc close"
 
-  // 0-5 are tiles, 6 volume slider, 7 brightness slider.
-  property int sel: 0
+  property int sel: 0                    // 0-5 tiles, 6 volume, 7 brightness
 
   readonly property var tiles: [
     { icon: Net.enabled ? "wifi" : "wifi-off", title: "Wi-Fi",
@@ -45,7 +42,8 @@ Item {
       else if (dy > 0) sel = (sel + 2 < 6) ? sel + 2 : 6
       else if (dy < 0 && sel >= 2) sel -= 2
     } else if (dx !== 0) adjust(dx * 0.05)
-    else sel = Math.max(sel >= 6 && dy < 0 ? (sel === 6 ? 4 : 6) : sel + dy, 0)
+    else if (dy < 0) sel = sel === 6 ? 4 : 6
+    else if (dy > 0) sel = 7
   }
 
   Keys.onPressed: function (e) {
@@ -61,52 +59,36 @@ Item {
       var name = sel < 6 ? tiles[sel].open : (sel === 6 ? "audio" : "display")
       if (name !== "") IslandState.openWidget(name, ""); e.accepted = true }
   }
-
-  // Read hardware state once when the widget opens (no polling).
   Component.onCompleted: { Brightness.refresh(); Indicators.refresh() }
 
-  // ---- tile grid: 2 columns; hidden tiles (no adapter) collapse out ----
   Grid {
-    id: grid
-    x: 18; y: 18
-    columns: 2; spacing: 10
+    width: parent.width; columns: 2; spacing: Theme.s8
     Repeater {
       model: root.tiles
       delegate: Tile {
         required property var modelData
         required property int index
         visible: modelData.show
-        width: (root.width - 36 - 10) / 2; height: 56
+        width: (parent.width - Theme.s8) / 2
         icon: modelData.icon; title: modelData.title; subtitle: modelData.sub
-        on: modelData.on
-        selected: root.sel === index
-        keyHint: String(index + 1)
+        on: modelData.on; selected: root.sel === index; keyHint: String(index + 1)
         onClicked: { root.sel = index; modelData.toggle() }
         onRightClicked: if (modelData.open !== "") IslandState.openWidget(modelData.open, "")
       }
     }
   }
-
-  // ---- sliders ----
-  Column {
-    x: 18; y: 18 + 3 * 56 + 2 * 10 + 16
-    width: root.width - 36
-    spacing: 10
-    PillSlider {
-      width: parent.width
-      icon: "volume"                       // replaced by the animated VolumeIcon below
-      iconItem: VolumeIcon { level: Audio.volume; muted: Audio.muted; size: 20; color: Theme.accentText }
-      value: Audio.muted ? 0 : Audio.volume
-      selected: root.sel === 6
-      onMoved: function (v) { root.sel = 6; Audio.setVolume(v) }
-    }
-    PillSlider {
-      width: parent.width
-      icon: "sun"
-      value: Brightness.level
-      visible: Brightness.available
-      selected: root.sel === 7
-      onMoved: function (v) { root.sel = 7; Brightness.set(v) }
-    }
+  PillSlider {
+    width: parent.width
+    icon: "volume"
+    iconItem: VolumeIcon { level: Audio.volume; muted: Audio.muted; size: Theme.iconMd; color: Theme.accentText }
+    value: Audio.muted ? 0 : Audio.volume
+    selected: root.sel === 6
+    onMoved: function (v) { root.sel = 6; Audio.setVolume(v) }
+  }
+  PillSlider {
+    width: parent.width
+    icon: "sun"; value: Brightness.level; visible: Brightness.available
+    selected: root.sel === 7
+    onMoved: function (v) { root.sel = 7; Brightness.set(v) }
   }
 }

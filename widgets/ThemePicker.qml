@@ -1,16 +1,19 @@
 import QtQuick
 import Quickshell.Io
+import Quickshell.Widgets
 import ".."
 import "../services"
 
 // Theme picker: cards with colour swatches and a wallpaper preview, built from the
 // theme folders (user themes in ~/.config/omarchy/themes, built-ins in OMARCHY_PATH).
-// The current theme is marked. Applying uses Omarchy's own `omarchy-theme-set`.
+// Each card is a ClippingRectangle, so the preview follows the card's rounded
+// corners. The panel scrolls when there are more themes than fit, and the selected
+// card is kept in view. Applying uses Omarchy's own `omarchy-theme-set`.
 // Keys: arrows move · Enter apply · Esc close.
-Item {
+WidgetPanel {
   id: root
-  focus: true
-  property string hint: "arrows move · Enter apply · Esc close"
+  preferredWidth: 720
+  hint: "arrows move · Enter apply · Esc close"
   property var themes: []
   property string current: ""
   property int sel: 0
@@ -27,7 +30,7 @@ Item {
     else if (e.key === Qt.Key_Up) sel = Math.max(sel - cols, 0)
     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) apply(themes[sel])
     else return
-    grid.positionViewAtIndex(sel, GridView.Contain); e.accepted = true
+    e.accepted = true
   }
 
   // One batched read of every theme's name, preview image and key colours.
@@ -57,34 +60,35 @@ Item {
     stdout: StdioCollector { onStreamFinished: { root.current = text.trim()
       for (var i = 0; i < root.themes.length; i++) if (root.themes[i].name === root.current) root.sel = i } } }
 
-  Text { x: 22; y: 14; textFormat: Text.PlainText; text: "Themes"; color: Theme.text; font.pixelSize: 15; font.bold: true }
-  Text { visible: root.loading; anchors.centerIn: parent; textFormat: Text.PlainText
-    text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: 13 }
+  Text { textFormat: Text.PlainText; text: "Themes"; color: Theme.text; font.pixelSize: 15; font.bold: true }
+  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: 13 }
 
-  GridView {
-    id: grid
-    x: 14; y: 44; width: root.width - 28; height: root.height - 54
-    clip: true; model: root.themes
-    cellWidth: width / root.cols; cellHeight: 132
-    delegate: Item {
-      required property var modelData
-      required property int index
-      width: grid.cellWidth; height: grid.cellHeight
-      Rectangle { anchors.fill: parent; anchors.margins: 5; radius: 16; color: Theme.surface; clip: true
+  Grid {
+    width: parent.width; columns: root.cols; spacing: Theme.s8
+    Repeater {
+      model: root.themes
+      delegate: ClippingRectangle {
+        id: card
+        required property var modelData
+        required property int index
+        readonly property bool hasImage: /\.(png|jpe?g|webp)$/i.test(modelData.preview)
+        width: (parent.width - (root.cols - 1) * Theme.s8) / root.cols; height: 124
+        radius: Theme.tileRadius; color: Theme.surface
         border.width: root.sel === index ? 2 : 0; border.color: Theme.text
-        // wallpaper preview (images only; loaded lazily for visible cards)
-        Image { x: 0; y: 0; width: parent.width; height: 78; fillMode: Image.PreserveAspectCrop; asynchronous: true
-          sourceSize: Qt.size(240, 160)
-          source: /\.(png|jpe?g|webp)$/i.test(modelData.preview) ? "file://" + modelData.preview : "" }
-        Rectangle { visible: !(/\.(png|jpe?g|webp)$/i.test(modelData.preview)); width: parent.width; height: 78; color: modelData.bg }
-        Text { x: 10; y: 84; width: parent.width - 60; elide: Text.ElideRight; textFormat: Text.PlainText
+        onVisibleChanged: {}
+        // keep the selected card in view
+        Connections { target: root; function onSelChanged() { if (root.sel === card.index) root.reveal(card) } }
+        Image { visible: card.hasImage; x: 0; y: 0; width: parent.width; height: 76; fillMode: Image.PreserveAspectCrop; asynchronous: true
+          sourceSize: Qt.size(240, 160); source: card.hasImage ? "file://" + modelData.preview : "" }
+        Rectangle { visible: !card.hasImage; width: parent.width; height: 76; color: modelData.bg }
+        Text { x: Theme.s12; y: 82; width: parent.width - 2 * Theme.s12 - 20; elide: Text.ElideRight; textFormat: Text.PlainText
           text: modelData.name; color: Theme.text; font.pixelSize: 12; font.bold: true }
-        Row { x: 10; y: 106; spacing: 4
+        Row { x: Theme.s12; y: 102; spacing: 4
           Repeater { model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
             delegate: Rectangle { required property string modelData; width: 12; height: 12; radius: 6; color: modelData
               border.width: 1; border.color: Theme.outline } } }
-        Icon { visible: modelData.name === root.current; anchors.right: parent.right; anchors.rightMargin: 8; y: 84
-          name: "check"; size: 16; color: Theme.success }
+        Icon { visible: modelData.name === root.current; anchors.right: parent.right; anchors.rightMargin: Theme.s8; y: 80
+          name: "check"; size: Theme.iconSm; color: Theme.successInk }
         MouseArea { anchors.fill: parent; onClicked: { root.sel = index; root.apply(modelData) } }
       }
     }

@@ -21,7 +21,7 @@ Item {
   // What the Omarchy host reads from the active bar (panels use these to anchor
   // under it, and the "toggle bar" key to hide it).
   readonly property bool barHidden: IslandState.barHidden
-  readonly property int barSize: 38                // top margin 6 + idle pill 32
+  readonly property int barSize: 26                // idle pill height, flush with the top edge
   readonly property string position: "top"
   readonly property string fontFamily: ""
   readonly property var screenBarSizes: ({})

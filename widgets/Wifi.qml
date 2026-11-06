@@ -1,22 +1,26 @@
 import QtQuick
 import Quickshell.Io
+import Quickshell.Networking
 import ".."
 import "../services"
 
-// Wi-Fi: current connection details plus the list of networks.
-// Keys: ↑/↓ select, Enter connect, D disconnect, W radio on/off.
-Item {
+// Wi-Fi: connection header with power and rescan buttons, four equal metric
+// columns, and one uniform row per network.
+// Keys: ↑/↓ select, Enter connect, D disconnect, W radio on/off, R rescan.
+WidgetPanel {
   id: root
-  focus: true
-  property string hint: "↑/↓ select · Enter connect · D disconnect · W radio · Esc close"
+  preferredWidth: 480
+  hint: "↑/↓ select · Enter connect · D disconnect · W radio · R rescan · Esc close"
+
   property int sel: 0
-  property var info: ({})            // key -> value from omarchy-network-status
+  property var info: ({})
   property bool loadingInfo: true
-
   readonly property var nets: Net.networks
-  function band(f) { var n = parseFloat(f); return isNaN(n) ? "" : (n >= 5900 ? "6 GHz" : n >= 4900 ? "5 GHz" : "2.4 GHz") }
-  function bars(frac) { return frac > 0.75 ? "Excellent" : frac > 0.5 ? "Good" : frac > 0.25 ? "Fair" : "Weak" }
 
+  function band(f) { var n = parseFloat(f); return isNaN(n) ? "" : (n >= 5900 ? "6 GHz" : n >= 4900 ? "5 GHz" : "2.4 GHz") }
+  function quality(frac) { return frac > 0.75 ? "Excellent" : frac > 0.5 ? "Good" : frac > 0.25 ? "Fair" : "Weak" }
+  function secured(n) { return n.security !== WifiSecurityType.Open }
+  function subtitleOf(n) { return n.connected ? "Connected" : (n.known ? "Saved" : (secured(n) ? "Secured" : "Open")) }
   function connect(n) {
     // Known networks reconnect natively. A new secured network needs a password,
     // which only NetworkManager's own prompt should ask for, so hand off to nmtui.
@@ -24,74 +28,80 @@ Item {
     if (n.known) n.connect()
     else Cmd.run(["omarchy-launch-floating-terminal-with-presentation", "nmtui connect"])
   }
+  function rescan() { Cmd.run(["nmcli", "dev", "wifi", "rescan"]) }
 
   Keys.onPressed: function (e) {
-    if (e.key === Qt.Key_Down) { sel = Math.min(sel + 1, nets.length - 1); list.positionViewAtIndex(sel, ListView.Contain); e.accepted = true }
-    else if (e.key === Qt.Key_Up) { sel = Math.max(sel - 1, 0); list.positionViewAtIndex(sel, ListView.Contain); e.accepted = true }
+    if (e.key === Qt.Key_Down) { sel = Math.min(sel + 1, nets.length - 1); e.accepted = true }
+    else if (e.key === Qt.Key_Up) { sel = Math.max(sel - 1, 0); e.accepted = true }
     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (nets[sel]) connect(nets[sel]); e.accepted = true }
     else if (e.key === Qt.Key_D) { if (Net.active) Net.active.disconnect(); e.accepted = true }
     else if (e.key === Qt.Key_W) { Net.toggle(); e.accepted = true }
+    else if (e.key === Qt.Key_R) { rescan(); e.accepted = true }
   }
+  // Scan only while this widget is open (hygiene: no background scanning).
+  Component.onCompleted: if (Net.device) Net.device.scannerEnabled = true
+  Component.onDestruction: if (Net.device) Net.device.scannerEnabled = false
 
   // ---- header ----
-  Rectangle { x: 18; y: 16; width: 44; height: 44; radius: 22; color: Net.connected ? Theme.accent : Theme.surface
-    Icon { anchors.centerIn: parent; size: 22; name: Net.enabled ? "wifi" : "wifi-off"
-      color: Net.connected ? Theme.accentText : Theme.text } }
-  Column {
-    x: 74; y: 18; spacing: 2
-    Text { textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.bold: true
-      text: !Net.hasWifi ? "No Wi-Fi adapter" : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? Net.ssid : "Not connected")) }
-    Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
-      text: !Net.hasWifi ? "Nothing to manage on this machine"
-          : (!Net.enabled ? "Press W to turn it on" : (Net.connected ? bars(Net.strength) + " signal" : "Pick a network below")) }
+  Item {
+    width: parent.width; height: 44
+    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Net.connected ? Theme.accent : Theme.surface
+      WifiIcon { anchors.centerIn: parent; size: Theme.iconLg; off: !Net.enabled; level: Net.connected ? Net.strength : 0
+        color: Net.connected ? Theme.accentText : Theme.text } }
+    Column {
+      anchors.left: badge.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
+      anchors.right: buttons.left; anchors.rightMargin: Theme.s8
+      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.bold: true
+        text: !Net.hasWifi ? "No Wi-Fi adapter" : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? Net.ssid : "Not connected")) }
+      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
+        text: !Net.hasWifi ? "Nothing to manage on this machine"
+            : (!Net.enabled ? "Press W to turn it on" : (Net.connected ? quality(Net.strength) + " signal" : "Pick a network below")) }
+    }
+    Row { id: buttons; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8; visible: Net.hasWifi
+      IconButton { icon: "power"; on: Net.enabled; onClicked: Net.toggle() }
+      IconButton { icon: "refresh"; visible: Net.enabled; onClicked: root.rescan() } }
   }
 
-  // ---- live details (only while connected) ----
-  Grid {
+  // ---- four equal metric columns across the full width ----
+  Row {
     visible: Net.connected && !root.loadingInfo
-    x: 18; y: 70; columns: 4; columnSpacing: 22; rowSpacing: 2
+    width: parent.width; spacing: 0
     Repeater {
-      model: [
-        { k: "IP", v: root.info.ip || "-" },
-        { k: "Signal", v: root.info.signal_dbm ? root.info.signal_dbm + " dBm" : "-" },
-        { k: "Band", v: root.band(root.info.freq) || "-" },
-        { k: "Speed", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "-" }
-      ]
-      delegate: Column {
-        required property var modelData
+      model: [ { k: "IP", v: root.info.ip || "—" },
+               { k: "Signal", v: root.info.signal_dbm ? root.info.signal_dbm + " dBm" : "—" },
+               { k: "Band", v: root.band(root.info.freq) || "—" },
+               { k: "Speed", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "—" } ]
+      delegate: Column { required property var modelData; width: parent.width / 4
         Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 10 }
-        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.bold: true }
+        Text { width: parent.width - Theme.s8; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.bold: true } }
+    }
+  }
+  Text { visible: Net.connected && root.loadingInfo; textFormat: Text.PlainText
+    text: "Reading connection details…"; color: Theme.textMuted; font.pixelSize: 11 }
+
+  // ---- network rows (all the same height) ----
+  Column {
+    visible: Net.enabled && root.nets.length > 0
+    width: parent.width; spacing: Theme.rowGap
+    Repeater {
+      model: root.nets
+      delegate: ListRow {
+        required property var modelData
+        required property int index
+        width: parent.width
+        title: modelData.name; subtitle: root.subtitleOf(modelData)
+        trailing: Math.round(modelData.signalStrength * 100) + "%"
+        trailingIcon: root.secured(modelData) ? "lock-small" : ""
+        active: modelData.connected
+        selected: root.sel === index
+        leading: Component { WifiIcon { level: modelData.signalStrength; size: Theme.iconMd; color: modelData.connected ? Theme.accentInk : Theme.text } }
+        onSelectedChanged: if (selected) root.reveal(this)
+        onClicked: { root.sel = index; root.connect(modelData) }
       }
     }
   }
-  Text { visible: Net.connected && root.loadingInfo; x: 18; y: 74; textFormat: Text.PlainText
-    text: "Reading connection details…"; color: Theme.textMuted; font.pixelSize: 11 }
-
-  // ---- network list ----
-  ListView {
-    id: list
-    x: 10; y: 122; width: root.width - 20; height: root.height - 122 - 10
-    clip: true; spacing: 2
-    model: root.nets
-    visible: Net.enabled
-    delegate: ListItem {
-      required property var modelData
-      required property int index
-      width: list.width
-      icon: "wifi"; title: modelData.name
-      subtitle: modelData.connected ? "Connected" : (modelData.known ? "Saved" : "")
-      trailing: Math.round(modelData.signalStrength * 100) + "%"
-      active: modelData.connected
-      selected: root.sel === index
-      onClicked: { root.sel = index; root.connect(modelData) }
-    }
-  }
-  Text { visible: Net.enabled && root.nets.length === 0; anchors.centerIn: parent; textFormat: Text.PlainText
+  Text { visible: Net.enabled && root.nets.length === 0; textFormat: Text.PlainText
     text: "No networks found"; color: Theme.textMuted; font.pixelSize: 13 }
-
-  // Scan for networks only while this widget is open (hygiene: no background scanning).
-  Component.onCompleted: if (Net.device) Net.device.scannerEnabled = true
-  Component.onDestruction: if (Net.device) Net.device.scannerEnabled = false
 
   // The reading is a snapshot taken when the widget opens (no polling).
   Process {

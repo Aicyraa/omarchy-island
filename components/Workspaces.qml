@@ -11,9 +11,9 @@ import ".."
 Item {
   id: root
 
-  readonly property int slot: 14        // width of one workspace slot
-  readonly property int dot: 6
-  readonly property int capW: 20        // capsule width (centered on its slot)
+  readonly property int slot: 12        // width of one workspace slot
+  readonly property int dot: 5
+  readonly property int capW: 17        // capsule width (centered on its slot)
 
   // Workspaces to show: all real ones (id > 0), sorted, with a minimum of 4 so
   // the idle pill isn't empty on a fresh session.
@@ -32,7 +32,7 @@ Item {
   readonly property int focusedSlot: Math.max(0, ids.indexOf(focusedId))
 
   implicitWidth: ids.length * slot
-  implicitHeight: 14
+  implicitHeight: dot          // exactly the ink height, so a stacked layout stays vertically symmetric
 
   // Target edges for the capsule.
   readonly property real tl: focusedSlot * slot + (slot - capW) / 2
@@ -77,7 +77,7 @@ Item {
 
   // Click a slot to switch; scroll anywhere to step through workspaces.
   MouseArea {
-    anchors.fill: parent
+    anchors.fill: parent; anchors.margins: -4       // larger hit area than the 5px dots
     onClicked: function (m) {
       var i = Math.floor(m.x / root.slot)
       if (i >= 0 && i < root.ids.length) Hyprland.dispatch("workspace " + root.ids[i])

@@ -9,15 +9,16 @@ Status: all four milestones done and live (see "Verified" and "Not verified" bel
 
 ```
 Bar.qml          plugin entry (manifest kind "bar"): Variants -> one Island per screen,
-                 IPC loader, Hyprland global shortcuts, charger HUD
-Island.qml       one PanelWindow per screen: fixed-size, transparent, click-masked,
-                 containing the animated `pill`
-State.qml        singleton "IslandState": the state machine (file is State.qml, type is
+                 IPC loaders, Hyprland global shortcuts, charger HUD, host bar contract
+Island.qml       one PanelWindow per screen: fixed size, transparent, click-masked, holding the
+                 animated `pill`; sizes the pill from the active widget's implicit size
+State.qml        singleton "IslandState": the state machine (file is State.qml, the type is
                  IslandState because QtQuick already has a type called State)
-Theme.qml        singleton: palette -> semantic colour roles
-services/        Net (Wi-Fi), Power (battery): native Quickshell modules, no polling
-components/      Workspaces, WifiBars, BatteryIcon, ...
-ipc/             HostIpc.qml (inside the shell) / PlainIpc.qml (test rig)
+Theme.qml        singleton: palette -> colour roles, contrast guard, and ALL layout tokens
+services/        Net, Bt, Audio, Brightness, Power, Indicators, Notifs, Stats, Cmd (singletons)
+components/      shared building blocks (below) + IdleForm (the idle/hover pill) + Workspaces
+widgets/         one file per widget, each built on WidgetPanel; Registry.js lists them
+ipc/             HostIpc (inside the shell) / PlainIpc (test rig) / indicator and bar handlers
 osd/             second tiny plugin that routes Omarchy's OSD calls to the island HUD
 rig.qml          run the island beside your live bar: `qs -p rig.qml`
 ```
@@ -105,10 +106,64 @@ From git: `omarchy plugin add <git-url> --enable` installs the bar alone. The OS
 and is a second plugin (one repo = one plugin for `plugin add`), so copy it with `deploy.py`.
 Enabling the bridge disables stock `omarchy.osd` automatically, so there is only ever one OSD.
 
+## Layout system (tokens, content-sized panels, shared components)
+
+### Tokens (Theme.qml)
+Everything that has a size comes from `Theme`, nothing is hard-coded in a widget.
+
+| token | value | meaning |
+|---|---|---|
+| `s4 s8 s12 s16 s20` | 4 8 12 16 20 | spacing scale |
+| `panelPadding` | 16 | ONE padding on all four sides of every panel (it used to be 14 to 24) |
+| `rowGap` / `sectionGap` | 4 / 12 | between rows / between sections |
+| `rowHeight` `sliderHeight` `tileHeight` `footerHeight` | 44 44 56 28 | |
+| `tileRadius` / `pillRadius` | 18 / Hyprland rounding + 4 | `pillRadius` matches the Compass menu |
+| `panelMaxHeight` `panelMinHeight` `panelMaxWidth` | 420 48 720 | the fixed layer window is sized for these |
+| `iconSm iconMd iconLg` | 16 20 24 | icon sizes |
+
+Colour roles: `background surface surfaceRaised outline text textMuted accent accentText
+textOnAccentMuted badgeText success warning danger`, plus the guarded `accentInk successInk
+warningInk dangerInk` (use these for text, icons and lines; use the plain colours only for FILLS)
+and `textOnWarning textOnDanger`. Every text role is nudged (`Theme.lift`) toward the text colour
+just far enough to reach 4.5:1 on the pill, tiles and raised rows, instead of snapping to
+black/white. `omarchy-shell island debug contrast` audits 21 pairs; all pass in 7 themes.
+
+### Content-sized panels (the mechanism)
+`WidgetPanel.qml` is the base of every widget. Children go in its inner column; its
+`implicitHeight` is `content + 2*panelPadding + footer`, clamped to `[panelMinHeight, panelMaxHeight]`.
+`Island.qml` reads the loaded widget's `implicitWidth/implicitHeight` (`widgetSize()`), so the pill's
+target size IS the content size, and the existing width-leads/height-follows spring retargets whenever it
+changes (a list filling in, a zone being added). Until the widget is loaded, `Registry.js` supplies an
+estimate for the first frames only. Taller content scrolls in a `Flickable` with a fade at each clipped
+edge and a thin indicator; `reveal(item)` keeps the selected row in view. Hidden sections (khal events,
+the hibernate hint) take no space. A widget with nothing to show sets `compact: true` and becomes a small
+toast (Tray with no icons).
+
+The layer window is fixed (`panelMaxWidth + ears` by `panelMaxHeight + 20`). The click-through
+`mask` is the `zone` item, which is exactly the pill's target size plus the 12px ears for a widget
+(a few px more for idle/hover so moving into the expanded pill does not close it).
+
+### Shared components
+`Icon` (one 24-grid stroke family), `WifiIcon` (fan with signal levels, used in the pill AND panels),
+`VolumeIcon` (waves grow with level), `BatteryIcon`, `PillSlider` (icon inside the fill; value label, dimmed
+and badge states, thin variant; also the HUD), `Tile` (number badge in a safe inset of 0.4 x radius),
+`ListRow` (fixed height, content on the shared edge, highlight bleeds by `panelPadding`), `IconButton`,
+`Sparkline` (polyline + area fill), `WidgetPanel` (includes the footer hint row: on by default, `?`
+toggles, persisted).
+
+### Debug overlay and measuring
+```
+omarchy-shell island debug layout      # toggle the overlay: pill (red), 16px inset (green), text (magenta), icons (cyan)
+omarchy-shell island debug measure     # JSON: pill size, content blocks' padding on 4 sides, clock offset from centre
+omarchy-shell island debug contrast    # JSON: every text/background pair with its ratio
+```
+`blocks` padding is the visual padding (the panel's rows/cards/tiles); `pad` is the ink padding.
+All widgets measure `top = bottom = left = right = 16` (scrolling panels report no bottom).
+
 ## Widgets
 Each widget is `widgets/<Name>.qml`, registered in `widgets/Registry.js` (file, width, height).
 `Island.qml` loads it through a `Loader` that is active only while the widget is on screen, so a closed
-widget is destroyed together with its Timers and Processes (verified: 0 spawns after close).
+widget is destroyed together with its Timers and Processes (verified: 0 spawns after close). The one exception is `services/Stats.qml`: a single 2 s timer reading three /proc files into a 60-sample ring buffer so the System charts are full on open. Measured cost: 0.30% of one core with it, 0.25% without (see README "Verified"); set `ISLAND_STATS_OFF=1` or `Stats.alwaysOn: false` for the fallback that samples only while the widget is open.
 
 | id            | what it shows |
 |---------------|---------------|
@@ -123,29 +178,32 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | power         | 1 Shutdown, 2 Reboot, 3 Sleep, 4 Lock, uptime, restart-needed badge, hibernate chip if supported |
 | notifications | history (read from the shell's state files), Focus toggle, dismiss, replay |
 | media         | MPRIS player, controls, progress |
-| system        | CPU, memory, CPU temperature (never touches the discrete GPU) |
+| system        | CPU, memory, CPU temperature with real line charts (shared 2 s ring buffer; never touches the discrete GPU) |
 | tray          | status-notifier icons |
 | theme         | theme cards with swatches and wallpaper preview, applies with `omarchy-theme-set` |
-| weather       | temperature, condition, high/low (one request to wttr.in per open) |
+| weather       | temperature, condition icon (sun/moon/cloud/rain...), high/low; location auto by IP or `weatherLocation` in state.json |
 | agent         | AI-agent usage limits close to their cap (reads Omarchy's usage files) |
 
 ### Conventions every widget follows
-- Esc closes (a widget can claim Esc for a sub-mode with `capturesEscape`), `?` shows the widget's `hint` row.
+- Esc closes (a widget can claim Esc for a sub-mode with `capturesEscape`); the `hint` footer is on by default and `?` toggles it.
 - Number keys pick tiles (1-6 Home, 1-4 Power, 1-3 Battery); arrows move; Enter activates.
 - Show `No adapter` / `Nothing playing` / loading / error states, never a blank panel; hide a control whose hardware is absent.
 - Plain text only (`textFormat: Text.PlainText`) for anything that comes from outside (SSIDs, titles, notifications).
 
-### Idle pill actions
-Scroll the volume icon to change volume (middle click mutes, click opens Audio); scroll the sun (hover form) for brightness;
-click the clock for the calendar; scroll the workspaces to switch; click Wi-Fi / battery to open them. Indicators
-(recording with timer, Focus, night light, stay awake, update, dictation) appear only while active and clicking one runs its action.
+### Pill actions
+Idle shows workspaces, the clock (exactly centred) and Wi-Fi + battery, plus an icon for any Omarchy
+indicator that is on (recording with a timer, Focus, night light, stay awake, update, dictation).
+Hovering for ~120 ms expands it: window title and workspaces on the left, time with the date to its right
+(the time does not move), then "All caught up" + bell, volume, brightness, Wi-Fi, battery. In the hover
+form: scroll the volume or sun icon to change them, middle-click volume mutes, click or right-click any icon
+to open its widget. Click the clock for the calendar, scroll the workspaces to switch.
 Indicator state is refreshed on events (startup, widget open/close, `omarchy-shell omarchy.indicators refresh`), not by polling.
 
 ### How to add a widget
-1. Create `widgets/MyThing.qml`: an `Item` with `focus: true`, a `hint` string, and a `Keys.onPressed` handler.
-2. Add `mything: { file: "MyThing.qml", w: 460, h: 260 }` to `widgets/Registry.js`.
+1. Create `widgets/MyThing.qml`: a `WidgetPanel` with `preferredWidth`, a `hint` string and a `Keys.onPressed` handler; put content inside it.
+2. Add `mything: { file: "MyThing.qml", w: 460, h: 260 }` to `widgets/Registry.js` (w/h are only a first-frame estimate).
 3. Add `"mything"` to the shortcut list in `Bar.qml` and bind a key to `hl.dsp.global("island:mything")`.
-4. Colours only from `Theme`, durations through `IslandState.reducedMotion`, processes inside the widget (they die with it).
+4. Sizes and colours only from `Theme` tokens, durations through `IslandState.reducedMotion`, processes inside the widget (they die with it). Use the `*Ink` colours for text/icons.
 
 ## Keybinds (old to new)
 Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` markers. Old control-center lines removed.
@@ -186,7 +244,7 @@ never repeated on its own. The update indicator runs `omarchy-update-available` 
 
 ## Tuning notes: reduced motion
 `omarchy-shell island reducedMotion true` sets every spring and fade to 0 and disables overshoot (persisted in
-`~/.local/state/island/state.json`).
+`~/.local/state/island/state.json`, together with `hintsVisible` and `weatherLocation`).
 
 ## Rollback
 - Fast: `./rollback.sh` (re-enables `jee.bar` and stock OSD, disables the island, restarts the shell). One-liner without the script:
@@ -200,14 +258,22 @@ never repeated on its own. The update indicator runs `omarchy-update-available` 
 - `omarchy restart shell` refuses while the screen is locked; unlock first.
 
 ## Verified
-Rig and live: state machine under toggle storms, hover timing, widget A to B without idle, HUD priority, fullscreen hide and
-explicit-widget override, Power keys (dry run), all 16 widgets open in the live shell with a clean log, three themes including a
-light one, hex literals only in the `Theme.qml` fallback block, 0 child processes at idle, 0 spawns after a widget closes.
+Measured (rig, 3 themes unless noted; numbers and before/after images are in `~/Work/omarchy-island-ss`):
+- every widget: padding top = bottom = left = right = 16 px (scrolling panels report no bottom); no child exceeds the pill
+- idle and hover: clock centre within 0.7 px of the pill centre; hover top/bottom padding 8/9
+- contrast: 21 text/background pairs, 0 below 4.5:1 in 7 themes (genesis, catppuccin-latte, flexoki-light, white, tokyo-night, gruvbox, nord)
+- state machine under a toggle storm settles with 0 px error; the mask region equals the pill plus the 12 px ears
+- 0 child processes at idle; 0 spawns after a widget closes; the one polling exception (System ring buffer) costs 0.30% of a core vs 0.25% without it
+- all 16 widgets open in the live shell with a clean log; hex literals only in the `Theme.qml` fallback block
 
 ## Not verified
-- Mouse: scroll/middle-click on pill icons, hold-to-confirm ring, click-outside (no way to inject mouse clicks here).
-- Sleep, hibernate, shutdown, reboot, lock were only dry-run, never fired. Hibernate chip shows because Omarchy's own check passes.
-- Second monitor (only one here); fullscreen hide uses the focused workspace, so on two monitors it may hide the wrong one.
-- khal events (khal is not installed), bluetooth connect/disconnect, Wi-Fi connect, tray context menus (right click sends the secondary action only).
-- "Restart needed" badge uses a limited check (running kernel's modules missing); Omarchy exposes no flag file.
-- Spring values are tuned by eye on one screen; the Omarchy guide discourages bounce and over 300 ms, the island overrides that on purpose.
+- Mouse: scroll/middle-click on pill icons, the hold-to-confirm ring, click-outside, and real click-through just outside the pill
+  (no way to inject real pointer motion or clicks here; Hyprland's focus-follows-mouse ignores a warped cursor)
+- Sleep, hibernate, shutdown, reboot, lock were only dry-run, never fired
+- Second monitor (only one here); fullscreen hide uses the focused workspace, so on two monitors it may hide the wrong one
+- khal events (not installed), Bluetooth connect/disconnect/scan, Wi-Fi connect, tray context menus (right click sends the secondary action only)
+- "Restart needed" uses a limited check (running kernel's modules missing); Omarchy exposes no flag file
+- Weather location "Ermita" comes from wttr.in's IP geolocation (it matches your Asia/Manila time zone); set `weatherLocation` in state.json to pin it
+- Hover pill is wider than the reference's proportions (681 px vs 181 idle) because it carries the date, bell text, volume, brightness, Wi-Fi and battery
+- Spring values are tuned by eye on one screen; Omarchy's guide discourages bounce and over 300 ms, the island overrides that on purpose
+- Deploying a changed bar plugin needs `omarchy restart shell`; the running shell caches its QML

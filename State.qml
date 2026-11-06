@@ -37,7 +37,7 @@ Singleton {
   readonly property bool pointerOver: Object.keys(hovered).length > 0
   property real lastKeyAt: 0
 
-  property bool hintsVisible: false   // "?" toggles the key-hint row under a widget
+  property bool hintsVisible: true    // key-hint footer: on by default, "?" toggles it, persisted
   // The stock "toggle bar" key (SUPER+SHIFT+SPACE) sets a flag file; the island honours it.
   property bool barHidden: false
   function syncHidden() { if (!hiddenProbe.running) hiddenProbe.running = true }
@@ -46,6 +46,18 @@ Singleton {
     command: ["bash", "-c", "[[ -f $HOME/.local/state/omarchy/toggles/bar-off ]] && echo yes || echo no"]
     stdout: StdioCollector { onStreamFinished: root.barHidden = text.trim() === "yes" }
   }
+  // Match the Hyprland corner rounding (read once), like the Compass menu does, so
+  // the island and the menu share the same bottom-corner radius.
+  property int cornerRadius: 16
+  Process {
+    command: ["bash", "-c", "hyprctl getoption decoration:rounding -j | jq -r '.int'"]
+    running: true
+    stdout: StdioCollector { onStreamFinished: { var n = parseInt(text.trim()); if (!isNaN(n) && n >= 0) root.cornerRadius = n } }
+  }
+  // ---- debug (UI checking only; nothing runs unless switched on) ----
+  property bool debugLayout: false
+  property string measureResult: "{}"
+  signal measureRequested()
   property bool reducedMotion: false  // durations -> 0, no overshoot
 
   // ---- derived ----
@@ -162,20 +174,30 @@ Singleton {
     } }
 
   // ---- persistence: ~/.local/state/island/state.json ----
+  // One small JSON file: the reduced-motion flag, whether the key-hint footer is
+  // shown, and the optional weather location override ("" = auto-detect by IP).
   readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/island"
   property bool ready: false
+  property string weatherLocation: ""
   FileView {
     id: store
     path: root.stateDir + "/state.json"
     onLoaded: {
-      try { root.reducedMotion = !!JSON.parse(text()).reducedMotion } catch (e) {}
+      try {
+        var j = JSON.parse(text())
+        root.reducedMotion = !!j.reducedMotion
+        if (j.hintsVisible !== undefined) root.hintsVisible = !!j.hintsVisible
+        if (typeof j.weatherLocation === "string") root.weatherLocation = j.weatherLocation.slice(0, 80)
+      } catch (e) {}
       root.ready = true
     }
     onLoadFailed: root.ready = true
   }
   Process { id: mkdir; command: ["mkdir", "-p", root.stateDir]; running: true }
-  onReducedMotionChanged: {
+  function save() {
     if (!ready) return
-    store.setText(JSON.stringify({ reducedMotion: reducedMotion }))
+    store.setText(JSON.stringify({ reducedMotion: reducedMotion, hintsVisible: hintsVisible, weatherLocation: weatherLocation }, null, 2))
   }
+  onReducedMotionChanged: save()
+  onHintsVisibleChanged: save()
 }
