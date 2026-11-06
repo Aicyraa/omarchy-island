@@ -166,7 +166,11 @@ Singleton {
   // Timers exist but only RUN when started, so nothing ticks while idle.
   Timer { id: openTimer; interval: 170
     onTriggered: { root.hoverScreen = root.pendingHoverScreen; root.hoverOpen = true } }
-  Timer { id: closeTimer; interval: 380; onTriggered: root.hoverOpen = false }
+  Timer { id: closeTimer; interval: 380
+    // The pointer was reported gone. Confirm with the real cursor position before collapsing the hover form.
+    onTriggered: root.probeCursor(root.hoverScreen, function (inside) {
+      if (inside) closeTimer.restart()
+      else { console.warn("island: hover closed, cursor away"); root.hoverOpen = false } }) }
   Timer { id: hudTimer; interval: 1500; onTriggered: root.hudActive = false }
   Timer { id: idleTimer
     interval: root.timeoutFor(root.widgetName)
@@ -180,34 +184,37 @@ Singleton {
   // A cursor that sits still on the pill sends no hover events, so `pointerOver` can be false while it is right
   // there. Before closing for inactivity, ask Hyprland where the cursor really is; if it is on the widget, stay open.
   property var islands: ({})              // screen name -> its Island window (registered by Island.qml)
+  // probeCursor(screen, cb): asks Hyprland where the cursor really is; cb(true) if it is on that screen's island
+  // (pill plus ears, 6 px of slack). Hover events can be lost or reported late; this is the ground truth.
+  function probeCursor(screen, cb) {
+    var isl = islands[screen]
+    if (!isl || cursorProbe.running) { cb(false); return }
+    cursorProbe.box = isl.pillBox()
+    cursorProbe.cb = cb
+    cursorProbe.command = ["bash", Qt.resolvedUrl("assets/cursorpos.sh").toString().replace("file://", ""), screen]
+    cursorProbe.running = true
+  }
   // guard(reason, done): the widget is about to close for `reason`. If the cursor is on the widget it stays open
   // (and the inactivity countdown restarts); otherwise it closes. `done(stayed)` is optional.
   function guard(reason, done) {
-    var isl = islands[activeScreen]
-    if (!isl || cursorProbe.running || widgetName === "") { closeWidget(reason + ", no probe"); if (done) done(false); return }
-    cursorProbe.box = isl.pillBox()
-    cursorProbe.reason = reason
-    cursorProbe.done = done || null
-    cursorProbe.command = ["bash", Qt.resolvedUrl("assets/cursorpos.sh").toString().replace("file://", ""), activeScreen]
-    cursorProbe.running = true
+    if (widgetName === "") { if (done) done(false); return }
+    probeCursor(activeScreen, function (inside) {
+      if (inside && widgetName !== "") { idleTimer.restart(); if (done) done(true) }
+      else { closeWidget(reason + ", cursor away"); if (done) done(false) }
+    })
   }
   function checkCursor() { guard("idle timeout") }
   Process {
     id: cursorProbe
     property size box: Qt.size(0, 0)
-    property string reason: ""
-    property var done: null
-    function finish(inside) {
-      var cb = done; done = null
-      if (inside && root.widgetName !== "") { idleTimer.restart(); if (cb) cb(true) }
-      else { root.closeWidget(reason + ", cursor away"); if (cb) cb(false) }
-    }
+    property var cb: null
+    function finish(inside) { var f = cb; cb = null; if (f) f(inside) }
     stdout: StdioCollector { onStreamFinished: {
       var p = text.trim().split(" ").map(Number)
       cursorProbe.finish(p.length === 3 && !p.some(isNaN)
         && Math.abs(p[0] - p[2] / 2) <= cursorProbe.box.width / 2 + 6 && p[1] >= 0 && p[1] <= cursorProbe.box.height + 6)
     } }
-    onExited: function (code) { if (code !== 0 && done) finish(false) }
+    onExited: function (code) { if (code !== 0) finish(false) }
   }
 
   // ---- persistence: ~/.local/state/island/state.json ----
