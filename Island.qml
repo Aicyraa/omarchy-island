@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Shapes
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -214,32 +213,6 @@ PanelWindow {
       PathLine { x: 0; y: 0 }
       PathLine { x: win.ear; y: 0 }
     }
-  }
-
-  // ---- drop shadow, like the terminal windows have ----
-  // Hyprland draws shadows for windows only, not for layer surfaces, so the island draws its own with the same
-  // numbers as the window shadow (decoration:shadow: range 28, black at 50 %, offset 5 px down). `silhouette` holds
-  // plain copies of the pill and the capsules; MultiEffect blurs them into a shadow and an inverted mask cuts out the
-  // shapes themselves, so only the shadow around them is drawn (the real shapes keep their translucent look).
-  readonly property real shadowRange: 28
-  Item {
-    id: silhouette
-    visible: false; layer.enabled: true
-    width: win.width; height: win.height
-    Rectangle { x: pill.x; y: pill.y; width: pill.width; height: pill.height; color: "black"; antialiasing: true
-      topLeftRadius: 0; topRightRadius: 0; bottomLeftRadius: pill.bottomLeftRadius; bottomRightRadius: pill.bottomRightRadius }
-    Rectangle { x: leftSat.x; y: leftSat.y; width: leftSat.width; height: leftSat.height; radius: height / 2; color: "black"; antialiasing: true }
-    Rectangle { x: rightSat.x; y: rightSat.y; width: rightSat.width; height: rightSat.height; radius: height / 2; color: "black"; antialiasing: true; visible: rightSat.visible }
-  }
-  MultiEffect {
-    z: -1
-    anchors.fill: parent
-    source: silhouette
-    autoPaddingEnabled: false
-    blurMax: win.shadowRange
-    shadowEnabled: true; shadowColor: "black"; shadowOpacity: 0.5
-    shadowBlur: 1.0; shadowVerticalOffset: 5; shadowHorizontalOffset: 0
-    maskEnabled: true; maskSource: silhouette; maskInverted: true     // soft (alpha) mask: no threshold, so the shapes' antialiased edge pixels get exactly the shadow they are missing
   }
 
   // ---- side capsules: workspaces on the left, battery on the right ----

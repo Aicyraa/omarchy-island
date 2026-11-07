@@ -316,6 +316,5 @@ The hover form works the same way: when the pointer is reported gone, `closeTime
 ## Smooth edges
 Every rounded shape in the bar is antialiased, and the Hyprland layer rule for the island uses `ignore_alpha = 0.9` (in `looknfeel.lua`): with the old 0.05 the compositor blurred the semi-transparent edge pixels as if they were solid, which made the capsule and pill outlines look stair-stepped. Now only the solid interior is blurred and the edge blends cleanly.
 
-## Shadow and the no-cover disc
-- **Shadow:** Hyprland draws shadows for windows only, so the island draws its own, matching the terminal's (`decoration:shadow`: range 28, black at 50 %, 5 px down). `Island.qml` keeps an invisible `silhouette` of the pill and capsules, `MultiEffect` blurs it into a shadow, and an inverted SOFT (alpha) mask removes the shapes themselves so only the shadow around them is drawn. A hard threshold on that mask (the first version) gave the antialiased edge pixels a shadow-or-no-shadow backing and made the outline look stair-stepped. It follows the pill as it animates.
-- **Vinyl:** when a track has no cover art (or it has not loaded yet) the media card shows `components/Vinyl.qml`: a black record with grooves, a label in the theme accent, a mark so the spin is visible, a fixed sheen, spinning while the track plays.
+## The no-cover disc
+When a track has no cover art (or it has not loaded yet) the media card shows `components/Vinyl.qml`: a black record with grooves, a label in the theme accent, a mark so the spin is visible, a fixed sheen, spinning while the track plays. (A drop shadow was tried and removed: it made the outlines look rough.)
