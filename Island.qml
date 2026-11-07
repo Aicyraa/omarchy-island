@@ -239,8 +239,7 @@ PanelWindow {
     blurMax: win.shadowRange
     shadowEnabled: true; shadowColor: "black"; shadowOpacity: 0.5
     shadowBlur: 1.0; shadowVerticalOffset: 5; shadowHorizontalOffset: 0
-    maskEnabled: true; maskSource: silhouette; maskInverted: true
-    maskThresholdMin: 0.5; maskSpreadAtMin: 0.0
+    maskEnabled: true; maskSource: silhouette; maskInverted: true     // soft (alpha) mask: no threshold, so the shapes' antialiased edge pixels get exactly the shadow they are missing
   }
 
   // ---- side capsules: workspaces on the left, battery on the right ----
