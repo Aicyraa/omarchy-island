@@ -7,20 +7,20 @@
 // pill; the spring retargets when the real size arrives. Names not listed fall back
 // to Placeholder.
 var widgets = {
-  home: { file: "Home.qml", w: 440, h: 250 },
-  wifi: { file: "Wifi.qml", w: 480, h: 300 },
-  bluetooth: { file: "Bluetooth.qml", w: 480, h: 220 },
-  audio: { file: "Audio.qml", w: 640, h: 260 },
-  display: { file: "Display.qml", w: 460, h: 230 },
-  battery: { file: "Battery.qml", w: 480, h: 220 },
-  calendar: { file: "Calendar.qml", w: 400, h: 330 },
-  worldclock: { file: "WorldClock.qml", w: 620, h: 360 },
-  power: { file: "Power.qml", w: 600, h: 230 },
-  notifications: { file: "Notifications.qml", w: 480, h: 300 },
+  home: { file: "Home.qml", w: 440, h: 300 },
+  wifi: { file: "Wifi.qml", w: 480, h: 364 },
+  bluetooth: { file: "Bluetooth.qml", w: 480, h: 149 },
+  audio: { file: "Audio.qml", w: 640, h: 278 },
+  display: { file: "Display.qml", w: 460, h: 243 },
+  battery: { file: "Battery.qml", w: 480, h: 211 },
+  calendar: { file: "Calendar.qml", w: 400, h: 348 },
+  worldclock: { file: "WorldClock.qml", w: 620, h: 380 },
+  power: { file: "Power.qml", w: 660, h: 316 },
+  notifications: { file: "Notifications.qml", w: 480, h: 420 },
   system: { file: "System.qml", w: 620, h: 380 },
-  tray: { file: "Tray.qml", w: 200, h: 72 },
-  theme:         { file: "ThemePicker.qml", w: 720, h: 186 },
-  weather: { file: "Weather.qml", w: 440, h: 130 },
+  tray: { file: "Tray.qml", w: 200, h: 48 },
+  theme:         { file: "ThemePicker.qml", w: 720, h: 188 },
+  weather: { file: "Weather.qml", w: 440, h: 128 },
   agent: { file: "Agent.qml", w: 600, h: 372 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }

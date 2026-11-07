@@ -178,6 +178,9 @@ PanelWindow {
   }
   Connections { target: IslandState
     function onMeasureRequested() { if (win.myMode !== "idle" || win.screenName === IslandState.focusedScreenName()) IslandState.measureResult = win.measure() } }
+  Timer { interval: 16; repeat: true; running: IslandState.debugTrace && win.screenName === IslandState.focusedScreenName()
+    onTriggered: console.log("TRACE", Date.now() % 100000, win.myMode, pill.shownMode, +content.opacity.toFixed(2), +content.fade.toFixed(2), +pill.fit.toFixed(2), pill.gating ? 1 : 0,
+      Math.round(pill.width), Math.round(pill.height), Math.round(win.target.width), Math.round(win.target.height), Math.round(win.shownSize.width), Math.round(win.shownSize.height)) }
   Timer { interval: 400; repeat: true; running: IslandState.debugLayout; triggeredOnStart: true; onTriggered: win.refreshDebug() }
 
   // Concave "ears": small inverted corners on each side that flare the pill into
@@ -233,11 +236,11 @@ PanelWindow {
     // is not a damping ratio: 1.0 does not mean "critical", it just crawls (the collapse took ~0.7 s).
     Behavior on width {
       enabled: !IslandState.reducedMotion
-      SpringAnimation { spring: win.shrinkW ? 6.0 : 3.4; damping: win.shrinkW ? 0.55 : 0.26; epsilon: 0.5 }
+      SpringAnimation { spring: win.shrinkW ? 6.0 : 3.4; damping: win.shrinkW ? 0.55 : 0.34; epsilon: 0.5 }
     }
     Behavior on height {
       enabled: !IslandState.reducedMotion
-      SpringAnimation { spring: win.shrinkH ? 6.0 : 3.0; damping: win.shrinkH ? 0.55 : 0.28; epsilon: 0.5 }
+      SpringAnimation { spring: win.shrinkH ? 6.0 : 3.0; damping: win.shrinkH ? 0.55 : 0.36; epsilon: 0.5 }
     }
 
     // Debug overlay: every item's box (magenta = text, cyan = icon/shape, yellow = other),
@@ -269,8 +272,14 @@ PanelWindow {
     // How well the pill currently fits the content, 0..1. Deliberately independent of `gating`, so the
     // handler below can switch `gating` off without creating a binding loop.
     readonly property real rawFit: {
-      function f(r) { return r < 1 ? Math.max(0, Math.min(1, (r - 0.82) / 0.14)) : Math.max(0, Math.min(1, (1.30 - r) / 0.20)) }
-      return Math.min(f(width / Math.max(1, content.width)), f(height / Math.max(1, content.height)))
+      function clamp(v) { return Math.max(0, Math.min(1, v)) }
+      // Pill SMALLER than the content (growing): the content is top-anchored, so the growing pill simply reveals it.
+      // Height may start revealing very early (10 % of the way); width is stricter because it clips both sides.
+      // Pill LARGER than the content (shrinking): the small form may appear while the pill is still collapsing
+      // (from 3.2x down to 1.5x its size) instead of popping in only at the very end.
+      function fw(r) { return r < 1 ? clamp((r - 0.45) / 0.35) : clamp((3.2 - r) / 1.7) }
+      function fh(r) { return r < 1 ? clamp((r - 0.10) / 0.45) : clamp((3.2 - r) / 1.7) }
+      return Math.min(fw(width / Math.max(1, content.width)), fh(height / Math.max(1, content.height)))
     }
     readonly property real fit: gating ? rawFit : 1
     onRawFitChanged: if (gating && rawFit >= 0.98) gating = false
@@ -306,7 +315,7 @@ PanelWindow {
         ScriptAction { script: { pill.shownMode = win.myMode; pill.shownWidget = win.myMode === "widget" ? IslandState.widgetName : ""
                                  pill.gating = !IslandState.reducedMotion } }
         NumberAnimation { target: content; property: "fade"; to: 1
-          duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic }
+          duration: IslandState.reducedMotion ? 0 : 200; easing.type: Easing.OutCubic }
       }
       Connections { target: win; function onMyModeChanged() { swap.restart() } }
       Connections { target: IslandState

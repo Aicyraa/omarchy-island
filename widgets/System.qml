@@ -16,7 +16,7 @@ WidgetPanel {
 
   readonly property real tempWarn: Stats.temp > 80 ? 2 : (Stats.temp > 70 ? 1 : 0)
 
-  // ---- details: from the SysInfo service (kept warm by Prefetch); refreshed every 3 s while this is open ----
+  // ---- details: from the SysInfo service (kept warm by Prefetch); refreshed every 2.5 s while this is open ----
   readonly property real load1: SysInfo.load1; readonly property real load5: SysInfo.load5; readonly property real load15: SysInfo.load15
   readonly property real uptimeSec: SysInfo.uptimeSec
   readonly property real diskUsed: SysInfo.diskUsed; readonly property real diskSize: SysInfo.diskSize
@@ -27,7 +27,7 @@ WidgetPanel {
   function bytes(n) { n = Number(n) || 0; var u = ["B", "KB", "MB", "GB", "TB"], i = 0; while (n >= 1000 && i < 4) { n /= 1000; i++ } return (n >= 100 || i === 0 ? Math.round(n) : n.toFixed(1)) + " " + u[i] }
   function dur(sec) { var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60)
     return d > 0 ? d + "d " + h + "h" : (h > 0 ? h + "h " + m + "m" : m + "m") }
-  Timer { interval: 3000; repeat: true; running: true; triggeredOnStart: true; onTriggered: SysInfo.refresh() }
+  Timer { interval: 2500; repeat: true; running: true; triggeredOnStart: true; onTriggered: SysInfo.refresh() }
 
   component Card: Rectangle {
     id: card

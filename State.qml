@@ -55,6 +55,7 @@ Singleton {
   }
   // ---- debug (UI checking only; nothing runs unless switched on) ----
   property bool debugLayout: false
+  property bool debugTrace: false      // logs the reveal state every 16 ms (animation debugging)
   property string measureResult: "{}"
   signal measureRequested()
   property bool reducedMotion: false  // durations -> 0, no overshoot
