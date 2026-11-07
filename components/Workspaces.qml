@@ -17,16 +17,15 @@ Item {
   readonly property int activeW: 6      // the focused pill is a touch wider than a dot
   readonly property int capH: 14        // the focused pill's height (fits the 26px idle bar with 6px to spare)
 
-  // Workspaces to show: all real ones (id > 0), sorted, with a minimum of 4 so
-  // the idle pill isn't empty on a fresh session.
+  // Workspaces to show: the ones that exist (Hyprland keeps occupied and focused ones), sorted; the focused one is always
+  // included. A new workspace adds a dot, a closed one removes it.
   readonly property var ids: {
     var out = []
     var ws = Hyprland.workspaces.values
     for (var i = 0; i < ws.length; i++) if (ws[i].id > 0) out.push(ws[i].id)
-    out.sort(function (a, b) { return a - b })
-    var max = out.length ? out[out.length - 1] : 0
-    for (var n = 1; n <= Math.max(4, max) && out.length < 4; n++)
-      if (out.indexOf(n) < 0) out.push(n)
+    var f = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
+    if (f > 0 && out.indexOf(f) < 0) out.push(f)
+    if (out.length === 0) out.push(1)
     out.sort(function (a, b) { return a - b })
     return out
   }

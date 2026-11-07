@@ -314,9 +314,12 @@ The inactivity timer (12 s, 15 s for Power) does not rely on hover events alone:
 Every close is logged with its reason (`qs log -p /usr/share/omarchy/shell | grep "widget closed"`): `Esc`, `idle timeout, cursor away`, `focus grab cleared, cursor away`, or `(explicit)` for a key press / IPC. The focus-grab path (another window took keyboard focus) is guarded the same way as the idle timeout: if the cursor is still on the widget it stays open and the grab is re-armed.
 The hover form works the same way: when the pointer is reported gone, `closeTimer` confirms with the real cursor position (`State.probeCursor`) before collapsing, and re-arms while the cursor is still on the form. A hover close is logged as `island: hover closed, cursor away` (grep for `island: `).
 
-## Bar status icons and the visualizer
-- Status icons in the bar (recording, dictation, Focus, Night light, Awake, update) are scaled to the battery body's height like the Wi-Fi glyph (`Icon.matchBattery`, per-icon extents in `Icons.js`; the stroke is only partly compensated so small glyphs stay legible).
-- While any MPRIS player is playing, a 7-bar audio visualizer (real `cava` data) springs out of the left edge of the clock; the pill widens only if it needs the room. cava runs only while a track plays and the idle form is showing. `ISLAND_FORCE_VIZ=1` forces it on for testing.
+## Bar layout: three parts
+- **Centre pill** (attached to the top edge, the one that morphs into widgets, the hover form and the HUD): the clock only.
+- **Left capsule**: the workspace dots. It shows the workspaces that exist (a new workspace adds a dot, a closed one removes it; the focused one is the tall pill) and resizes with them.
+- **Right capsule**: the battery icon only (click opens the battery widget). No Wi-Fi icon and no status icons (Focus, Night light, Awake, dictation, update, **screen recording**) in the bar any more; they are in the hover form.
+- The capsules float just outside the centre pill's ears and follow its springing edges, so they are pushed outward when the pill grows into a widget and slide back with it. The fixed window is `Theme.windowWidth` (1000) wide; clicks pass through everywhere except the pill zone and the two capsules.
+- **Audio visualizer** (ported from the old `jee.clock` widget): while a player is playing, five 2 px bars (cava, `assets/viz-bar.conf`, same 12 px / sqrt scaling and 320 ms slide-scale-fade entrance as before) appear on the left of the time and the pill makes room. cava runs only while a track plays and the idle form is showing. `ISLAND_FORCE_VIZ=1` forces it on for testing.
 - Toggles (Focus, Night light, Awake) flip the visible state immediately and re-read it 450 ms later; a refresh requested while another is running is queued, not dropped.
 
 ## Transition timeline (what the pill does when a widget opens, switches or closes)

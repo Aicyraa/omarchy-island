@@ -69,7 +69,7 @@ PanelWindow {
 
   color: "transparent"
   anchors.top: true                     // top edge only -> centered horizontally
-  implicitWidth: Theme.panelMaxWidth + 2 * ear + 16
+  implicitWidth: Theme.windowWidth
   implicitHeight: Theme.windowHeight
   // Reserve exactly the collapsed height so tiled windows don't jump when the
   // pill grows (it overlays windows instead).
@@ -100,7 +100,8 @@ PanelWindow {
   // px bigger than the pill's TARGET size, which "bridges" the gap while the pill
   // is mid-spring so moving into the expanded pill never counts as leaving. For a
   // widget it is EXACTLY the pill (plus the ears), so clicks just outside pass through.
-  mask: Region { item: zone }
+  // Clickable: the centre zone and the two side capsules; everything else passes clicks through.
+  mask: Region { item: zone; Region { item: leftSat } Region { item: rightSat } }
   Item {
     id: zone
     anchors.horizontalCenter: parent.horizontalCenter
@@ -210,6 +211,34 @@ PanelWindow {
       PathLine { x: 0; y: 0 }
       PathLine { x: win.ear; y: 0 }
     }
+  }
+
+  // ---- side capsules: workspaces on the left, battery on the right ----
+  // They are separate floating capsules just outside the pill's ears. Their x follows the pill's (springing) edges,
+  // so when the pill grows into a widget they are pushed outward, and they come back with it.
+  readonly property int satY: 2
+  readonly property int satH: 22
+  readonly property int satGap: 8
+  Rectangle {
+    id: leftSat
+    y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
+    width: wsView.implicitWidth + 2 * Theme.s12
+    x: pill.x - win.ear - win.satGap - width
+    Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    Workspaces { id: wsView; anchors.centerIn: parent }
+  }
+  Rectangle {
+    id: rightSat
+    visible: Power.present
+    y: win.satY; height: win.satH; radius: height / 2
+    color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
+    Behavior on color { ColorAnimation { duration: 120 } }
+    width: Theme.iconMd + 2 * Theme.s12
+    x: pill.x + pill.width + win.ear + win.satGap
+    BatteryIcon { anchors.centerIn: parent; size: Theme.iconMd }
+    MouseArea { id: batArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+      acceptedButtons: Qt.LeftButton | Qt.RightButton
+      onClicked: IslandState.toggleWidget("battery", win.screenName) }
   }
 
   Rectangle {
