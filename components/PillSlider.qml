@@ -32,7 +32,7 @@ Item {
   readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
   // No outline: selection and hover only lift the track a little (the fill keeps the accent).
-  Rectangle { anchors.fill: parent; radius: height / 2
+  Rectangle { antialiasing: true; anchors.fill: parent; radius: height / 2
     color: root.selected ? Theme.mix(Theme.surface, Theme.text, 0.14) : (area.containsMouse && root.interactive ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface)
     Behavior on color { ColorAnimation { duration: 140 } } }
 

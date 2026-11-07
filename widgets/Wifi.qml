@@ -45,7 +45,7 @@ WidgetPanel {
   // ---- header ----
   Item {
     width: parent.width; height: 44
-    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Net.connected ? Theme.accentFill : Theme.surface
+    Rectangle { antialiasing: true; id: badge; width: 44; height: 44; radius: 22; color: Net.connected ? Theme.accentFill : Theme.surface
       WifiIcon { anchors.centerIn: parent; size: Theme.iconLg; off: !Net.enabled; level: Net.connected ? Net.strength : 0
         color: Net.connected ? Theme.accentText : Theme.text } }
     Column {

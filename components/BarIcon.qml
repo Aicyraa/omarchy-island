@@ -18,7 +18,7 @@ Item {
   Item { id: box; width: childrenRect.width; height: childrenRect.height }
 
   // Hover: a soft rounded backing behind the glyph.
-  Rectangle { anchors.fill: parent; anchors.margins: -3; radius: 7; z: -1; color: Theme.text; opacity: hit.containsMouse ? 0.12 : 0
+  Rectangle { antialiasing: true; anchors.fill: parent; anchors.margins: -3; radius: 7; z: -1; color: Theme.text; opacity: hit.containsMouse ? 0.12 : 0
     Behavior on opacity { NumberAnimation { duration: 120 } } }
   MouseArea {
     id: hit

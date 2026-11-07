@@ -56,7 +56,7 @@ WidgetPanel {
   // ---- header ----
   Item {
     width: parent.width; height: 44
-    Rectangle { id: badge; width: 44; height: 44; radius: 22; color: Bt.enabled ? Theme.accentFill : Theme.surface
+    Rectangle { antialiasing: true; id: badge; width: 44; height: 44; radius: 22; color: Bt.enabled ? Theme.accentFill : Theme.surface
       Icon { anchors.centerIn: parent; size: Theme.iconLg; name: "bluetooth"; color: Bt.enabled ? Theme.accentText : Theme.text } }
     Column {
       anchors.left: badge.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter

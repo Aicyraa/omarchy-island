@@ -224,6 +224,7 @@ PanelWindow {
   Rectangle {
     id: leftSat
     z: 0
+    antialiasing: true
     y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
     width: wsView.implicitWidth + 2 * 10
     x: pill.x - win.satTuck - width
@@ -233,14 +234,31 @@ PanelWindow {
   Rectangle {
     id: rightSat
     z: 0
-    visible: Power.present
+    antialiasing: true
+    visible: Power.present || Indicators.recording
     y: win.satY; height: win.satH; radius: height / 2
     color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
     Behavior on color { ColorAnimation { duration: 120 } }
-    width: 18 + 2 * 10
+    width: 2 * 10 + (Power.present ? 18 : 0) + (Indicators.recording ? 8 + (Power.present ? 6 : 0) : 0)
+    Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
     x: pill.x + pill.width + win.satTuck
-    BatteryIcon { anchors.centerIn: parent; size: 18 }
-    MouseArea { id: batArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+    Row {
+      anchors.centerIn: parent; spacing: 6
+      // Screen recording: a red dot that pulses; click stops the recording.
+      Rectangle {
+        id: recDot
+        visible: Indicators.recording; antialiasing: true
+        anchors.verticalCenter: parent.verticalCenter
+        width: 8; height: 8; radius: 4; color: Theme.dangerInk
+        SequentialAnimation on opacity { running: Indicators.recording; loops: Animation.Infinite
+          NumberAnimation { to: 0.55; duration: 800; easing.type: Easing.InOutSine }
+          NumberAnimation { to: 1; duration: 800; easing.type: Easing.InOutSine } }
+        MouseArea { anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+          onClicked: Cmd.run(["omarchy-capture-screenrecording", "--stop-recording"]) }
+      }
+      BatteryIcon { anchors.verticalCenter: parent.verticalCenter; size: 18 }
+    }
+    MouseArea { id: batArea; z: -1; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
       acceptedButtons: Qt.LeftButton | Qt.RightButton
       onClicked: IslandState.toggleWidget("battery", win.screenName) }
   }
@@ -248,6 +266,7 @@ PanelWindow {
   Rectangle {
     id: pill
     z: 2
+    antialiasing: true
     y: win.topMargin
     anchors.horizontalCenter: parent.horizontalCenter
     width: win.target.width

@@ -60,7 +60,7 @@ Item {
   }
 
   // Hover: a faint highlight (the selected row has the panel's sliding one instead).
-  Rectangle { anchors.fill: parent; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8; radius: Theme.tileRadius
+  Rectangle { antialiasing: true; anchors.fill: parent; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8; radius: Theme.tileRadius
     color: Theme.text; opacity: rowArea.containsMouse && !root.selected ? 0.07 : 0
     Behavior on opacity { NumberAnimation { duration: 120 } } }
   MouseArea { id: rowArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8; onClicked: root.clicked() }

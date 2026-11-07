@@ -77,11 +77,11 @@ WidgetPanel {
     Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 16; font.weight: Theme.weightStrong
       text: root.monthNames[root.month] + " " + root.year }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Rectangle { height: 30; width: todayLabel.implicitWidth + Theme.s16 * 2; radius: 15; color: Theme.surface
+      Rectangle { antialiasing: true; height: 30; width: todayLabel.implicitWidth + Theme.s16 * 2; radius: 15; color: Theme.surface
         Text { id: todayLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Today"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
         MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.goToday() } }
       Repeater { model: [ { ic: "chevron-left", d: -1 }, { ic: "chevron-right", d: 1 } ]
-        delegate: Rectangle { required property var modelData; width: 30; height: 30; radius: 15; color: Theme.surface
+        delegate: Rectangle { antialiasing: true; required property var modelData; width: 30; height: 30; radius: 15; color: Theme.surface
           Icon { anchors.centerIn: parent; name: modelData.ic; size: Theme.iconSm }
           MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.shiftMonth(modelData.d) } } }
     }
@@ -118,7 +118,7 @@ WidgetPanel {
           readonly property bool today: root.iso(modelData.date) === root.iso(new Date())
           readonly property bool isSel: root.iso(modelData.date) === root.iso(root.selected)
           readonly property bool weekend: modelData.date.getDay() === 0 || modelData.date.getDay() === 6
-          Rectangle { anchors.centerIn: parent; width: 30; height: 30; radius: 15
+          Rectangle { antialiasing: true; anchors.centerIn: parent; width: 30; height: 30; radius: 15
             color: today ? (dayArea.containsMouse ? Qt.lighter(Theme.accentFill, 1.12) : Theme.accentFill) : (isSel ? Theme.mix(Theme.pill, Theme.text, 0.20) : (dayArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.12) : "transparent"))
             border.width: 0 }
           Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: modelData.date.getDate()
@@ -153,7 +153,7 @@ WidgetPanel {
           anchors.verticalCenter: parent.verticalCenter; spacing: 0
           Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.label; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
           Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: "in " + modelData.remaining + " · " + modelData.atTime; color: Theme.textMuted; font.pixelSize: 11 } }
-        Rectangle { id: cancel; anchors.right: parent.right; anchors.rightMargin: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13
+        Rectangle { antialiasing: true; id: cancel; anchors.right: parent.right; anchors.rightMargin: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13
           color: xArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.16) : "transparent"
           Icon { anchors.centerIn: parent; name: "x"; size: Theme.iconSm - 2; color: Theme.textMuted }
           MouseArea { id: xArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.cancelReminder(modelData.timer) } }

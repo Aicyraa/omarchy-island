@@ -54,7 +54,7 @@ WidgetPanel {
 
       // header
       Item { width: parent.width; height: 36
-        Rectangle { id: disc; width: 36; height: 36; radius: 18
+        Rectangle { antialiasing: true; id: disc; width: 36; height: 36; radius: 18
           color: side.muted ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.accentFill
           Behavior on color { ColorAnimation { duration: 150 } }
           Icon { anchors.centerIn: parent; name: side.isInput ? (side.muted ? "mic-off" : "mic") : "volume"; size: Theme.iconMd

@@ -316,8 +316,8 @@ The hover form works the same way: when the pointer is reported gone, `closeTime
 
 ## Bar layout: three parts
 - **Centre pill** (attached to the top edge, the one that morphs into widgets, the hover form and the HUD): the clock only.
-- **Left capsule**: the workspace dots. It shows the workspaces that exist (a new workspace adds a dot, a closed one removes it; the focused one is the tall pill) and resizes with them.
-- **Right capsule**: the battery icon only (click opens the battery widget). No Wi-Fi icon and no status icons (Focus, Night light, Awake, dictation, update, **screen recording**) in the bar any more; they are in the hover form.
+- **Left capsule**: the workspace dots: the workspaces that exist (a new one adds a dot, a closed one removes it; the focused one is the tall pill), with a small "..." marker where the numbering skips (1 2 3 ... 8). Test data: `ISLAND_FAKE_WS=1,2,3,8 ISLAND_FAKE_FOCUS=8`.
+- **Right capsule**: the battery icon only (click opens the battery widget). No Wi-Fi icon and no status icons (Focus, Night light, Awake, dictation, update, **screen recording**) in the bar; they are in the hover form. The exception is a pulsing red dot in the right capsule while screen recording (click it to stop).
 - The capsules (20 px tall) tuck 6 px under the pill's concave ears (the ears are drawn above them) and follow its springing edges, so they are pushed outward when the pill grows into a widget and slide back with it. The fixed window is `Theme.windowWidth` (1000) wide; clicks pass through everywhere except the pill zone and the two capsules.
 - **Audio visualizer** (ported from the old `jee.clock` widget): while a player is playing, five 2 px bars (cava, `assets/viz-bar.conf`, same 12 px / sqrt scaling and 320 ms slide-scale-fade entrance as before) appear on the left of the time and the pill makes room. cava runs only while a track plays and the idle form is showing. `ISLAND_FORCE_VIZ=1` forces it on for testing.
 - Toggles (Focus, Night light, Awake) flip the visible state immediately and re-read it 450 ms later; a refresh requested while another is running is queued, not dropped.

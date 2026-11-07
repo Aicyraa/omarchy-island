@@ -73,9 +73,9 @@ WidgetPanel {
       delegate: Item { required property var modelData; width: parent.width; height: 20
         Text { anchors.verticalCenter: parent.verticalCenter; width: parent.width - 200; elide: Text.ElideRight; textFormat: Text.PlainText
           text: modelData.name; color: Theme.text; font.pixelSize: 12 }
-        Rectangle { anchors.right: parent.right; anchors.rightMargin: 128; anchors.verticalCenter: parent.verticalCenter; width: 48; height: 4; radius: 2
+        Rectangle { antialiasing: true; anchors.right: parent.right; anchors.rightMargin: 128; anchors.verticalCenter: parent.verticalCenter; width: 48; height: 4; radius: 2
           color: Theme.mix(Theme.pill, Theme.text, 0.14)
-          Rectangle { height: parent.height; radius: 2; width: parent.width * Math.min(1, modelData.cpu / 100); color: Theme.accentInk } }
+          Rectangle { antialiasing: true; height: parent.height; radius: 2; width: parent.width * Math.min(1, modelData.cpu / 100); color: Theme.accentInk } }
         Text { anchors.right: parent.right; anchors.rightMargin: 72; anchors.verticalCenter: parent.verticalCenter; width: 44; horizontalAlignment: Text.AlignRight
           textFormat: Text.PlainText; text: modelData.cpu.toFixed(modelData.cpu < 10 ? 1 : 0) + "%"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
         Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 64; horizontalAlignment: Text.AlignRight

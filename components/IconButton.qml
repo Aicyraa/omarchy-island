@@ -13,7 +13,7 @@ Item {
   implicitWidth: 36; implicitHeight: 36
   width: 36; height: 36
 
-  Rectangle { anchors.fill: parent; radius: width / 2
+  Rectangle { antialiasing: true; anchors.fill: parent; radius: width / 2
     color: root.on ? (area.containsMouse ? Qt.lighter(Theme.accentFill, 1.12) : Theme.accentFill) : (area.pressed ? Theme.surfaceRaised : (area.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.surface))
     Behavior on color { ColorAnimation { duration: 150 } }
     FocusRing { on: root.selected; radius: parent.radius } }

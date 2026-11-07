@@ -115,14 +115,14 @@ WidgetPanel {
             text: modelData.name; color: card.themeFg; font.pixelSize: 12; font.weight: Theme.weightLabel }
           Row { x: Theme.s12; y: parent.height - 19; spacing: 4
             Repeater { model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
-              delegate: Rectangle { required property string modelData; width: 10; height: 10; radius: 5; color: modelData
+              delegate: Rectangle { antialiasing: true; required property string modelData; width: 10; height: 10; radius: 5; color: modelData
                 border.width: 1; border.color: Qt.rgba(card.themeFg.r, card.themeFg.g, card.themeFg.b, 0.35) } } }
 
           // light / dark chip, top-left
-          Rectangle { x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.45)
+          Rectangle { antialiasing: true; x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.45)
             Icon { anchors.centerIn: parent; name: modelData.mode === "light" ? "sun" : "moon"; size: 13; color: Qt.rgba(1, 1, 1, 0.92) } }
           // current-theme badge, top-right
-          Rectangle { visible: card.isCurrent; x: parent.width - 30; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accentFill
+          Rectangle { antialiasing: true; visible: card.isCurrent; x: parent.width - 30; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accentFill
             Icon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText; strokeWidth: 2.4 } }
 
           MouseArea { id: cardArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.sel = card.index; root.apply(modelData) } }

@@ -44,8 +44,8 @@ WidgetPanel {
       text: Power.stateText + (Power.timeText(Power.secondsLeft) !== ""
             ? " · " + Power.timeText(Power.secondsLeft) + (Power.charging ? " to full" : " left") : "") }
   }
-  Rectangle { visible: Power.present; width: parent.width; height: 10; radius: 5; color: Theme.surface
-    Rectangle { height: parent.height; radius: 5; width: parent.width * Power.level
+  Rectangle { antialiasing: true; visible: Power.present; width: parent.width; height: 10; radius: 5; color: Theme.surface
+    Rectangle { antialiasing: true; height: parent.height; radius: 5; width: parent.width * Power.level
       color: Power.low ? Theme.dangerInk : (Power.charging ? Theme.successInk : Theme.accentFill)
       Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } } } }
 

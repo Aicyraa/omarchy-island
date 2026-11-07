@@ -38,7 +38,7 @@ WidgetPanel {
         required property var modelData
         required property int index
         width: 56; height: 56
-        Rectangle { anchors.fill: parent; radius: Theme.tileRadius; color: Theme.surface
+        Rectangle { antialiasing: true; anchors.fill: parent; radius: Theme.tileRadius; color: Theme.surface
           border.width: root.sel === index ? 2 : 0; border.color: Theme.text }
         Image { anchors.centerIn: parent; width: 28; height: 28; source: modelData.icon; sourceSize: Qt.size(56, 56); asynchronous: true }
         MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton

@@ -142,7 +142,7 @@ WidgetPanel {
 
   // ---- search overlay ----
   Column { visible: root.searching; width: parent.width; spacing: Theme.s8
-    Rectangle { width: parent.width; height: 40; radius: 20; color: Theme.surface
+    Rectangle { antialiasing: true; width: parent.width; height: 40; radius: 20; color: Theme.surface
       Icon { x: Theme.s16; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm }
       Text { x: Theme.s16 + Theme.iconSm + Theme.s8; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
         text: root.query === "" ? "Search time zones…" : root.query; color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 13 } }

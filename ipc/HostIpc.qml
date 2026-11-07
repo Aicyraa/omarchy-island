@@ -26,6 +26,7 @@ ShellIpc {
     // Test hooks: inject the hover event a real pointer produces over the focused screen's pill.
     if (what === "trace") { IslandState.debugTrace = !IslandState.debugTrace; return IslandState.debugTrace ? "trace on" : "trace off" }
     if (what === "stats") return JSON.stringify({ cpu: Stats.cpu, mem: Stats.memUsedGb, temp: Stats.temp, n: Stats.cpuHist.length, active: Stats.active })
+    if (what === "fake-rec") { Indicators.recording = !Indicators.recording; return Indicators.recording ? "rec on (until the next refresh)" : "rec off" }
     if (what === "indicators") return JSON.stringify({ dnd: Indicators.dnd, night: Indicators.nightLight, awake: Indicators.stayAwake, dictation: Indicators.dictation })
     if (what === "toggle-awake") { Indicators.toggleStayAwake(); return "toggled" }
     if (what === "hover-on") { IslandState.hoverIntent(true, IslandState.focusedScreenName()); return "hover on" }

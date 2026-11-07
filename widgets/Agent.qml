@@ -94,7 +94,7 @@ WidgetPanel {
               Repeater { model: card.modelData.days
                 delegate: Item { required property int index; required property real modelData
                   width: 5; height: 18
-                  Rectangle { anchors.bottom: parent.bottom; width: 5; radius: 2
+                  Rectangle { antialiasing: true; anchors.bottom: parent.bottom; width: 5; radius: 2
                     height: Math.max(2, 18 * parent.modelData / card.modelData.dayMax)
                     color: parent.index === card.modelData.days.length - 1 ? Theme.accentInk : card.track } } } }
             Column { anchors.verticalCenter: parent.verticalCenter; spacing: 0
@@ -119,7 +119,7 @@ WidgetPanel {
               font.pixelSize: 11; font.weight: Theme.weightLabel }
             Rectangle { anchors.left: lbl.right; anchors.leftMargin: Theme.s8; anchors.right: pct.left; anchors.rightMargin: Theme.s8
               anchors.verticalCenter: parent.verticalCenter; height: 8; radius: 4; color: card.track; opacity: known ? 1 : 0.5
-              Rectangle { visible: known; height: parent.height; radius: 4; width: parent.width * Math.min(1, modelData.percent)
+              Rectangle { antialiasing: true; visible: known; height: parent.height; radius: 4; width: parent.width * Math.min(1, modelData.percent)
                 color: modelData.percent >= 0.9 ? Theme.dangerInk : (modelData.percent >= 0.7 ? Theme.warningInk : Theme.accentInk) } }
           }
         }
