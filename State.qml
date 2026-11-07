@@ -79,6 +79,15 @@ Singleton {
   readonly property bool fullscreen:
     Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.hasFullscreen : false
 
+  // The Omarchy screensaver is a window with app id org.omarchy.screensaver on every monitor.
+  // While one exists the island stays hidden, even for widgets.
+  readonly property bool screensaver: {
+    var t = ToplevelManager.toplevels.values
+    for (var i = 0; i < t.length; i++)
+      if (t[i].appId === "org.omarchy.screensaver") return true
+    return false
+  }
+
   function focusedScreenName() {
     return Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
   }

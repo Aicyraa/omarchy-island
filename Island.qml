@@ -84,8 +84,8 @@ PanelWindow {
   // Only grab the keyboard while a widget is open on this screen.
   WlrLayershell.keyboardFocus: myMode === "widget" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
-  // Hide in fullscreen unless the user explicitly opened a widget.
-  visible: !IslandState.barHidden && !(IslandState.fullscreen && myMode !== "widget")
+  // Hide in fullscreen unless the user explicitly opened a widget; always hide under the screensaver.
+  visible: !IslandState.barHidden && !IslandState.screensaver && !(IslandState.fullscreen && myMode !== "widget")
 
   // Click-outside closes a widget: while open, a focus grab watches for a click
   // elsewhere and reports `cleared`.
