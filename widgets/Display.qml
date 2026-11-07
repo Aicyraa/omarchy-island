@@ -28,7 +28,6 @@ WidgetPanel {
     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (row === 1) Indicators.toggleNightLight(); e.accepted = true }
   }
 
-  Text { textFormat: Text.PlainText; text: "Display"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
   PillSlider {
     width: parent.width; icon: "sun"; value: Brightness.level; visible: Brightness.available
     selected: root.row === 0; showValue: true

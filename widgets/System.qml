@@ -2,7 +2,7 @@ import QtQuick
 import ".."
 import "../services"
 
-// System: CPU, memory and CPU temperature as equal cards with real line charts, then detail tiles (load, uptime,
+// System: CPU, memory and CPU temperature as equal cards with real line charts, then detail tiles (load,
 // disk, swap, network, clock speed) and the three busiest processes.
 // History comes from Stats, a shared 2 s ring buffer (the one documented exception to
 // "nothing polls while hidden"), so the charts are already full when this opens.
@@ -18,7 +18,6 @@ WidgetPanel {
 
   // ---- details: from the SysInfo service (kept warm by Prefetch); refreshed every 2.5 s while this is open ----
   readonly property real load1: SysInfo.load1; readonly property real load5: SysInfo.load5; readonly property real load15: SysInfo.load15
-  readonly property real uptimeSec: SysInfo.uptimeSec
   readonly property real diskUsed: SysInfo.diskUsed; readonly property real diskSize: SysInfo.diskSize
   readonly property real swapTotal: SysInfo.swapTotal; readonly property real swapUsed: SysInfo.swapUsed
   readonly property real freqMHz: SysInfo.freqMHz; readonly property int cores: SysInfo.cores
@@ -58,11 +57,10 @@ WidgetPanel {
   Flow {
     width: parent.width; spacing: Theme.s12
     StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Load average"; value: root.load1.toFixed(2) + " · " + root.load5.toFixed(2) + " · " + root.load15.toFixed(2); fraction: root.cores > 0 ? root.load1 / root.cores : -1 }
-    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Uptime"; value: root.dur(root.uptimeSec) }
     StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "CPU clock"; value: root.freqMHz > 0 ? (root.freqMHz / 1000).toFixed(2) + " GHz · " + root.cores + " cores" : "—" }
     StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Disk /"; value: root.bytes(root.diskUsed) + " / " + root.bytes(root.diskSize); fraction: root.diskUsed / root.diskSize }
-    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
-    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
+    StatTile { width: (parent.width - Theme.s12) / 2; label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
+    StatTile { width: (parent.width - Theme.s12) / 2; label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
   }
 
   // ---- busiest processes (share of the whole CPU) ----

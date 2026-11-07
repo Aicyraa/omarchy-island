@@ -99,7 +99,6 @@ WidgetPanel {
 
   // ---- header ----
   Item { width: parent.width; height: 28
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "World clock"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Rectangle { visible: !root.searching; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
       height: 28; width: addLabel.implicitWidth + Theme.s16 * 2; radius: 14; color: Theme.surface
       Text { id: addLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }

@@ -28,11 +28,10 @@ Item {
 
   // ---- profile data (read once per hover) ----
   property string host: ""
-  property string uptime: ""
   Process {
     running: true
-    command: ["bash", "-c", "hostname; uptime -p | sed 's/^up //; s/ days\\?/d/; s/ hours\\?/h/; s/ minutes\\?/m/; s/,//g'"]
-    stdout: StdioCollector { onStreamFinished: { var l = text.split("\n"); root.host = l[0] || ""; root.uptime = l[1] || "" } }
+    command: ["hostname"]
+    stdout: StdioCollector { onStreamFinished: root.host = text.trim() }
   }
   SystemClock { id: clock; precision: SystemClock.Minutes }
   readonly property string userName: { var u = Quickshell.env("USER") || "user"; return u.charAt(0).toUpperCase() + u.slice(1) }
@@ -69,7 +68,7 @@ Item {
         anchors.left: avatar.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: 2
         Text { textFormat: Text.PlainText; text: root.greeting; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
         Text { textFormat: Text.PlainText; text: root.userName; color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 18; font.weight: Theme.weightStrong }
-        Text { textFormat: Text.PlainText; text: root.host + (root.uptime !== "" ? " · up " + root.uptime : ""); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
+        Text { textFormat: Text.PlainText; text: root.host; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
       }
       Column {
         anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1

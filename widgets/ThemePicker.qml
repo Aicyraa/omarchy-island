@@ -59,9 +59,8 @@ WidgetPanel {
   onCurrentChanged: syncToCurrent()
   onThemesChanged: syncToCurrent()
 
-  // ---- header: title on the left, position / status on the right ----
+  // ---- header: position / status on the right ----
   Item { width: parent.width; height: 24
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Themes"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
       text: root.applying !== "" ? "Applying " + root.applying + "…" : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length : "")
       color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: 12 }

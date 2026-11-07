@@ -15,7 +15,6 @@ WidgetPanel {
 
   property int sel: 3                     // starts on Lock, the safest action
   property bool hibernate: false          // only true if the system really supports it
-  property string uptime: ""
   property bool restartNeeded: false
   property string booted: ""
   property string kernel: ""
@@ -44,13 +43,9 @@ WidgetPanel {
     else if (e.key === Qt.Key_H && hibernate) { Cmd.run(["bash", "-c", "omarchy-system-lock; systemctl hibernate"]); IslandState.closeWidget(); e.accepted = true }
   }
 
-  Item { width: parent.width; height: 28
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Power"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
-    Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Rectangle { antialiasing: true; visible: root.restartNeeded; height: 20; width: badge.width + 16; radius: 10; color: Theme.warning
-        Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: 10; font.weight: Theme.weightLabel } }
-      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: root.uptime; color: Theme.textMuted; font.pixelSize: 12 } }
-  }
+  // Only shown when a reboot is pending (the kernel's modules are gone).
+  Rectangle { antialiasing: true; visible: root.restartNeeded; height: 22; width: badge.width + 20; radius: 11; color: Theme.warning
+    Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: 11; font.weight: Theme.weightLabel } }
 
   Row {
     width: parent.width; spacing: Theme.s12
@@ -95,11 +90,6 @@ WidgetPanel {
       var pr = l[2] || ""; root.profile = pr === "power-saver" ? "Saver" : pr === "performance" ? "Performance" : pr === "balanced" ? "Balanced" : pr
       root.session = l[3] || "" } } }
   Process { running: true; command: ["omarchy-hibernation-available"]; onExited: function (code) { root.hibernate = (code === 0) } }
-  Process { running: true; command: ["awk", "{print int($1)}", "/proc/uptime"]
-    stdout: StdioCollector { onStreamFinished: {
-      var s = parseInt(text.trim()); if (isNaN(s)) return
-      var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60)
-      root.uptime = "up " + (d > 0 ? d + "d " : "") + (h > 0 || d > 0 ? h + "h " : "") + m + "m" } } }
   // Limited check: the running kernel's modules are gone => a reboot is pending.
   Process { running: true; command: ["bash", "-c", "[ -d /usr/lib/modules/$(uname -r) ] || echo restart"]
     stdout: StdioCollector { onStreamFinished: root.restartNeeded = text.indexOf("restart") >= 0 } }

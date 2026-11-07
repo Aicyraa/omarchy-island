@@ -49,10 +49,8 @@ WidgetPanel {
   Item {
     visible: root.agents.length > 0; width: parent.width; height: 24
     Row { anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Agents"
-        color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; visible: AgentUsage.fetchedAt > 0
-        text: "· updated " + root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: 11 } }
+        text: "Updated " + root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: 11 } }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s12
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Today"; color: Theme.textMuted; font.pixelSize: 11 }
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: root.fmt(root.todayTokens) + " tokens"

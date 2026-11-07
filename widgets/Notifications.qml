@@ -19,9 +19,8 @@ WidgetPanel {
     else if (e.key === Qt.Key_R) { Cmd.run(["omarchy-shell", "-q", "notifications", "showHistory"]); e.accepted = true }
   }
 
-  // Header: title and a Focus button that shows its state, on one centre line.
+  // Header: a Focus button that shows its state, on one centre line.
   Item { width: parent.width; height: 36
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Notifications"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
     Rectangle {
       anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
       height: 32; width: focusRow.implicitWidth + Theme.s16 * 2; radius: 16
