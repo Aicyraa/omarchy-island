@@ -236,7 +236,6 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | T and SHIFT + SPACE | Omarchy theme menu (`rebind`) | island theme picker |
 | SHIFT + A | Omarchy Agent (`omarchy-agent --pick`) | Omarchy Agent, launches the default agent in a terminal (the island agent widget is on SUPER + ALT + A) |
 | ALT + W | free | weather |
-| ALT + ESCAPE | free | panic: `omarchy restart shell` |
 
 `hl.unbind` is used before the keys the old control center bound; `o.rebind` replaces Omarchy defaults whose target
 (a stock bar widget panel) no longer exists under the island. Original lines are in `bindings.lua.bak-island-*`.
@@ -253,17 +252,6 @@ never repeated on its own. The update indicator runs `omarchy-update-available` 
 ## Tuning notes: reduced motion
 `omarchy-shell island reducedMotion true` sets every spring and fade to 0 and disables overshoot (persisted in
 `~/.local/state/island/state.json`, together with `weatherLocation`).
-
-## Rollback
-- Fast: `./rollback.sh` (re-enables `jee.bar` and stock OSD, disables the island, restarts the shell). One-liner without the script:
-  `omarchy plugin disable io.github.aicyraa.island; omarchy plugin enable jee.bar; omarchy plugin enable omarchy.osd; omarchy restart shell`
-- The host also falls back to the stock bar by itself if the island fails to load.
-- Panic key: SUPER + CTRL + ALT + ESCAPE restarts the shell.
-- Config backups: `~/.config/omarchy/shell.json.bak-island-*`, `~/.config/hypr/bindings.lua.bak-island-*`, `looknfeel.lua.bak-island-*`.
-- The old control center is disabled, not deleted: `~/.config/omarchy/plugins/io.github.aicyraa.control-center.disabled`
-  (backup copy in `~/.config/omarchy/backups/`, source in `~/Work/omarchy-control-center`).
-  Restore: rename the folder back, `omarchy plugin enable io.github.aicyraa.control-center`.
-- `omarchy restart shell` refuses while the screen is locked; unlock first.
 
 ## Verified
 Measured (rig, 3 themes unless noted; numbers and before/after images are in `~/Work/omarchy-island-ss`):
@@ -319,7 +307,7 @@ The hover form works the same way: when the pointer is reported gone, `closeTime
 - **Left capsule**: workspaces 1-5 are always shown as dots; workspaces beyond 5 that exist (or you are on) are appended, with a small "..." marker where the numbering skips (1 2 3 4 5 ... 8). The focused workspace is one short pill that glides between dots (its leading edge on a fast spring, the trailing edge on a slower one, so it stretches while travelling); new slots scale in. Test data: `ISLAND_FAKE_WS=1,2,3,8 ISLAND_FAKE_FOCUS=8`.
 - **Right capsule**: the battery icon only (click opens the battery widget). No Wi-Fi icon and no status icons (Focus, Night light, Awake, dictation, update, **screen recording**) in the bar; they are in the hover form. The exception is a pulsing red dot in the right capsule while screen recording (click it to stop).
 - The capsules (20 px tall) tuck 6 px under the pill's concave ears (the ears are drawn above them) and follow its springing edges, so they are pushed outward when the pill grows into a widget and slide back with it. The fixed window is `Theme.windowWidth` (1000) wide; clicks pass through everywhere except the pill zone and the two capsules.
-- **Audio visualizer** (ported from the old `jee.clock` widget): while a player is playing, five 2 px bars (cava, `assets/viz-bar.conf`, same 12 px / sqrt scaling and 320 ms slide-scale-fade entrance as before) appear on the left of the time and the pill makes room. cava runs only while a track plays and the idle form is showing. `ISLAND_FORCE_VIZ=1` forces it on for testing.
+- **Audio visualizer** (ported from the previous bar's clock widget): while a player is playing, five 2 px bars (cava, `assets/viz-bar.conf`, same 12 px / sqrt scaling and 320 ms slide-scale-fade entrance as before) appear on the left of the time and the pill makes room. cava runs only while a track plays and the idle form is showing. `ISLAND_FORCE_VIZ=1` forces it on for testing.
 - Toggles (Focus, Night light, Awake) flip the visible state immediately and re-read it 450 ms later; a refresh requested while another is running is queued, not dropped.
 
 ## Transition timeline (what the pill does when a widget opens, switches or closes)

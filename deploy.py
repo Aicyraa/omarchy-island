@@ -13,7 +13,7 @@ import shutil, sys
 
 src = Path(__file__).resolve().parent
 plugins = Path.home() / ".config/omarchy/plugins"
-SKIP = {"deploy.py", "rollback.sh", "README.md", "LICENSE", "rig.qml", "tools", "osd", ".git", "__pycache__"}
+SKIP = {"deploy.py", "README.md", "LICENSE", "rig.qml", "tools", "osd", ".git", "__pycache__"}
 
 def copy_tree(source: Path, target: Path, skip=frozenset()):
     # Replace the plugin's OWN directory so deleted files don't linger.
