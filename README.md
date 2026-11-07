@@ -318,3 +318,6 @@ Every rounded shape in the bar is antialiased, and the Hyprland layer rule for t
 
 ## The no-cover disc
 When a track has no cover art (or it has not loaded yet) the media card shows `components/Vinyl.qml`: a black record with grooves, a label in the theme accent, a mark so the spin is visible, a fixed sheen, spinning while the track plays. (A drop shadow was tried and removed: it made the outlines look rough.)
+
+## No snapping while data loads
+A widget whose content arrives late (Wi-Fi networks, Bluetooth devices, the world clock, agents, weather, system details, themes) sets `dataLoading: true`. The island remembers each widget's height from the last time it was fully loaded (`Cache` key `wsize`) and uses it two ways: as the pill's size from the first frame, and as the widget's `reserve`. While loading, `WidgetPanel` keeps that height and fills the space the real content does not cover yet with pulsing placeholder rows, so the pill opens at its final size and the data just fills in. The reservation ends when loading ends (or after 2.5 s). Test: `ISLAND_FORCE_LOADING=1`. The rig and the live shell share the cache file.

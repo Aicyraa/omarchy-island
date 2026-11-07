@@ -19,6 +19,7 @@ WidgetPanel {
   property var rows: []                  // [{zone, city, time, day, offset, night, hour}]
   property int sel: 0
   property bool use24h: true
+  dataLoading: rows.length === 0
   property string localZone: ""
   property var cityMap: ({})                 // IANA zone -> [lat, lon], from assets/cities.json (Omarchy's Elsewhen list)
   readonly property var sunMarkers: {

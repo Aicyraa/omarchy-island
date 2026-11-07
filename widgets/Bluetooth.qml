@@ -26,6 +26,7 @@ WidgetPanel {
   readonly property var paired: all.filter(function (d) { return !d.connected && (d.paired || d.bonded) })
   readonly property var available: all.filter(function (d) { return !d.connected && !(d.paired || d.bonded) })
   readonly property var flat: connected.concat(paired).concat(available)
+  dataLoading: Bt.enabled && flat.length === 0
 
   function isPending(d) { return pending[d.address] === true || d.state === BluetoothDeviceState.Connecting || d.state === BluetoothDeviceState.Disconnecting }
   function statusOf(d) {

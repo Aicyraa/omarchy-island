@@ -35,11 +35,15 @@ PanelWindow {
   // (content + padding, clamped). Until the widget is loaded (the first ~100 ms
   // of an open, or while A is fading into B) we use the Registry's estimate; when
   // the real item appears the spring simply retargets, with no restart of the fade.
+  // The height each widget had the last time it was fully loaded (kept in the Cache): used as its first-frame size and handed to
+  // the widget as `reserve`, so a widget whose data arrives late opens at its final size instead of snapping.
+  function savedHeight(name) { var m = Cache.get("wsize"); return (m && m[name]) ? m[name] : 0 }
   function widgetSizeOf(name) {
     var it = widgetLoader.item
     if (it && pill.shownWidget === name && it.implicitHeight > 0)
       return Qt.size(Math.min(Theme.panelMaxWidth, it.implicitWidth), it.implicitHeight)
-    return Qt.size(Registry.width(name), Registry.height(name))
+    var saved = savedHeight(name)
+    return Qt.size(Registry.width(name), saved > 0 ? saved : Registry.height(name))
   }
   // The hover preview sizes itself; before it is loaded, estimate from whether a player exists.
   function hoverSize() {
@@ -434,6 +438,8 @@ PanelWindow {
         focus: true
         source: active && pill.shownWidget !== "" ? "widgets/" + Registry.fileOf(pill.shownWidget) : ""
         onLoaded: {
+          if (item.hasOwnProperty("reserve")) item.reserve = win.savedHeight(pill.shownWidget)
+          sizeSave.restart()
           item.forceActiveFocus()
           // Widgets that need the window (e.g. tray context menus) declare `hostWindow`.
           if (item.hasOwnProperty("hostWindow")) item.hostWindow = win
@@ -441,6 +447,17 @@ PanelWindow {
       }
     }
   }
+
+  // Remember a widget's size once it is fully loaded and has stopped changing.
+  Timer { id: sizeSave; interval: 700
+    onTriggered: {
+      var it = widgetLoader.item, name = pill.shownWidget
+      if (!it || name === "" || it.dataLoading === true || !(it.implicitHeight > 0)) return
+      var m = Object.assign({}, Cache.get("wsize") || {})
+      if (Math.abs((m[name] || 0) - it.implicitHeight) < 2) return
+      m[name] = Math.round(it.implicitHeight); Cache.put("wsize", m)
+    } }
+  Connections { target: widgetLoader.item; ignoreUnknownSignals: true; function onImplicitHeightChanged() { sizeSave.restart() } }
 
   // The 40ms-late height (see below).
   property real delayedH: target.height

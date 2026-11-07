@@ -14,6 +14,7 @@ WidgetPanel {
   Component.onCompleted: Stats.sampling = true
   Component.onDestruction: Stats.sampling = false
 
+  dataLoading: !SysInfo.loaded
   readonly property real tempWarn: Stats.temp > 80 ? 2 : (Stats.temp > 70 ? 1 : 0)
 
   // ---- details: from the SysInfo service (kept warm by Prefetch); refreshed every 2.5 s while this is open ----

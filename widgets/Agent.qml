@@ -44,6 +44,7 @@ WidgetPanel {
   }
   function shortModel(m) { return String(m).replace(/^claude-/, "").replace(/^gpt-/, "GPT-").slice(0, 22) }
 
+  dataLoading: !AgentUsage.loaded
   compact: !loading && agents.length === 0
   // ---- summary ----
   Item {

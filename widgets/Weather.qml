@@ -20,6 +20,7 @@ WidgetPanel {
   Keys.onPressed: function (e) { if (e.key === Qt.Key_R) { WeatherData.refresh(); e.accepted = true } }
   Component.onCompleted: WeatherData.refreshIfStale()
 
+  dataLoading: state === "loading"
   compact: state !== "ok"
   Text { visible: root.state === "loading"; textFormat: Text.PlainText; text: "Fetching weather…"; color: Theme.textMuted; font.pixelSize: 13 }
   Row { visible: root.state === "error"; spacing: Theme.s8

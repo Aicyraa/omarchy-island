@@ -15,6 +15,7 @@ WidgetPanel {
   property int sel: 0
   property var info: ({})
   property bool loadingInfo: true
+  dataLoading: Net.enabled && Net.hasWifi && nets.length === 0
   readonly property var nets: Net.networks
 
   function band(f) { var n = parseFloat(f); return isNaN(n) ? "" : (n >= 5900 ? "6 GHz" : n >= 4900 ? "5 GHz" : "2.4 GHz") }

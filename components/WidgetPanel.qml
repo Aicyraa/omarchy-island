@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import ".."
 
 // WidgetPanel: the base every widget is built on. It is what makes panels
@@ -31,9 +32,19 @@ Item {
   readonly property int inset: Theme.s8
   readonly property real contentH: col.implicitHeight + 2 * pad
 
+  // ---- no snapping while data loads ----
+  // A widget whose content arrives late (a list, a fetched reading) sets `dataLoading: true`. Island hands it `reserve`, the
+  // height it had last time it was fully loaded (remembered in the Cache). While loading, the panel keeps that height and
+  // fills the part the real content does not cover yet with placeholder rows, so the pill opens at its final size and the
+  // data just fills in. The reservation ends when loading ends, or after 2.5 s so an empty result cannot hold it forever.
+  property bool dataLoading: false
+  property real reserve: 0
+  readonly property bool reserving: (dataLoading || Quickshell.env("ISLAND_FORCE_LOADING") === "1") && reserve > 0 && reserveTimer.running
+  Timer { id: reserveTimer; interval: 2500; running: true }
+
   focus: true
   implicitWidth: preferredWidth
-  implicitHeight: Math.max(compact ? 40 : Theme.panelMinHeight, Math.min(Theme.panelMaxHeight, contentH))
+  implicitHeight: Math.max(compact ? 40 : Theme.panelMinHeight, Math.min(Theme.panelMaxHeight, reserving ? Math.max(contentH, reserve) : contentH))
   readonly property bool scrollable: contentH > height + 1
 
   function reveal(item) {
@@ -80,6 +91,26 @@ Item {
       Behavior on y { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
       Behavior on width { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
       Behavior on height { enabled: hl.has && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.45; epsilon: 0.3 } }
+    }
+
+    // placeholder rows for the data that has not arrived (shown only while reserving, below the real content)
+    Column {
+      id: skeleton
+      visible: panel.reserving && rows > 0
+      x: panel.pad; y: col.y + col.implicitHeight + Theme.sectionGap
+      width: panel.width - 2 * panel.pad; spacing: Theme.rowGap
+      readonly property real room: panel.reserve - panel.contentH - Theme.sectionGap
+      readonly property int rows: Math.max(0, Math.floor((room + spacing) / (44 + spacing)))
+      SequentialAnimation on opacity { running: skeleton.visible && !IslandState.reducedMotion; loops: Animation.Infinite
+        NumberAnimation { to: 0.45; duration: 900; easing.type: Easing.InOutSine }
+        NumberAnimation { to: 1.0; duration: 900; easing.type: Easing.InOutSine } }
+      Repeater {
+        model: skeleton.rows
+        delegate: Rectangle { antialiasing: true; width: skeleton.width; height: 44; radius: Theme.tileRadius - 4; color: Theme.surface
+          Rectangle { antialiasing: true; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; color: Theme.mix(Theme.surface, Theme.text, 0.08) }
+          Rectangle { antialiasing: true; x: Theme.s12 + 26 + Theme.s12; y: 12; width: (parent.width - 90) * (index % 2 ? 0.45 : 0.6); height: 8; radius: 4; color: Theme.mix(Theme.surface, Theme.text, 0.10) }
+          Rectangle { antialiasing: true; x: Theme.s12 + 26 + Theme.s12; y: 26; width: (parent.width - 90) * (index % 2 ? 0.3 : 0.38); height: 6; radius: 3; color: Theme.mix(Theme.surface, Theme.text, 0.06) } }
+      }
     }
 
     Column {

@@ -23,6 +23,7 @@ WidgetPanel {
   property string applying: ""            // name being applied (clears itself after a few seconds)
   property int sel: 0
   readonly property bool loading: !Themes.loaded
+  dataLoading: !Themes.loaded
   readonly property var debugState: ({ sel: sel, count: themes.length, contentX: Math.round(strip.contentX) })
 
   readonly property int cardW: 156
