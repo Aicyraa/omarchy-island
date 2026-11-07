@@ -60,14 +60,14 @@ Item {
 
   Item {
     anchors.fill: parent; anchors.margins: Theme.s12
-    // cover
+    // cover: the art, or a spinning vinyl record when there is none (or it has not loaded yet)
     ClippingRectangle {
       id: cover
-      width: 84; height: 84; radius: 14; color: Qt.rgba(1, 1, 1, root.hasArt ? 0.12 : 0.06)
+      width: 84; height: 84; radius: 14; color: "transparent"
       Image { anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; source: root.art
         sourceSize.width: 256; sourceSize.height: 256; visible: status === Image.Ready }
-      Icon { anchors.centerIn: parent; name: "music"; size: 28; color: root.fgMuted; visible: !root.hasArt }
     }
+    Vinyl { anchors.fill: cover; visible: !root.hasArt; spinning: root.p !== null && root.p.isPlaying && root.live }
     Column {
       anchors.left: cover.right; anchors.leftMargin: Theme.s12; anchors.right: parent.right
       anchors.top: parent.top; spacing: 2

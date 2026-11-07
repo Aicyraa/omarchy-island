@@ -22,3 +22,4 @@ Scroller 1.0 components/Scroller.qml
 FocusRing 1.0 components/FocusRing.qml
 FocusTarget 1.0 components/FocusTarget.qml
 StatTile 1.0 components/StatTile.qml
+Vinyl 1.0 components/Vinyl.qml
