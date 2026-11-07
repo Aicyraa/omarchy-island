@@ -12,15 +12,15 @@ var widgets = {
   bluetooth: { file: "Bluetooth.qml", w: 480, h: 149 },
   audio: { file: "Audio.qml", w: 640, h: 278 },
   display: { file: "Display.qml", w: 460, h: 212 },
-  battery: { file: "Battery.qml", w: 480, h: 212 },
+  battery: { file: "Battery.qml", w: 480, h: 172 },
   calendar: { file: "Calendar.qml", w: 400, h: 348 },
-  worldclock: { file: "WorldClock.qml", w: 620, h: 380 },
+  worldclock: { file: "WorldClock.qml", w: 620, h: 340 },
   power: { file: "Power.qml", w: 660, h: 276 },
   notifications: { file: "Notifications.qml", w: 480, h: 420 },
-  system: { file: "System.qml", w: 620, h: 380 },
+  system: { file: "System.qml", w: 620, h: 420 },
   tray: { file: "Tray.qml", w: 200, h: 48 },
   theme:         { file: "ThemePicker.qml", w: 720, h: 188 },
-  weather: { file: "Weather.qml", w: 440, h: 128 },
+  weather: { file: "Weather.qml", w: 440, h: 190 },
   agent: { file: "Agent.qml", w: 600, h: 372 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }

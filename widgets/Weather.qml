@@ -27,19 +27,33 @@ WidgetPanel {
     Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter
       text: "Couldn't load weather. Check your connection."; color: Theme.textMuted; font.pixelSize: 12 } }
 
-  Row { visible: root.state === "ok"; width: parent.width; spacing: Theme.s16
-    Icon { name: root.w.icon; size: 44; color: root.w.icon === "sun" ? Theme.warningInk : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-    Text { textFormat: Text.PlainText; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 44; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
-    Column { anchors.verticalCenter: parent.verticalCenter
-      Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
-      Text { textFormat: Text.PlainText; text: root.w.place; color: Theme.text; font.pixelSize: 12 }
-      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
-        text: (root.location !== "" ? "custom location" : "from your IP address") + (WeatherData.age > 120000 ? " · " + Math.round(WeatherData.age / 60000) + " min ago" : "") } }
+  // The condition card: a soft sky tint (warm by day, cool at night), the big icon and temperature, the condition
+  // and place, and High / Low on the right.
+  readonly property bool night: w.icon.indexOf("moon") >= 0
+  Rectangle {
+    visible: root.state === "ok"; antialiasing: true
+    width: parent.width; height: 96; radius: Theme.tileRadius + 2
+    gradient: Gradient { orientation: Gradient.Horizontal
+      GradientStop { position: 0; color: Theme.mix(Theme.surface, root.night ? Theme.accentFill : Theme.warning, root.night ? 0.30 : 0.20) }
+      GradientStop { position: 1; color: Theme.surface } }
+    Icon { id: heroIcon; x: Theme.s16; anchors.verticalCenter: parent.verticalCenter; name: root.w.icon; size: 52
+      color: root.w.icon === "sun" ? Theme.warningInk : Theme.text }
+    Text { id: heroTemp; anchors.left: heroIcon.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
+      textFormat: Text.PlainText; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 46; font.weight: Theme.weightStrong }
+    Column { anchors.left: heroTemp.right; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
+      Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel }
+      Text { textFormat: Text.PlainText; text: root.w.place + (WeatherData.age > 120000 ? " · " + Math.round(WeatherData.age / 60000) + " min ago" : ""); color: Theme.textMuted; font.pixelSize: 12 } }
+    Column { anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+      Row { spacing: 6; anchors.right: parent.right
+        Text { text: "High"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+        Text { text: root.w.hi + "°"; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
+      Row { spacing: 6; anchors.right: parent.right
+        Text { text: "Low"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+        Text { text: root.w.lo + "°"; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
+    }
   }
-  Row { visible: root.state === "ok"; width: parent.width
-    Repeater { model: [ { k: "High", v: root.w.hi + "°" }, { k: "Low", v: root.w.lo + "°" },
-                        { k: "Feels like", v: root.w.feels + "°" }, { k: "Humidity", v: root.w.humidity + "%" } ]
-      delegate: Column { required property var modelData; width: parent.width / 4
-        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
-        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel } } } }
+  Row { visible: root.state === "ok"; width: parent.width; spacing: Theme.s12
+    Repeater { model: [ { k: "Feels like", v: root.w.feels + "°" }, { k: "Humidity", v: root.w.humidity + "%" } ]
+      delegate: StatTile { required property var modelData; width: (parent.width - Theme.s12) / 2; label: modelData.k; value: modelData.v
+        fraction: modelData.k === "Humidity" ? root.w.humidity / 100 : -1 } } }
 }

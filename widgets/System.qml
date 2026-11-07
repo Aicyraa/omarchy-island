@@ -32,7 +32,7 @@ WidgetPanel {
     id: card
     property string icon; property string label; property string value; property string unit
     property var hist: []; property color tint: Theme.accentInk
-    width: (parent.width - 2 * Theme.s12) / 3; height: 128; radius: Theme.tileRadius + 4; color: Theme.surface
+    width: (parent.width - 2 * Theme.s12) / 3; height: 100; radius: Theme.tileRadius + 4; color: Theme.surface
     Icon { x: Theme.s16; y: Theme.s16; name: card.icon; size: Theme.iconMd; color: card.tint }
     Text { x: Theme.s16 + Theme.iconMd + Theme.s8; y: Theme.s16; height: Theme.iconMd; verticalAlignment: Text.AlignVCenter
       textFormat: Text.PlainText; text: card.label; color: Theme.textMuted; font.pixelSize: 12 }
@@ -41,8 +41,8 @@ WidgetPanel {
       Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text; font.pixelSize: 26; font.weight: Theme.weightStrong }
       Text { anchors.left: val.right; anchors.leftMargin: 4; anchors.baseline: val.baseline; textFormat: Text.PlainText
         text: card.unit; color: Theme.textMuted; font.pixelSize: 12 } }
-    Sparkline { x: Theme.s16; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s16
-      width: parent.width - 2 * Theme.s16; height: 36; samples: card.hist; color: card.tint }
+    Sparkline { x: Theme.s16; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
+      width: parent.width - 2 * Theme.s16; height: 26; samples: card.hist; color: card.tint }
   }
 
   Row {
@@ -63,21 +63,29 @@ WidgetPanel {
     StatTile { width: (parent.width - Theme.s12) / 2; label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
   }
 
-  // ---- busiest processes (share of the whole CPU) ----
+  // ---- busiest processes (share of the whole CPU): a letter badge, the name, a bar and the numbers ----
   Column {
-    width: parent.width; spacing: 2; visible: root.procs.length > 0
-    Text { textFormat: Text.PlainText; text: "Busiest processes"; color: Theme.textMuted; font.pixelSize: 11; bottomPadding: 4 }
+    width: parent.width; spacing: Theme.s8; visible: root.procs.length > 0
+    Text { textFormat: Text.PlainText; text: "Busiest processes"; color: Theme.textMuted; font.pixelSize: 11 }
     Repeater { model: root.procs
-      delegate: Item { required property var modelData; width: parent.width; height: 20
-        Text { anchors.verticalCenter: parent.verticalCenter; width: parent.width - 200; elide: Text.ElideRight; textFormat: Text.PlainText
-          text: modelData.name; color: Theme.text; font.pixelSize: 12 }
-        Rectangle { antialiasing: true; anchors.right: parent.right; anchors.rightMargin: 128; anchors.verticalCenter: parent.verticalCenter; width: 48; height: 4; radius: 2
-          color: Theme.mix(Theme.pill, Theme.text, 0.14)
-          Rectangle { antialiasing: true; height: parent.height; radius: 2; width: parent.width * Math.min(1, modelData.cpu / 100); color: Theme.accentInk } }
-        Text { anchors.right: parent.right; anchors.rightMargin: 72; anchors.verticalCenter: parent.verticalCenter; width: 44; horizontalAlignment: Text.AlignRight
-          textFormat: Text.PlainText; text: modelData.cpu.toFixed(modelData.cpu < 10 ? 1 : 0) + "%"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
-        Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 64; horizontalAlignment: Text.AlignRight
-          textFormat: Text.PlainText; text: modelData.mem.toFixed(1) + "% mem"; color: Theme.textMuted; font.pixelSize: 11 } }
+      delegate: Rectangle { required property var modelData; required property int index
+        width: parent.width; height: 38; radius: Theme.tileRadius - 4; color: Theme.surface; antialiasing: true
+        readonly property color tint: modelData.cpu >= 50 ? Theme.dangerInk : (modelData.cpu >= 25 ? Theme.warningInk : Theme.accentInk)
+        Rectangle { id: badge; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; antialiasing: true
+          color: Theme.mix(Theme.surface, parent.tint, 0.22)
+          Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: String(modelData.name).charAt(0).toUpperCase(); color: parent.parent.tint
+            font.pixelSize: 12; font.weight: Theme.weightLabel } }
+        Text { id: pname; anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: nums.left; anchors.rightMargin: Theme.s8; y: 6
+          elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.name; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
+        Rectangle { anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: parent.right; anchors.rightMargin: Theme.s12
+          y: parent.height - 11; height: 4; radius: 2; antialiasing: true; color: Theme.mix(Theme.surface, Theme.text, 0.14)
+          Rectangle { height: parent.height; radius: 2; antialiasing: true; color: parent.parent.tint
+            width: Math.max(4, parent.width * Math.min(1, modelData.cpu / 100))
+            Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } } } }
+        Row { id: nums; anchors.right: parent.right; anchors.rightMargin: Theme.s12; y: 6; spacing: Theme.s8
+          Text { textFormat: Text.PlainText; text: modelData.cpu.toFixed(modelData.cpu < 10 ? 1 : 0) + "%"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
+          Text { textFormat: Text.PlainText; text: modelData.mem.toFixed(1) + "% mem"; color: Theme.textMuted; font.pixelSize: 11; anchors.baseline: parent.children[0].baseline } }
+      }
     }
   }
 }

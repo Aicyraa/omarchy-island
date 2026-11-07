@@ -72,8 +72,9 @@ WidgetPanel {
                { k: "Band", v: root.band(root.info.freq) || "—" },
                { k: "Speed", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "—" } ]
       delegate: Column { required property var modelData; width: parent.width / 4
-        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
-        Text { width: parent.width - Theme.s8; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel } }
+        Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
+        Text { width: parent.width - Theme.s8; anchors.horizontalCenter: parent.horizontalCenter; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+          textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel } }
     }
   }
   Text { visible: Net.connected && root.loadingInfo; textFormat: Text.PlainText

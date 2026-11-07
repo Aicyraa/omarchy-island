@@ -34,38 +34,36 @@ WidgetPanel {
   Text { visible: !Power.present; textFormat: Text.PlainText
     text: "No battery in this machine"; color: Theme.textMuted; font.pixelSize: 14 }
 
-  // Big percentage (the number ticks between values instead of snapping).
-  Column {
-    visible: Power.present; width: parent.width; spacing: 2
+  // Header line: the big percentage and its state on the left; "Charging at"/"Draw" and "Health" on the same line, on the right,
+  // as two little cards. Metrics with no data are not drawn.
+  Item {
+    visible: Power.present; width: parent.width; height: 56
     property real shown: Power.level * 100
     Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
-    Text { textFormat: Text.PlainText; text: Math.round(parent.shown) + "%"; color: Theme.text; font.pixelSize: 32; font.weight: Theme.weightStrong }
-    Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
-      text: Power.stateText + (Power.timeText(Power.secondsLeft) !== ""
-            ? " · " + Power.timeText(Power.secondsLeft) + (Power.charging ? " to full" : " left") : "") }
-  }
-  Rectangle { antialiasing: true; visible: Power.present; width: parent.width; height: 10; radius: 5; color: Theme.surface
-    Rectangle { antialiasing: true; height: parent.height; radius: 5; width: parent.width * Power.level
-      color: Power.low ? Theme.dangerInk : (Power.charging ? Theme.successInk : Theme.accentFill)
-      Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } } } }
-
-  // Only the metrics that actually have data.
-  Row {
-    visible: Power.present && metrics.count > 0
-    width: parent.width; spacing: Theme.s20
-    Repeater {
-      id: metrics
-      model: {
-        var m = []
-        if (Power.watts > 0.05) m.push({ k: Power.charging ? "Charging at" : "Draw", v: Power.watts.toFixed(1) + " W" })
-        if (root.healthPct > 0) m.push({ k: "Health", v: Math.round(root.healthPct) + "%" })
-        return m
-      }
-      delegate: Column { required property var modelData
-        Text { textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
-        Text { textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel } }
+    Column { anchors.verticalCenter: parent.verticalCenter; spacing: 1
+      Text { textFormat: Text.PlainText; text: Math.round(parent.parent.shown) + "%"; color: Theme.text; font.pixelSize: 34; font.weight: Theme.weightStrong }
+      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
+        text: Power.stateText + (Power.timeText(Power.secondsLeft) !== ""
+              ? " · " + Power.timeText(Power.secondsLeft) + (Power.charging ? " to full" : " left") : "") } }
+    Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+      Repeater {
+        model: {
+          var m = []
+          if (Power.watts > 0.05) m.push({ k: Power.charging ? "Charging at" : "Draw", v: Power.watts.toFixed(1) + " W", ic: "bolt" })
+          if (root.healthPct > 0) m.push({ k: "Health", v: Math.round(root.healthPct) + "%", ic: "heart" })
+          return m
+        }
+        delegate: Rectangle { required property var modelData
+          antialiasing: true; height: 48; width: Math.max(88, cardCol.implicitWidth + 2 * Theme.s12); radius: Theme.tileRadius - 4; color: Theme.surface
+          Column { id: cardCol; anchors.centerIn: parent; spacing: 1
+            Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
+            Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel } } } }
     }
   }
+  Rectangle { antialiasing: true; visible: Power.present; width: parent.width; height: 12; radius: 6; color: Theme.surface
+    Rectangle { antialiasing: true; height: parent.height; radius: 6; width: Math.max(12, parent.width * Power.level)
+      color: Power.low ? Theme.dangerInk : (Power.charging ? Theme.successInk : Theme.accentFill)
+      Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } } } }
 
   // Three equal pills; short labels that never truncate.
   Row {

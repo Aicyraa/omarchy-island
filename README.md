@@ -184,13 +184,13 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | display       | brightness, night light, text size |
 | battery       | charge, time left, draw, health, power profile, stay awake |
 | calendar      | month grid, Omarchy reminders (list, quick add, cancel), optional khal events |
-| worldclock    | zones from `~/.local/state/island/world-clock.json`, fuzzy add, system `date` for DST |
+| worldclock    | an interactive globe (drag to spin; real night side; your cities as dots; turns to the selected city) beside the clocks with 24 h strips |
 | power         | shutdown, reboot, sleep, lock, plus battery, profile, updates, last boot, kernel, session |
-| notifications | history (read from the shell's state files), Focus toggle, dismiss, replay |
+| notifications | history as cards with a preview thumbnail: the image the notification is about (e.g. a screenshot, read from its file, nothing copied or cached on disk) or the app icon |
 | system        | CPU, memory, temperature charts; load, uptime, CPU clock, disk, swap, network rate; three busiest processes |
 | tray          | status-notifier icons |
 | theme         | ONE horizontal strip of theme cards (720 x ~188 px, scrolls sideways): wallpaper, name on a scrim in the theme's own colours, swatches, light/dark chip, check on the current theme; applies with `omarchy-theme-set` |
-| weather       | temperature, condition icon (sun/moon/cloud/rain...), high/low; location auto by IP or `weatherLocation` in state.json |
+| weather       | condition card (sky tint, big icon and temperature, High/Low) plus Feels like and Humidity |
 | agent         | usage per agent, live: files re-read every 5 s while open, collectors run every 3 min (R forces), countdowns tick; tokens today and 7 days, limits, usage line |
 
 ### Conventions every widget follows
@@ -224,7 +224,7 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | A | Control center: Sound | audio |
 | B | Control center: Connect | bluetooth |
 | W | Control center: Connect | Wi-Fi |
-| N | Omarchy Network panel (`rebind`) | notifications |
+| N | Omarchy Network panel (`rebind`) | notifications | history as cards with a preview thumbnail: the image the notification is about (e.g. a screenshot, read from its file, nothing copied or cached on disk) or the app icon |
 | P | Control center: Power | battery and power profile |
 | D | Control center: Power | display |
 | ALT + D | Control center: Time | calendar |
@@ -235,7 +235,7 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | G | free | tray |
 | T and SHIFT + SPACE | Omarchy theme menu (`rebind`) | island theme picker |
 | SHIFT + A | Omarchy Agent (`omarchy-agent --pick`) | Omarchy Agent, launches the default agent in a terminal (the island agent widget is on SUPER + ALT + A) |
-| ALT + W | free | weather |
+| ALT + W | free | weather       | condition card (sky tint, big icon and temperature, High/Low) plus Feels like and Humidity |
 
 `hl.unbind` is used before the keys the old control center bound; `o.rebind` replaces Omarchy defaults whose target
 (a stock bar widget panel) no longer exists under the island. Original lines are in `bindings.lua.bak-island-*`.

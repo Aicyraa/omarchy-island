@@ -19,6 +19,37 @@ WidgetPanel {
   property var rows: []                  // [{zone, city, time, day, offset, night, hour}]
   property int sel: 0
   property bool use24h: true
+  property string localZone: ""
+  property var cityMap: ({})                 // IANA zone -> [lat, lon], from assets/cities.json (Omarchy's Elsewhen list)
+  readonly property var sunMarkers: {
+    var out = []
+    rows.forEach(function (r, i) {
+      var z = r.zone === "Local" ? localZone : r.zone, c = cityMap[z]
+      if (c) out.push({ lat: c[0], lon: c[1], sel: i === sel })
+    })
+    return out
+  }
+  readonly property real focusLon: {
+    var r = rows[sel]; if (!r) return 0
+    var c = cityMap[r.zone === "Local" ? localZone : r.zone]
+    return c ? c[1] : 0
+  }
+  FileView { path: Qt.resolvedUrl("../assets/cities.json").toString().replace("file://", ""); printErrors: false
+    onLoaded: { try { var m = Object.assign({}, root.cityMap); JSON.parse(text()).forEach(function (c) { m[c[1]] = [c[2], c[3]] }); root.cityMap = m } catch (e) {} } }
+  // Every IANA zone's principal city, with coordinates, from the system's tzdata (fills in zones the short list lacks,
+  // such as Asia/Manila). ISO 6709: +DDMM[SS]+DDDMM[SS].
+  function isoCoord(t) {
+    var m = /^([+-])(\d{2})(\d{2})(\d{2})?([+-])(\d{3})(\d{2})(\d{2})?$/.exec(t); if (!m) return null
+    var la = parseInt(m[2]) + parseInt(m[3]) / 60 + (m[4] ? parseInt(m[4]) / 3600 : 0)
+    var lo = parseInt(m[6]) + parseInt(m[7]) / 60 + (m[8] ? parseInt(m[8]) / 3600 : 0)
+    return [m[1] === "-" ? -la : la, m[5] === "-" ? -lo : lo]
+  }
+  FileView { path: "/usr/share/zoneinfo/zone.tab"; printErrors: false
+    onLoaded: { var m = Object.assign({}, root.cityMap)
+      text().split("\n").forEach(function (l) { if (l[0] === "#" || !l) return; var f = l.split("\t"); var c = root.isoCoord(f[1]); if (c && !m[f[2]]) m[f[2]] = c })
+      root.cityMap = m } }
+  Process { running: true; command: ["timedatectl", "show", "-p", "Timezone", "--value"]
+    stdout: StdioCollector { onStreamFinished: root.localZone = text.trim() } }
 
   function cityOf(z) { return z === "Local" ? "Local" : (z === "UTC" ? "UTC" : z.split("/").pop().replace(/_/g, " ")) }
   function save() { store.setText(JSON.stringify({ zones: zones })) }
@@ -97,59 +128,83 @@ WidgetPanel {
       e.accepted = true }
   }
 
-  // ---- header ----
-  Item { width: parent.width; height: 28
-    Rectangle { visible: !root.searching; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-      height: 28; width: addLabel.implicitWidth + Theme.s16 * 2; radius: 14; color: Theme.surface
-      Text { id: addLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
-      MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.query = ""; root.pick = 0; root.searching = true } } } }
+  // ---- left: the globe, the selected city and "Add city"; right: the cities ----
+  Row {
+    width: parent.width; spacing: Theme.s16
+    Column {
+      id: left
+      width: 168; spacing: Theme.s8
+      GlobeView { anchors.horizontalCenter: parent.horizontalCenter; width: 156; height: 156; markers: root.sunMarkers; focusLon: root.focusLon }
+      Column { width: parent.width; spacing: 1
+        Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
+          text: root.rows[root.sel] ? root.rows[root.sel].city : ""; color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel }
+        Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
+          text: root.rows[root.sel] ? root.rows[root.sel].time + (root.rows[root.sel].night ? "  ·  night" : "  ·  day") : ""
+          color: Theme.textMuted; font.pixelSize: 12 } }
+      Rectangle { antialiasing: true; visible: !root.searching; width: parent.width; height: 30; radius: 15
+        color: addArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.surface
+        Behavior on color { ColorAnimation { duration: 120 } }
+        Row { anchors.centerIn: parent; spacing: 6
+          Icon { name: "plus"; size: Theme.iconSm; color: Theme.text; anchors.verticalCenter: parent.verticalCenter }
+          Text { textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
+        MouseArea { id: addArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+          onClicked: { root.query = ""; root.pick = 0; root.searching = true } } }
+    }
 
-  // ---- rows (hidden while searching) ----
-  Column {
-    visible: !root.searching && root.rows.length > 0
-    width: parent.width; spacing: Theme.rowGap
-    Repeater {
-      model: root.rows
-      delegate: Item {
-        required property var modelData
-        required property int index
-        width: parent.width; height: 48
-        // Highlight first (it bleeds to the pill edge) ...
-        FocusTarget { selected: root.sel === index && !root.searching; target: parent }
-        Icon { x: 0; anchors.verticalCenter: parent.verticalCenter; name: modelData.night ? "moon" : "sun"; size: Theme.iconMd
-          color: modelData.night ? Theme.textMuted : Theme.warningInk }
-        Column { x: Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter
-          Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
-          Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
-            text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · "); visible: text !== "" } }
-        Text { x: 170; width: 88; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-          text: modelData.time; color: Theme.text; font.pixelSize: 17; font.weight: Theme.weightStrong }
-        // ... then the 24h strip ABOVE it, so every row (including the selected one) shows its track:
-        // a shaded 09:00-17:00 working band and a "now" marker.
-        Rectangle { x: 270; anchors.verticalCenter: parent.verticalCenter
-          width: parent.width - 270; height: 10; radius: 5; color: Theme.outline; opacity: 0.35 }
-        Rectangle { x: 270 + (parent.width - 270) * 9 / 24; anchors.verticalCenter: parent.verticalCenter
-          width: (parent.width - 270) * 8 / 24; height: 10; color: Theme.accentInk; opacity: 0.55 }
-        Rectangle { x: 270 + (parent.width - 270) * modelData.hour / 24 - 1.5; anchors.verticalCenter: parent.verticalCenter
-          width: 3; height: 16; radius: 1.5; color: Theme.text }
-        onWidthChanged: {}
+    Item {
+      id: right
+      width: parent.width - left.width - Theme.s16
+      height: Math.max(listCol.implicitHeight, searchCol.implicitHeight, 40)
+
+      // ---- rows (hidden while searching) ----
+      Column {
+        id: listCol
+        visible: !root.searching && root.rows.length > 0
+        width: parent.width; spacing: Theme.rowGap
+        Repeater {
+          model: root.rows
+          delegate: Item {
+            id: rowItem
+            required property var modelData
+            required property int index
+            width: parent.width; height: 48
+            FocusTarget { selected: root.sel === index && !root.searching; target: parent }
+            Icon { x: 0; anchors.verticalCenter: parent.verticalCenter; name: modelData.night ? "moon" : "sun"; size: Theme.iconMd
+              color: modelData.night ? Theme.textMuted : Theme.warningInk }
+            Column { x: Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter
+              Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+              Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
+                text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · "); visible: text !== "" } }
+            Text { x: 118; width: 70; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+              text: modelData.time; color: Theme.text; font.pixelSize: 16; font.weight: Theme.weightStrong }
+            // the 24 h strip: a shaded 09:00-17:00 working band and a "now" marker
+            Rectangle { antialiasing: true; x: 196; anchors.verticalCenter: parent.verticalCenter
+              width: parent.width - 196; height: 10; radius: 5; color: Theme.outline; opacity: 0.35 }
+            Rectangle { x: 196 + (parent.width - 196) * 9 / 24; anchors.verticalCenter: parent.verticalCenter
+              width: (parent.width - 196) * 8 / 24; height: 10; color: Theme.accentInk; opacity: 0.55 }
+            Rectangle { antialiasing: true; x: 196 + (parent.width - 196) * modelData.hour / 24 - 1.5; anchors.verticalCenter: parent.verticalCenter
+              width: 3; height: 16; radius: 1.5; color: Theme.text }
+            MouseArea { anchors.fill: parent; anchors.leftMargin: -Theme.s8; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+              onClicked: root.sel = rowItem.index }
+          }
+        }
+      }
+      Text { visible: !root.searching && root.rows.length === 0; textFormat: Text.PlainText
+        text: "Reading time zones…"; color: Theme.textMuted; font.pixelSize: 12 }
+
+      // ---- search ----
+      Column { id: searchCol; visible: root.searching; width: parent.width; spacing: Theme.s8
+        Rectangle { antialiasing: true; width: parent.width; height: 40; radius: 20; color: Theme.surface
+          Icon { x: Theme.s16; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm }
+          Text { x: Theme.s16 + Theme.iconSm + Theme.s8; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+            text: root.query === "" ? "Search time zones…" : root.query; color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 13 } }
+        Repeater { model: root.matches
+          delegate: ListRow { required property string modelData; required property int index
+            width: parent.width; height: 36; icon: "globe"; title: modelData; selected: root.pick === index
+            onClicked: root.addZone(modelData) } }
+        Text { visible: root.matches.length === 0; textFormat: Text.PlainText; text: root.allZones.length === 0 ? "Loading…" : "No match"
+          color: Theme.textMuted; font.pixelSize: 12 }
       }
     }
-  }
-  Text { visible: !root.searching && root.rows.length === 0; textFormat: Text.PlainText
-    text: "Reading time zones…"; color: Theme.textMuted; font.pixelSize: 12 }
-
-  // ---- search overlay ----
-  Column { visible: root.searching; width: parent.width; spacing: Theme.s8
-    Rectangle { antialiasing: true; width: parent.width; height: 40; radius: 20; color: Theme.surface
-      Icon { x: Theme.s16; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm }
-      Text { x: Theme.s16 + Theme.iconSm + Theme.s8; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-        text: root.query === "" ? "Search time zones…" : root.query; color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 13 } }
-    Repeater { model: root.matches
-      delegate: ListRow { required property string modelData; required property int index
-        width: parent.width; height: 36; icon: "globe"; title: modelData; selected: root.pick === index
-        onClicked: root.addZone(modelData) } }
-    Text { visible: root.matches.length === 0; textFormat: Text.PlainText; text: root.allZones.length === 0 ? "Loading…" : "No match"
-      color: Theme.textMuted; font.pixelSize: 12 }
   }
 }
