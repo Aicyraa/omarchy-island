@@ -19,14 +19,20 @@ WidgetPanel {
   readonly property real weekTokens: agents.reduce(function (s, a) { return s + a.week }, 0)
   readonly property int todayPrompts: agents.reduce(function (s, a) { return s + a.prompts }, 0)
 
-  Keys.onPressed: function (e) { if (e.key === Qt.Key_R) { AgentUsage.refresh(); e.accepted = true } }
-  Component.onCompleted: AgentUsage.refreshIfOlder(15000)
+  // Live: while this is open the service re-reads the files every 5 s and runs the collectors every 3 min (R forces a run).
+  Keys.onPressed: function (e) { if (e.key === Qt.Key_R) { AgentUsage.collect(true); e.accepted = true } }
+  Component.onCompleted: { AgentUsage.watch(true); AgentUsage.refresh(); AgentUsage.collect(false) }
+  Component.onDestruction: AgentUsage.watch(false)
+  // The "resets in" countdowns and "updated" age tick on their own.
+  property real now: Date.now()
+  Timer { interval: 15000; repeat: true; running: true; onTriggered: root.now = Date.now() }
+  function ago(ms) { var m = Math.round((root.now - ms) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.round(m / 60) + " h ago" }
 
   // Original per-provider glyphs (not brand logos).
   function glyph(id) { return { claude: "spark", codex: "brackets", copilot: "plane", cursor: "pointer" }[String(id)] || "bot" }
   function resets(iso) {
     var t = Date.parse(iso); if (isNaN(t)) return ""
-    var m = Math.max(0, Math.round((t - Date.now()) / 60000))
+    var m = Math.max(0, Math.round((t - root.now) / 60000))
     return m < 60 ? "resets in " + m + "m" : m < 1440 ? "resets in " + Math.round(m / 60) + "h" : "resets in " + Math.round(m / 1440) + "d"
   }
   function fmt(n) {
@@ -42,8 +48,11 @@ WidgetPanel {
   // ---- summary ----
   Item {
     visible: root.agents.length > 0; width: parent.width; height: 24
-    Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Agents"
-      color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
+    Row { anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Agents"
+        color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
+      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; visible: AgentUsage.fetchedAt > 0
+        text: "· updated " + root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: 11 } }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s12
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Today"; color: Theme.textMuted; font.pixelSize: 11 }
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: root.fmt(root.todayTokens) + " tokens"

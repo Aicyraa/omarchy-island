@@ -17,10 +17,10 @@ Singleton {
   }
   function touch() {
     SysInfo.refreshIfOlder(5000)
-    AgentUsage.refreshIfOlder(60000)
+    AgentUsage.refreshIfOlder(60000); AgentUsage.collect(false)
     WeatherData.refreshIfStale()
     Themes.refreshCurrent()
   }
   Timer { id: warm; interval: 2500
-    onTriggered: { Themes.refresh(); Themes.refreshCurrent(); AgentUsage.refresh(); SysInfo.refresh(); WeatherData.refreshIfStale() } }
+    onTriggered: { Themes.refresh(); Themes.refreshCurrent(); AgentUsage.refresh(); AgentUsage.collect(false); SysInfo.refresh(); WeatherData.refreshIfStale() } }
 }
