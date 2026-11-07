@@ -20,7 +20,7 @@ Item {
   readonly property real timeW: timeM.advanceWidth
 
   readonly property bool playing: Quickshell.env("ISLAND_FORCE_VIZ") === "1" || Mpris.players.values.some(function (p) { return p.isPlaying })
-  readonly property real vizRoom: 23      // along-bar room the bars need (same as the old widget)
+  readonly property real vizRoom: 29      // along-bar room the bars need: 3 px edge + 18 px of bars + an 8 px gap to the time
   property real vizWidth: playing ? vizRoom : 0
   property real vizEdge: playing ? 3 : -5
   Behavior on vizWidth { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 320; easing.type: Easing.InOutCubic } }

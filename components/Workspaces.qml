@@ -3,25 +3,22 @@ import Quickshell
 import Quickshell.Hyprland
 import ".."
 
-// Workspace indicator: one small dot per workspace; the FOCUSED one stretches
-// VERTICALLY into a tall pill (taller, not wider, so the row stays compact and
-// fits inside the bar's height).
-//
-// Each dot owns its own shape, and the stretch is a spring on its height: when
-// focus moves, the old pill springs back down to a dot while the new one springs
-// up, so the two motions overlap like a liquid handing over. Slots never move.
+// Workspace indicator.
+//   * Always shows workspaces 1-5 as dots. Workspaces beyond 5 that exist (or that you are on) are appended, and where
+//     the numbering skips a small "..." marker stands for the missing ones: 1 2 3 4 5 ... 8.
+//   * The focused workspace is ONE short pill that glides from dot to dot. Its leading edge moves on a quick spring and
+//     its trailing edge on a slower one, so it stretches while it travels and then settles (a liquid hand-over).
+//   * New slots scale in; slots slide aside when a marker appears.
+// ISLAND_FAKE_WS="1,2,3,8" and ISLAND_FAKE_FOCUS=8 feed fake data (testing).
 Item {
   id: root
 
-  readonly property int slot: 11        // width of one workspace slot
+  readonly property int slot: 11        // width of one slot
   readonly property int dot: 5          // resting diameter
-  readonly property int activeW: 6      // the focused pill is a touch wider than a dot
-  readonly property int capH: 14        // the focused pill's height (fits the 26px idle bar with 6px to spare)
+  readonly property int activeW: 6      // the focused pill's width at rest
+  readonly property int capH: 10        // the focused pill's height (short: it sits easily in the 20 px capsule)
+  readonly property int baseCount: 5
 
-  // Workspaces to show: the ones that exist (Hyprland keeps occupied and focused ones), sorted; the focused one is always
-  // included, so going to an empty workspace 4 adds a dot for it. Where the numbering skips (1 2 3 then 8), a small
-  // "..." marker stands for the missing ones, so you can tell you are far away without a long row of dots.
-  // ISLAND_FAKE_WS="1,2,3,8" and ISLAND_FAKE_FOCUS=8 feed fake data (testing).
   readonly property var realIds: {
     var fake = Quickshell.env("ISLAND_FAKE_WS")
     if (fake) return fake.split(",").map(Number)
@@ -30,12 +27,14 @@ Item {
     for (var i = 0; i < ws.length; i++) if (ws[i].id > 0) out.push(ws[i].id)
     return out
   }
-  readonly property int focusedId: Quickshell.env("ISLAND_FAKE_FOCUS") ? Number(Quickshell.env("ISLAND_FAKE_FOCUS"))
+  property int focusOverride: 0         // test hook: pretend this workspace is focused
+  readonly property int focusedId: focusOverride > 0 ? focusOverride : Quickshell.env("ISLAND_FAKE_FOCUS") ? Number(Quickshell.env("ISLAND_FAKE_FOCUS"))
                                     : (Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1)
   readonly property var ids: {
-    var out = realIds.slice()
+    var out = []
+    for (var n = 1; n <= baseCount; n++) out.push(n)
+    realIds.forEach(function (id) { if (id > baseCount && out.indexOf(id) < 0) out.push(id) })
     if (focusedId > 0 && out.indexOf(focusedId) < 0) out.push(focusedId)
-    if (out.length === 0) out.push(1)
     out.sort(function (a, b) { return a - b })
     return out
   }
@@ -48,47 +47,69 @@ Item {
     }
     return out
   }
+  readonly property int focusIndex: {
+    for (var i = 0; i < items.length; i++) if (!items[i].gap && items[i].id === focusedId) return i
+    return 0
+  }
 
   implicitWidth: items.length * slot
-  implicitHeight: capH                  // room for the tall pill, so the layout never shifts when focus moves
+  implicitHeight: 14
 
+  // ---- the dots ----
   Repeater {
     model: root.items
     delegate: Item {
+      id: cell
       required property var modelData
       required property int index
       readonly property bool gap: modelData.gap
-      readonly property bool active: !gap && modelData.id === root.focusedId
-      x: index * root.slot; width: root.slot; height: parent.height
+      readonly property bool focused: !gap && modelData.id === root.focusedId
+      width: root.slot; height: root.implicitHeight
+      x: index * root.slot
+      Behavior on x { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
-      // a workspace: dot, or the tall pill when focused
+      // scale in when a slot is added
+      property real appear: 0
+      Component.onCompleted: appear = 1
+      Behavior on appear { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
+      scale: IslandState.reducedMotion ? 1 : appear
+
       Rectangle {
-        visible: !parent.gap
+        visible: !cell.gap
         antialiasing: true
-        x: (root.slot - width) / 2
-        anchors.verticalCenter: parent.verticalCenter
-        width: parent.active ? root.activeW : root.dot
-        height: parent.active ? root.capH : root.dot
-        radius: width / 2
-        color: parent.active ? Theme.text : Theme.textMuted
-        opacity: parent.active ? 1 : 0.55
-        // Height is the stretch: a spring (stiff, slightly bouncy). Width and colour just ease.
-        Behavior on height {
-          enabled: !IslandState.reducedMotion
-          SpringAnimation { spring: 4.5; damping: 0.30; epsilon: 0.2 }
-        }
-        Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        Behavior on color { ColorAnimation { duration: 200 } }
-        Behavior on opacity { NumberAnimation { duration: 200 } }
+        anchors.centerIn: parent
+        width: root.dot; height: root.dot; radius: width / 2
+        color: Theme.textMuted
+        // the focused slot's dot gives way to the gliding pill
+        opacity: cell.focused ? 0 : 0.55
+        scale: cell.focused ? 0.4 : 1
+        Behavior on opacity { NumberAnimation { duration: 160 } }
+        Behavior on scale { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
       }
-      // skipped workspaces: three tiny dots
       Row {
-        visible: parent.gap
+        visible: cell.gap
         anchors.centerIn: parent; spacing: 1.5
         Repeater { model: 3
           Rectangle { antialiasing: true; width: 2; height: 2; radius: 1; color: Theme.textMuted; opacity: 0.5 } }
       }
     }
+  }
+
+  // ---- the gliding focus pill: head (leading edge) and tail (trailing edge) chase the focused slot's centre ----
+  readonly property real targetCx: focusIndex * slot + slot / 2
+  property real headCx: targetCx
+  property real tailCx: targetCx
+  property bool ready: false
+  Component.onCompleted: Qt.callLater(function () { root.ready = true })
+  Behavior on headCx { enabled: root.ready && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.42; epsilon: 0.05 } }
+  Behavior on tailCx { enabled: root.ready && !IslandState.reducedMotion; SpringAnimation { spring: 3.6; damping: 0.50; epsilon: 0.05 } }
+  Rectangle {
+    antialiasing: true
+    height: root.capH; radius: height / 2
+    anchors.verticalCenter: parent.verticalCenter
+    color: Theme.text
+    x: Math.min(root.headCx, root.tailCx) - root.activeW / 2
+    width: Math.abs(root.headCx - root.tailCx) + root.activeW
   }
 
   // Click a slot to switch; scroll anywhere to step through workspaces.

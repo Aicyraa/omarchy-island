@@ -239,11 +239,11 @@ PanelWindow {
     y: win.satY; height: win.satH; radius: height / 2
     color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
     Behavior on color { ColorAnimation { duration: 120 } }
-    width: 2 * 10 + (Power.present ? 18 : 0) + (Indicators.recording ? 8 + (Power.present ? 6 : 0) : 0)
+    width: 2 * 10 + (Power.present ? 18 : 0) + (Indicators.recording ? 8 + (Power.present ? 9 : 0) : 0)
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
     x: pill.x + pill.width + win.satTuck
     Row {
-      anchors.centerIn: parent; spacing: 6
+      anchors.centerIn: parent; spacing: 9
       // Screen recording: a red dot that pulses; click stops the recording.
       Rectangle {
         id: recDot
