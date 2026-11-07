@@ -216,7 +216,7 @@ the cover art as a lightly blurred background, controls, progress and a real spe
 4. Sizes and colours only from `Theme` tokens, durations through `IslandState.reducedMotion`, processes inside the widget (they die with it). Use the `*Ink` colours for text/icons.
 
 ## Keybinds (old to new)
-Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` markers. Old control-center lines removed.
+Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` markers.
 
 | key (SUPER + CTRL + ...) | was | now |
 |---|---|---|
@@ -237,7 +237,7 @@ Added to `~/.config/hypr/bindings.lua` between `>>> io.github.aicyraa.island` ma
 | SHIFT + A | Omarchy Agent (`omarchy-agent --pick`) | Omarchy Agent, launches the default agent in a terminal (the island agent widget is on SUPER + ALT + A) |
 | ALT + W | free | weather       | condition card (sky tint, big icon and temperature, High/Low) plus Feels like and Humidity |
 
-`hl.unbind` is used before the keys the old control center bound; `o.rebind` replaces Omarchy defaults whose target
+`hl.unbind` is used before keys that earlier custom binds used; `o.rebind` replaces Omarchy defaults whose target
 (a stock bar widget panel) no longer exists under the island. Original lines are in `bindings.lua.bak-island-*`.
 The stock theme menu is still reachable through the root menu.
 
