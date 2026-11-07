@@ -15,7 +15,7 @@ Item {
   id: form
   property var win: null                  // the PanelWindow (for screen name + widget toggling)
 
-  readonly property int pad: 14
+  readonly property int pad: 22
   TextMetrics { id: timeM; font.pixelSize: 12; font.weight: Theme.weightLabel; text: "00:00" }
   readonly property real timeW: timeM.advanceWidth
 

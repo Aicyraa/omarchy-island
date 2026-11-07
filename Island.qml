@@ -189,6 +189,7 @@ PanelWindow {
   // curve drawn with a Shape; they sit beside the pill (not inside it, because
   // the pill clips its content).
   Shape {
+    z: 3
     x: pill.x - win.ear; y: win.topMargin
     width: win.ear; height: win.ear
     preferredRendererType: Shape.CurveRenderer
@@ -201,6 +202,7 @@ PanelWindow {
     }
   }
   Shape {
+    z: 3
     x: pill.x + pill.width; y: win.topMargin
     width: win.ear; height: win.ear
     preferredRendererType: Shape.CurveRenderer
@@ -216,26 +218,28 @@ PanelWindow {
   // ---- side capsules: workspaces on the left, battery on the right ----
   // They are separate floating capsules just outside the pill's ears. Their x follows the pill's (springing) edges,
   // so when the pill grows into a widget they are pushed outward, and they come back with it.
-  readonly property int satY: 2
-  readonly property int satH: 22
-  readonly property int satGap: 8
+  readonly property int satY: 3
+  readonly property int satH: 20
+  readonly property int satTuck: 6       // how far a capsule slides under the pill's concave ear (the ear is drawn above it)
   Rectangle {
     id: leftSat
+    z: 0
     y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
-    width: wsView.implicitWidth + 2 * Theme.s12
-    x: pill.x - win.ear - win.satGap - width
+    width: wsView.implicitWidth + 2 * 10
+    x: pill.x - win.satTuck - width
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
     Workspaces { id: wsView; anchors.centerIn: parent }
   }
   Rectangle {
     id: rightSat
+    z: 0
     visible: Power.present
     y: win.satY; height: win.satH; radius: height / 2
     color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
     Behavior on color { ColorAnimation { duration: 120 } }
-    width: Theme.iconMd + 2 * Theme.s12
-    x: pill.x + pill.width + win.ear + win.satGap
-    BatteryIcon { anchors.centerIn: parent; size: Theme.iconMd }
+    width: 18 + 2 * 10
+    x: pill.x + pill.width + win.satTuck
+    BatteryIcon { anchors.centerIn: parent; size: 18 }
     MouseArea { id: batArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
       acceptedButtons: Qt.LeftButton | Qt.RightButton
       onClicked: IslandState.toggleWidget("battery", win.screenName) }
@@ -243,6 +247,7 @@ PanelWindow {
 
   Rectangle {
     id: pill
+    z: 2
     y: win.topMargin
     anchors.horizontalCenter: parent.horizontalCenter
     width: win.target.width
