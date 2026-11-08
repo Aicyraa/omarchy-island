@@ -178,9 +178,9 @@ Singleton {
     onTriggered: { root.hoverScreen = root.pendingHoverScreen; root.hoverOpen = true } }
   Timer { id: closeTimer; interval: 380
     // The pointer was reported gone. Confirm with the real cursor position before collapsing the hover form.
-    onTriggered: root.probeCursor(root.hoverScreen, function (inside) {
+    onTriggered: root.probeCursor(root.hoverScreen, function (inside, raw) {
       if (inside) closeTimer.restart()
-      else { console.warn("island: hover closed, cursor away"); root.hoverOpen = false } }) }
+      else { console.warn("island: hover closed, cursor away (" + raw + ")"); root.hoverOpen = false } }) }
   Timer { id: hudTimer; interval: 1500; onTriggered: root.hudActive = false }
   Timer { id: idleTimer
     interval: root.timeoutFor(root.widgetName)
@@ -194,13 +194,17 @@ Singleton {
   // A cursor that sits still on the pill sends no hover events, so `pointerOver` can be false while it is right
   // there. Before closing for inactivity, ask Hyprland where the cursor really is; if it is on the widget, stay open.
   property var islands: ({})              // screen name -> its Island window (registered by Island.qml)
-  // probeCursor(screen, cb): asks Hyprland where the cursor really is; cb(true) if it is on that screen's island
-  // (pill plus ears, 6 px of slack). Hover events can be lost or reported late; this is the ground truth.
+  // probeCursor(screen, cb): asks Hyprland where the cursor really is; cb(inside, raw) with inside = true when it is on
+  // that screen's island (pill plus ears, 6 px of slack). Hover events can be lost or reported late; this is the ground
+  // truth. Two checks can overlap (the idle timer, a focus-grab clear and the hover check): the second one now WAITS for
+  // the running probe and gets its answer, instead of answering "outside" and closing the widget.
   function probeCursor(screen, cb) {
     var isl = islands[screen]
-    if (!isl || cursorProbe.running) { cb(false); return }
+    if (!isl) { cb(false, "no island"); return }
+    if (cursorProbe.running) { cursorProbe.waiting.push(cb); return }
     cursorProbe.box = isl.pillBox()
-    cursorProbe.cb = cb
+    cursorProbe.waiting = [cb]
+    cursorProbe.raw = ""
     cursorProbe.command = ["bash", Qt.resolvedUrl("assets/cursorpos.sh").toString().replace("file://", ""), screen]
     cursorProbe.running = true
   }
@@ -208,23 +212,28 @@ Singleton {
   // (and the inactivity countdown restarts); otherwise it closes. `done(stayed)` is optional.
   function guard(reason, done) {
     if (widgetName === "") { if (done) done(false); return }
-    probeCursor(activeScreen, function (inside) {
+    probeCursor(activeScreen, function (inside, raw) {
       if (inside && widgetName !== "") { idleTimer.restart(); if (done) done(true) }
-      else { closeWidget(reason + ", cursor away"); if (done) done(false) }
+      else { closeWidget(reason + ", cursor away (" + raw + ")"); if (done) done(false) }
     })
   }
   function checkCursor() { guard("idle timeout") }
   Process {
     id: cursorProbe
     property size box: Qt.size(0, 0)
-    property var cb: null
-    function finish(inside) { var f = cb; cb = null; if (f) f(inside) }
+    property var waiting: []
+    property string raw: ""
+    function finish(inside) {
+      var list = waiting; waiting = []
+      for (var i = 0; i < list.length; i++) list[i](inside, raw)
+    }
     stdout: StdioCollector { onStreamFinished: {
-      var p = text.trim().split(" ").map(Number)
+      cursorProbe.raw = text.trim()
+      var p = cursorProbe.raw.split(" ").map(Number)
       cursorProbe.finish(p.length === 3 && !p.some(isNaN)
         && Math.abs(p[0] - p[2] / 2) <= cursorProbe.box.width / 2 + 6 && p[1] >= 0 && p[1] <= cursorProbe.box.height + 6)
     } }
-    onExited: function (code) { if (code !== 0) finish(false) }
+    onExited: function (code) { if (code !== 0) { cursorProbe.raw = "probe failed " + code; finish(false) } }
   }
 
   // ---- persistence: ~/.local/state/island/state.json ----

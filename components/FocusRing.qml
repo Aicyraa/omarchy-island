@@ -1,8 +1,8 @@
 import QtQuick
 import ".."
 
-// The selection ring. It does not just appear: when an item gains focus the ring springs in from slightly
-// larger and settles onto it, and when focus leaves it fades out, so moving the selection reads as motion.
+// The selection ring. When an item gains focus the ring eases in from slightly larger and fades in; when focus leaves
+// it fades out. One short ease-out per property, so it lands cleanly.
 Rectangle {
   id: ring
   property bool on: false
@@ -14,6 +14,6 @@ Rectangle {
   scale: on ? 1 : 1.06
   visible: opacity > 0.01
   Behavior on opacity { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140 } }
-  Behavior on scale { enabled: !IslandState.reducedMotion
-    SpringAnimation { spring: 5.5; damping: 0.32; epsilon: 0.002 } }
+  // A short ease-out tween: no overshoot, so the ring lands on the item without wobbling.
+  Behavior on scale { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 }

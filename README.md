@@ -324,3 +324,8 @@ A widget whose content arrives late (Wi-Fi networks, Bluetooth devices, the worl
 ## Theme picker search and selection
 - Type to search: every typed character narrows the list to themes whose name contains those letters in order ("gru" finds Gruvbox). Backspace deletes; Esc clears the search first and closes the widget only when the search is empty. Enter applies the selected match. The header shows the search box and the position (for example "1 / 28").
 - The selected card grows (12 % wider and larger, a spring) and its neighbours move aside to make room; the strip glides (a spring) so the selected card stays centred. No outline. Drag and wheel scrolling are not interrupted by the glide.
+
+## Why widgets used to close, and the focus animation
+- **Early close:** the cursor check that keeps a widget open answered "outside" whenever another check was already running. The idle timer, the focus-grab clear and the hover check can overlap, so a widget with the cursor on it could close. Overlapping checks now wait for the running one and get its answer. Close reasons include the raw cursor reading, e.g. `idle timeout, cursor away (683 120 1366)`.
+- **Focus highlight:** the highlight used four separate springs (x, y, width, height), which moved unevenly. It is now one rectangle whose top and bottom edges move on their own clocks: the leading edge in 200 ms and the trailing edge in 320 ms, both with the same ease-out. A move that starts mid-flight begins from the current edges.
+- **Selection ring:** a 200 ms ease-out tween instead of a spring, so it lands without wobbling.
