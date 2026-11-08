@@ -189,7 +189,6 @@ widget is destroyed together with its Timers and Processes (verified: 0 spawns a
 | notifications | history as cards with a preview thumbnail: the image the notification is about (e.g. a screenshot, read from its file, nothing copied or cached on disk) or the app icon |
 | system        | CPU, memory, temperature charts; load, uptime, CPU clock, disk, swap, network rate; three busiest processes |
 | tray          | status-notifier icons |
-| theme         | ONE horizontal strip of theme cards (720 x ~188 px, scrolls sideways): wallpaper, name on a scrim in the theme's own colours, swatches, light/dark chip, check on the current theme; applies with `omarchy-theme-set` |
 | weather       | condition card (sky tint, big icon and temperature, High/Low) plus Feels like and Humidity |
 | agent         | usage per agent, live: files re-read every 5 s while open, collectors run every 3 min (R forces), countdowns tick; tokens today and 7 days, limits, usage line |
 
@@ -321,3 +320,7 @@ When a track has no cover art (or it has not loaded yet) the media card shows `c
 
 ## No snapping while data loads
 A widget whose content arrives late (Wi-Fi networks, Bluetooth devices, the world clock, agents, weather, system details, themes) sets `dataLoading: true`. The island remembers each widget's height from the last time it was fully loaded (`Cache` key `wsize`) and uses it two ways: as the pill's size from the first frame, and as the widget's `reserve`. While loading, `WidgetPanel` keeps that height and fills the space the real content does not cover yet with pulsing placeholder rows, so the pill opens at its final size and the data just fills in. The reservation ends when loading ends (or after 2.5 s). Test: `ISLAND_FORCE_LOADING=1`. The rig and the live shell share the cache file.
+
+## Theme picker search and selection
+- Type to search: every typed character narrows the list to themes whose name contains those letters in order ("gru" finds Gruvbox). Backspace deletes; Esc clears the search first and closes the widget only when the search is empty. Enter applies the selected match. The header shows the search box and the position (for example "1 / 28").
+- The selected card springs up in scale (1.06) and back down when the selection moves; hover is a smaller spring (1.025).
