@@ -362,3 +362,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Duplicate removal, step 2: Home replaces the menu's Toggle section
 - Home's hover form now has the six switches the menu's Trigger > Toggle had: Focus (silence notifications), Night light, Awake (stay awake), Dictation (when available), Screensaver and Crash capture. The last two read the toggle flags in `~/.local/state/omarchy/toggles`; the grid is three columns, so the form keeps its height.
 - `menu-core/MenuHidden.js` hides `trigger.toggle`; the routes `toggle` and `toggles` open Home. A redirect now checks the stock section it stands for (`sourceId`), since an alias is gone from the tree once its section is hidden.
+
+## Duplicate removal, step 3: Calendar replaces the menu's Reminder section
+- Calendar already sets, lists and clears reminders (quick-add +5/+15/+30/+1 h, Custom, the list with cancel, and Clear all), so the menu's Reminder section (set, show, clear) is hidden. The routes `reminder` and `reminder-set` open Calendar.
