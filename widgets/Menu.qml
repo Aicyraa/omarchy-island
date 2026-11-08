@@ -183,6 +183,11 @@ WidgetPanel {
     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (rows[sel]) open(rows[sel]); e.accepted = true }
     else if (e.key === Qt.Key_Right) { if (rows[sel] && (navigable(rows[sel]) || rows[sel].kind === "toggle")) open(rows[sel]); e.accepted = true }
     else if (e.key === Qt.Key_Tab) { railFocus = true; e.accepted = true }
+    else if (e.key === Qt.Key_Delete) {
+      var r = rows[sel]
+      if (r && r.section === "Recent" && query === "") { MenuData.forgetRecent(r.id); sel = Math.max(0, Math.min(sel, rows.length - 2)) }
+      e.accepted = true
+    }
     else if (e.key === Qt.Key_Left) { if (route !== "root" && query === "") up(); else railFocus = true; e.accepted = true }
     else if (e.key === Qt.Key_Backspace) {
       if (query !== "") { query = query.slice(0, -1); sel = 0 } else if (route !== "root") up()

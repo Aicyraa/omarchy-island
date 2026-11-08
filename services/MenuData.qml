@@ -158,6 +158,12 @@ Singleton {
     Cache.put("menu-usage", usage)
     revision += 1
   }
+  // Delete on a Recent row forgets it (Compass did the same).
+  function forgetRecent(id) {
+    setUsage(MenuModel.forgetUse(usage, id))
+    Cache.put("menu-usage", usage)
+    revision += 1
+  }
   function recentRows() {
     var out = []
     for (var i = 0; i < recentIds.length; i++) {
