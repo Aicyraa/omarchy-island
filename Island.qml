@@ -95,10 +95,19 @@ PanelWindow {
   // The grab also ends when another window takes keyboard focus on its own (a browser, a popup). That must not
   // close the widget while the cursor is still on it: State.guard checks, and the grab is re-armed if we stay.
   property bool grabHold: false
+  property bool menuArmed: false
+  Timer { id: menuArm; interval: 700; onTriggered: win.menuArmed = true }
+  Connections {
+    target: IslandState
+    function onWidgetNameChanged() { win.menuArmed = false; if (IslandState.widgetName === "menu") menuArm.restart(); else menuArm.stop() }
+  }
   HyprlandFocusGrab {
     windows: [win]
-    active: win.myMode === "widget" && !win.grabHold && !IslandState.pinned
-    onCleared: if (IslandState.pinned) { /* keybind-opened: a click outside is caught by ClickCatcher instead */ } else IslandState.guard("focus grab cleared", function (stayed) {
+    // The menu is keybind-opened (pinned) but watches for a click outside too. It holds the keyboard, so after it has
+    // settled (menuArmed: 700 ms after it opens, since taking the keyboard itself clears the grab) the grab is only
+    // cleared by a press elsewhere. The cursor check then closes it if the pointer is away.
+    active: win.myMode === "widget" && !win.grabHold && (!IslandState.pinned || (IslandState.widgetName === "menu" && win.menuArmed))
+    onCleared: if (IslandState.pinned && IslandState.widgetName !== "menu") { /* keybind-opened: ClickCatcher handles it */ } else IslandState.guard("focus grab cleared", function (stayed) {
       if (stayed) { win.grabHold = true; Qt.callLater(function () { win.grabHold = false }) } })
   }
 
