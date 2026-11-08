@@ -120,7 +120,7 @@ Singleton {
 
   // Re-check everything (called when the menu opens). Cheap enough: one batch of read-only checks.
   function refresh() { rebuild() }
-  Component.onCompleted: rebuild()
+  Component.onCompleted: { rebuild(); loadUsage() }
 
   // ---- queries used by the widget ----
   function visible(entry) {
@@ -146,6 +146,39 @@ Singleton {
     return hits.slice(0, limit || 60).map(function (h) { return h.entry })
   }
   function item(id) { return items[id] || null }
+
+  // ---- recents: frecency of the apps and actions run from the menu (the same ranking Compass used) ----
+  // Kept in the island's Cache; the first start imports Compass's usage file once, so the recents carry over.
+  property var usage: ({})
+  property var recentIds: []
+  readonly property int recentLimit: 8
+  function setUsage(next) { usage = next || ({}); recentIds = MenuModel.topUsed(usage, recentLimit, Date.now()) }
+  function remember(id) {
+    setUsage(MenuModel.recordUse(usage, id, Date.now()))
+    Cache.put("menu-usage", usage)
+    revision += 1
+  }
+  function recentRows() {
+    var out = []
+    for (var i = 0; i < recentIds.length; i++) {
+      var e = items[recentIds[i]]
+      if (e && visible(e)) out.push(e)
+    }
+    return out.slice(0, recentLimit)
+  }
+  function loadUsage() {
+    var c = Cache.get("menu-usage")
+    if (c && typeof c === "object" && Object.keys(c).length > 0) setUsage(c)
+    else compassUsage.reload()
+  }
+  FileView {
+    id: compassUsage
+    path: Quickshell.env("HOME") + "/.local/state/compass-menu-recent.json"
+    printErrors: false
+    onLoaded: {
+      try { root.setUsage(JSON.parse(text())); Cache.put("menu-usage", root.usage) } catch (e) {}
+    }
+  }
 
   // ---- opening the menu (summon routes and dmenu requests) ----
   // openSerial changes on every open, so an already-open menu can follow a new request.
@@ -229,7 +262,7 @@ Singleton {
   // Run a row: apps launch through DesktopEntries; actions run through a login shell (the same as the stock menu).
   function activate(entry) {
     if (!entry) return
-    if (entry.kind === "app") { if (entry.desktop) entry.desktop.execute(); return }
-    if (entry.kind === "action" && entry.action) Cmd.run(["bash", "-lc", entry.action])
+    if (entry.kind === "app") { remember(entry.id); if (entry.desktop) entry.desktop.execute(); return }
+    if (entry.kind === "action" && entry.action) { remember(entry.id); Cmd.run(["bash", "-lc", entry.action]) }
   }
 }
