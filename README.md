@@ -341,3 +341,10 @@ The click catcher's hole covers the island's zone in screen coordinates. The zon
 
 ## Shared list highlight (milestone 3 of the menu merge)
 The sliding highlight behind the rows moved out of `WidgetPanel` into `components/ListHighlight.qml` unchanged. It takes `host` (the panel, which provides `focusItem`), `container` (the scrolled content) and `content` (the column whose height change re-places it). Pixel check against the original, at rest on Notifications, Wi-Fi, Bluetooth and Theme: at a 5 % tolerance the images are identical, and the largest per-channel difference anywhere is about 4.7 %. Moving the selection still slides the highlight to the next row.
+
+## The menu widget (milestone 4 of the menu merge)
+- `services/MenuData.qml` (singleton): Omarchy's menu tree from the stock jsonc plus the user extension, minus the hidden sections (`menu-core/MenuHidden.js`), plus one `apps.<id>` row per installed desktop app. One read-only bash batch evaluates every `when:`, `checked:` and `disabled:` check; an installed app's Install row is hidden, as in Compass.
+- `widgets/Menu.qml`: a category rail (left), the rows of the chosen category (right), a search box and breadcrumb on top. Type to search; Enter or Right opens a submenu or runs an action (the widget closes first); Backspace, Left or Esc go up one level; Esc at the top closes the widget. Apps show their real icon.
+- Not yet in this milestone: recents and frecency, the Tab rail focus, the dmenu mode, the summon routes and the shim plugin (milestones 5 and 7).
+- Debug: `omarchy-shell island debug measure` reports the menu's route, rows and install-check counts in `widgetState`.
+- Caveat: the install checks take about one second to run in the background, so right after startup a row can briefly show before its check result arrives.

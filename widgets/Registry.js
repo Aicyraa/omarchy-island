@@ -21,7 +21,8 @@ var widgets = {
   tray: { file: "Tray.qml", w: 200, h: 48 },
   theme:         { file: "ThemePicker.qml", w: 720, h: 203 },
   weather: { file: "Weather.qml", w: 440, h: 190 },
-  agent: { file: "Agent.qml", w: 600, h: 372 }
+  agent: { file: "Agent.qml", w: 600, h: 372 },
+  menu: { file: "Menu.qml", w: 720, h: 380 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }
 
