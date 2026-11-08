@@ -98,8 +98,8 @@ Singleton {
   readonly property int tileRadius: 18
   readonly property int pillRadius: IslandState.cornerRadius + 4   // matches the Compass menu
   readonly property int windowWidth: 1000       // wide enough for the widest pill (720) plus a capsule on each side
-  readonly property int windowHeight: 520       // the fixed layer window: taller than any pill (widgets <= panelMaxHeight, hover form with a player ~435)
-  readonly property int panelMaxHeight: 420    // the fixed layer window is sized for this
+  readonly property int windowHeight: 570       // the fixed layer window: taller than any pill (widgets <= panelMaxHeight, hover form with a player ~435)
+  readonly property int panelMaxHeight: 470    // the fixed layer window is sized for this
   readonly property int panelMinHeight: 48
   readonly property int panelMaxWidth: 720
   readonly property int iconSm: 16

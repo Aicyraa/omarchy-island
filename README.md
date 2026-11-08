@@ -449,3 +449,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Sidebar padding restored
 - The sidebar boxes are back to the old size (the rail fits ten boxes in its height, with 2 px between them).
+
+## Taller menu, sidebar spacing
+- The menu body is 396 px (the panel cap is 470 px and the layer window 570 px), so the sidebar has room for 32 px boxes with 8 px between them, vertically. The list shows more rows.

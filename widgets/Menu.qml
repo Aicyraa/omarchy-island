@@ -19,7 +19,7 @@ WidgetPanel {
 
   // The fixed body. Search (30) + gap (12) + body (326) + footer (6 + 14) + padding (2 x 8) is 404, within the 420 px
   // panel limit, so the panel itself never scrolls: only the list does, and only when its rows overflow.
-  readonly property int bodyH: 326
+  readonly property int bodyH: 396
   readonly property int railW: 44
   readonly property string glyphFamily: "JetBrainsMono Nerd Font"
   readonly property string homeGlyph: "󰋜"
@@ -46,7 +46,7 @@ WidgetPanel {
     return [{ id: "home", label: "Home", icon: homeGlyph, kind: "home" }].concat(MenuData.childrenOf("root"))
   }
   // The rail: boxes fill the height (the old 30 px boxes with 2 px between them for ten items).
-  readonly property int railGap: 2
+  readonly property int railGap: 8
   readonly property int railItemH: Math.max(24, Math.min(40, Math.floor((bodyH - (railRows.length - 1) * railGap) / Math.max(1, railRows.length))))
   readonly property string highlightedRail: route === "root" ? railId : MenuModel.topLevelFor(MenuData.items, route)
 

@@ -23,7 +23,7 @@ var widgets = {
   look:          { file: "Look.qml", w: 640, h: 420 },
   weather: { file: "Weather.qml", w: 440, h: 190 },
   agent: { file: "Agent.qml", w: 600, h: 372 },
-  menu: { file: "Menu.qml", w: 720, h: 380 }
+  menu: { file: "Menu.qml", w: 720, h: 454 }
 }
 var fallback = { file: "Placeholder.qml", w: 420, h: 200 }
 
