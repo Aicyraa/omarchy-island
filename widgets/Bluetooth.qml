@@ -70,6 +70,7 @@ WidgetPanel {
     }
     Row { id: buttons; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8; visible: Bt.hasAdapter
       IconButton { icon: "power"; on: Bt.enabled; onClicked: Bt.toggle() }
+      IconButton { icon: "restart"; onClicked: Cmd.run(["omarchy-restart-bluetooth"]) }
       IconButton { icon: "scan"; visible: Bt.enabled; busy: Bt.hasAdapter && Bt.adapter.discovering; onClicked: root.scan() } }
   }
 

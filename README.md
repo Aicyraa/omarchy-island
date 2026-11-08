@@ -370,3 +370,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - The Wi-Fi widget has a share button (QR icon, while connected). It runs `omarchy-network-qr --meta` and draws the code on a white card (dark modules, four-module quiet zone) in place of the network list; the password is only inside the code. Esc, the same button or Q goes back to the list.
 - The menu's `setup.network.qr` section is hidden. The route `wifi-qr` opens Wi-Fi in share mode. The intent is taken once the network is connected, so it also works when the widget is created right after start.
 - Left in the menu for now: DNS (Setup > Network > DNS) stays as it is, by request.
+
+## Duplicate removal, step 5: restart buttons replace the menu's Update > Hardware (Wi-Fi, Bluetooth, Audio)
+- Wi-Fi, Bluetooth and Audio each have a restart button (the restart icon). It runs `omarchy-restart-wifi`, `omarchy-restart-bluetooth` or `omarchy-restart-audio` directly, without the floating terminal the stock menu used. Audio's button is in a footer under the two cards.
+- The menu's `update.hardware.wifi`, `update.hardware.bluetooth` and `update.hardware.audio` rows are hidden. Trackpad stays in the menu, since no island widget covers it.

@@ -37,6 +37,8 @@ WidgetPanel {
     else Cmd.run(["omarchy-launch-floating-terminal-with-presentation", "nmtui connect"])
   }
   function rescan() { Cmd.run(["nmcli", "dev", "wifi", "rescan"]) }
+  // Unblocks the radio and brings networking back up (the stock Update > Hardware > Wi-Fi action, without a terminal).
+  function restart() { Cmd.run(["omarchy-restart-wifi"]) }
 
   // ---- share: the QR code for the connected network ----
   function toggleShare() {
@@ -109,6 +111,7 @@ WidgetPanel {
     Row { id: buttons; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8; visible: Net.hasWifi
       IconButton { icon: "power"; on: Net.enabled; onClicked: Net.toggle() }
       IconButton { icon: "qr"; visible: Net.connected; on: root.sharing; onClicked: root.toggleShare() }
+      IconButton { icon: "restart"; onClicked: root.restart() }
       IconButton { icon: "refresh"; visible: Net.enabled; onClicked: root.rescan() } }
   }
 
