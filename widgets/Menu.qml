@@ -14,6 +14,7 @@ import "../menu-core/MenuModel.js" as MenuModel
 WidgetPanel {
   id: root
   preferredWidth: 520
+  pad: 8                                  // a tighter edge: the rail and the list sit close to the panel edges
   hint: "type to search · ↑/↓ move · Enter open or run · ←/Backspace up · Tab rail · Esc up or close"
 
   // The fixed body. Search (30) + section gap (12) + body (340) + padding (2 x 16) is 398, within the 420 px panel
@@ -235,7 +236,7 @@ WidgetPanel {
     Rectangle {
       id: rail
       visible: !root.dmenu
-      width: root.railW; height: root.bodyH; color: Theme.surface; radius: 0
+      width: root.railW; height: root.bodyH; color: Theme.surface; radius: 16
       Column {
       anchors.fill: parent; spacing: 2
       Repeater {
@@ -246,11 +247,14 @@ WidgetPanel {
           required property int index
           readonly property bool active: modelData.id === root.highlightedRail
           width: rail.width; height: root.railItemH
+          // A square, rounded icon box, centred in its row of the rail.
           Rectangle {
-            anchors.fill: parent; radius: 0
+            width: Math.min(root.railItemH, root.railW - 8); height: width
+            anchors.centerIn: parent
+            radius: 10
             color: railItem.active ? Theme.surfaceRaised : (railArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.06) : "transparent")
             Behavior on color { ColorAnimation { duration: 90 } }
-            FocusRing { on: root.railFocus && railItem.active; radius: 0 }
+            FocusRing { on: root.railFocus && railItem.active; radius: 10 }
           }
           Item {
             anchors.centerIn: parent; width: 18; height: 18

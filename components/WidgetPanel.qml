@@ -25,7 +25,7 @@ Item {
   property Item focusItem: null
   readonly property var column: col        // exposed for the layout measurement tool
 
-  readonly property int pad: Theme.panelPadding
+  property int pad: Theme.panelPadding     // a widget may choose a tighter edge (the menu uses 8)
   // The scrolling area is inset by `inset` at the top and bottom, so when a long list scrolls its
   // rows are clipped 8px BEFORE the pill edge instead of flush against it. The column's own
   // top/bottom padding shrinks by the same amount, so the resting padding is still exactly `pad`.
