@@ -408,3 +408,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - The pill and both capsules have no border. Instead they cast a soft shadow (`components/Elevation.qml`): eight rings, each a shape grown outward and cut out with the shape itself (even-odd), so nothing is painted under the translucent fill. The shadow falls 6 px down and reaches 22 px, peaking at about 27 % darkening at the edge.
 - Capsules no longer tuck under the ears (`satTuck` 0), so nothing overlaps at the joins.
 - Hyprland (`~/.config/hypr/looknfeel.lua`): the island layer's `ignore_alpha` is 0.5, so the translucent shadow is not blurred into a halo; the pill (alpha 0.70) still is.
+
+## Look, step 2: roomier type and rows
+- Rows are 48 px (was 44), with 24 px icons, 14 px titles, 12 px subtitles and trailing text, and a 16 px gap from icon to text. Tiles have 38 px icon circles and 14 px titles. The menu's rows are 48 px with 26 px app icons and 18 px glyphs.
+- Matched letters in search results are drawn in the accent-ink colour (contrast-checked by the theme) instead of bold, so no glyph widths change and neighbouring letters do not touch. Titles get 0.2 px of letter spacing.
+- Measured with `debug measure`: every shared widget stays within the 420 px panel cap.

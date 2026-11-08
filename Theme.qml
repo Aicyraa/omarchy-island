@@ -86,7 +86,13 @@ Singleton {
   readonly property int panelPadding: 16
   readonly property int rowGap: 4          // between rows in a list
   readonly property int sectionGap: 12     // between sections of a panel
-  readonly property int rowHeight: 44
+  readonly property int rowHeight: 48
+  // Row type: one size up from the old 13/11 so the text has room, with a little letter spacing for the matched letters.
+  readonly property int rowIcon: 24
+  readonly property int rowTitle: 14
+  readonly property int rowSub: 12
+  readonly property int rowTrail: 12
+  readonly property real rowLetter: 0.2
   readonly property int sliderHeight: 44
   readonly property int tileHeight: 56
   readonly property int tileRadius: 18

@@ -36,17 +36,17 @@ Item {
 
   Loader { id: lead; x: 0; anchors.verticalCenter: parent.verticalCenter
     sourceComponent: root.leading ? root.leading : defaultLead }
-  Component { id: defaultLead; Icon { name: root.icon; size: Theme.iconMd; color: root.active ? Theme.accentInk : Theme.text; opacity: root.pending ? 0.5 : 1 } }
+  Component { id: defaultLead; Icon { name: root.icon; size: Theme.rowIcon; color: root.active ? Theme.accentInk : Theme.text; opacity: root.pending ? 0.5 : 1 } }
 
   Column {
-    anchors.left: parent.left; anchors.leftMargin: Theme.iconMd + Theme.s12
+    anchors.left: parent.left; anchors.leftMargin: Theme.rowIcon + Theme.s16
     anchors.right: trail.left; anchors.rightMargin: Theme.s8
     anchors.verticalCenter: parent.verticalCenter
     spacing: 1
     Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText    // names come from outside: untrusted
-      text: root.title; color: Theme.text; font.pixelSize: 13; font.weight: root.active ? Theme.weightLabel : Font.Normal; opacity: root.pending ? 0.6 : 1 }
+      text: root.title; color: Theme.text; font.pixelSize: Theme.rowTitle; font.letterSpacing: Theme.rowLetter; font.weight: root.active ? Theme.weightLabel : Font.Normal; opacity: root.pending ? 0.6 : 1 }
     Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-      visible: root.subtitle !== ""; text: root.subtitle; color: root.active ? Theme.accentInk : Theme.textMuted; font.pixelSize: 11 }
+      visible: root.subtitle !== ""; text: root.subtitle; color: root.active ? Theme.accentInk : Theme.textMuted; font.pixelSize: Theme.rowSub }
   }
 
   Row {
@@ -54,7 +54,7 @@ Item {
     anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
     spacing: Theme.s8
     Icon { visible: root.trailingIcon !== ""; name: root.trailingIcon; size: Theme.iconSm; color: Theme.textMuted; anchors.verticalCenter: parent.verticalCenter }
-    Text { visible: root.trailing !== ""; textFormat: Text.PlainText; text: root.trailing; color: Theme.textMuted; font.pixelSize: 11
+    Text { visible: root.trailing !== ""; textFormat: Text.PlainText; text: root.trailing; color: Theme.textMuted; font.pixelSize: Theme.rowTrail
       anchors.verticalCenter: parent.verticalCenter }
     Icon { visible: root.active; name: "check"; size: Theme.iconSm; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
   }

@@ -38,7 +38,7 @@ Item {
   readonly property real badgeInset: Math.max(Theme.s8, r * 0.4)
   property real holdProgress: 0
   // x where the title text starts in the wide form (icon slot + gaps).
-  readonly property real textX: (iconCircle ? Theme.s16 + 34 + Theme.s12 : Theme.s16 + 2 + Theme.iconMd + Theme.s8)
+  readonly property real textX: (iconCircle ? Theme.s16 + 38 + Theme.s12 : Theme.s16 + 2 + Theme.iconMd + Theme.s8)
 
   Rectangle {
     anchors.fill: parent; radius: root.r
@@ -77,13 +77,13 @@ Item {
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.top: iconBox.bottom; anchors.topMargin: Theme.s4
-      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 13; font.weight: Theme.weightLabel
+      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 14; font.weight: Theme.weightLabel
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
       width: parent.width - Theme.s16; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
       textFormat: Text.PlainText; text: root.subtitle
-      color: root.selected && root.danger ? Theme.dangerInk : root.fgMuted; font.pixelSize: 11
+      color: root.selected && root.danger ? Theme.dangerInk : root.fgMuted; font.pixelSize: Theme.rowSub
     }
   }
 
@@ -95,7 +95,7 @@ Item {
     spacing: root.iconCircle ? Theme.s12 : Theme.s8
     Rectangle {
       visible: root.iconCircle
-      width: 34; height: 34; radius: 17
+      width: 38; height: 38; radius: 19
       color: root.on ? Qt.rgba(0, 0, 0, 0.14) : Theme.surfaceRaised
       Icon { anchors.centerIn: parent; name: root.icon; size: Theme.iconMd - 2; color: root.fg }
     }
@@ -106,10 +106,10 @@ Item {
       spacing: 1
       Text { width: Math.max(10, root.width - root.textX - (root.keyHint !== "" ? root.badgeInset + 14 : Theme.s16))
         elide: Text.ElideRight; textFormat: Text.PlainText; text: root.title
-        color: root.fg; font.pixelSize: 13; font.weight: Theme.weightLabel }
+        color: root.fg; font.pixelSize: 14; font.weight: Theme.weightLabel }
       Text { visible: root.subtitle !== ""
         width: Math.max(10, root.width - root.textX - Theme.s16); elide: Text.ElideRight
-        textFormat: Text.PlainText; text: root.subtitle; color: root.fgMuted; font.pixelSize: 11 }
+        textFormat: Text.PlainText; text: root.subtitle; color: root.fgMuted; font.pixelSize: Theme.rowSub }
     }
   }
 

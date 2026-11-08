@@ -81,6 +81,10 @@ WidgetPanel {
   // The query without the "/" that scopes a search to the open category.
   function qText() { return query.charAt(0) === "/" ? query.slice(1).trim() : query.trim() }
   // The label with the typed letters in bold (fuzzy: in order), HTML-escaped.
+  function hexOf(c) {
+    function h(v) { var n = Math.round(v * 255).toString(16); return n.length < 2 ? "0" + n : n }
+    return "#" + h(c.r) + h(c.g) + h(c.b)
+  }
   function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") }
   function markedLabel(label, q) {
     var s = String(label || ""), needle = String(q || "").toLowerCase().replace(/\s+/g, "")
@@ -88,7 +92,7 @@ WidgetPanel {
     var lower = s.toLowerCase(), out = "", j = 0
     for (var i = 0; i < s.length; i++) {
       var ch = s.charAt(i)
-      if (j < needle.length && lower.charAt(i) === needle.charAt(j)) { out += "<b>" + esc(ch) + "</b>"; j++ }
+      if (j < needle.length && lower.charAt(i) === needle.charAt(j)) { out += "<font color=\"" + hexOf(Theme.accentInk) + "\">" + esc(ch) + "</font>"; j++ }
       else out += esc(ch)
     }
     return out
@@ -308,7 +312,7 @@ WidgetPanel {
             // Centred by its ink, not its advance: nerd-font glyphs have uneven side bearings, so a centred advance sits off-centre.
             Text { id: railGlyph; visible: railItem.modelData.kind !== "app"
               textFormat: Text.PlainText; text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
-              font.family: root.glyphFamily; font.pixelSize: 15
+              font.family: root.glyphFamily; font.pixelSize: 17
               anchors.verticalCenter: parent.verticalCenter
               x: (parent.width - railInk.boundingRect.width) / 2 - railInk.boundingRect.x
               TextMetrics { id: railInk; font: railGlyph.font; text: railGlyph.text } }
@@ -355,30 +359,30 @@ WidgetPanel {
         id: rowItem
         required property var modelData
         required property int index
-        width: list.width; height: 38
+        width: list.width; height: Theme.rowHeight
         MouseArea { anchors.fill: parent; hoverEnabled: true
           onEntered: if (!root.railFocus) root.sel = index
           onClicked: { root.railFocus = false; root.sel = index; root.open(rowItem.modelData) } }
         Item {
           id: lead
-          x: Theme.s8 + 4; anchors.verticalCenter: parent.verticalCenter; width: 20; height: 20
+          x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26
           Image { visible: rowItem.modelData.kind === "app"; anchors.fill: parent; sourceSize: Qt.size(40, 40)
             asynchronous: true; smooth: true; mipmap: true
             source: rowItem.modelData.kind === "app" && rowItem.modelData.icon ? (Quickshell.iconPath(rowItem.modelData.icon, true) || "") : "" }
-          Icon { visible: rowItem.modelData.kind === "toggle"; anchors.centerIn: parent; size: Theme.iconSm
+          Icon { visible: rowItem.modelData.kind === "toggle"; anchors.centerIn: parent; size: Theme.iconMd
             name: rowItem.modelData.icon || ""; color: index === root.sel ? Theme.text : Theme.textMuted }
           Text { visible: rowItem.modelData.kind !== "app" && rowItem.modelData.kind !== "toggle"; anchors.fill: parent
             horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; textFormat: Text.PlainText
             text: rowItem.modelData.icon || ""; color: index === root.sel ? Theme.text : Theme.textMuted
-            font.family: root.glyphFamily; font.pixelSize: 15 }
+            font.family: root.glyphFamily; font.pixelSize: 18 }
         }
         Column {
-          x: lead.x + 20 + Theme.s12; anchors.verticalCenter: parent.verticalCenter
+          x: lead.x + 26 + Theme.s16; anchors.verticalCenter: parent.verticalCenter
           width: parent.width - x - 96
           Text { width: parent.width; elide: Text.ElideRight
             textFormat: root.qText() !== "" ? Text.StyledText : Text.PlainText
             text: root.qText() !== "" ? root.markedLabel(rowItem.modelData.label, root.qText()) : (rowItem.modelData.label || "")
-            color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel }
+            color: Theme.text; font.pixelSize: Theme.rowTitle; font.letterSpacing: Theme.rowLetter; font.weight: Theme.weightLabel }
           Text { visible: text !== ""; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
             text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: 12 }
         }
@@ -387,7 +391,7 @@ WidgetPanel {
           Icon { visible: rowItem.modelData.checked === true; anchors.verticalCenter: parent.verticalCenter; size: Theme.iconSm
             name: "check"; color: Theme.text; strokeWidth: 2 }
           Text { visible: text !== ""; textFormat: Text.PlainText; text: root.trailingFor(rowItem.modelData)
-            color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
+            color: Theme.textMuted; font.pixelSize: Theme.rowTrail; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
           Text { visible: root.pinnedOn(rowItem.modelData); textFormat: Text.PlainText; text: "pinned"
             color: Theme.textMuted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
         }
