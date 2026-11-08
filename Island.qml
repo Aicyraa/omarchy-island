@@ -107,7 +107,12 @@ PanelWindow {
   // Clickable: the centre zone and the two side capsules; everything else passes clicks through.
   // Published for the click catcher (see ClickCatcher.qml): the zone in this screen's coordinates.
   // The window is centred on the screen (it anchors to the top edge only), so add its offset to get screen coordinates.
-  readonly property rect zoneRect: Qt.rect(Math.round((win.screen.width - win.width) / 2) + zone.x, zone.y, zone.width, zone.height)
+  // It covers BOTH the target zone and the pill as it is drawn right now (the pill springs, so for a moment it can be
+  // taller than the target when a list shrinks); the hole follows the animation frame by frame.
+  readonly property real zoneL: Math.min(zone.x, pill.x - ear)
+  readonly property real zoneR: Math.max(zone.x + zone.width, pill.x + pill.width + ear)
+  readonly property real zoneB: Math.max(zone.y + zone.height, pill.y + pill.height)
+  readonly property rect zoneRect: Qt.rect(Math.round((win.screen.width - win.width) / 2) + zoneL, 0, zoneR - zoneL, zoneB)
   onZoneRectChanged: IslandState.setZone(screenName, zoneRect)
   mask: Region { item: zone; Region { item: leftSat } Region { item: rightSat } }
   Item {
