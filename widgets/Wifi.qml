@@ -15,7 +15,9 @@ WidgetPanel {
   property int sel: 0
   property var info: ({})
   property bool loadingInfo: true
-  dataLoading: Net.enabled && Net.hasWifi && nets.length === 0
+  // Still loading while there is no network list, or while a connected network's details have not arrived yet
+  // (otherwise the shorter height would be remembered as this widget's size).
+  dataLoading: (Net.enabled && Net.hasWifi && nets.length === 0) || (Net.connected && loadingInfo)
   readonly property var nets: Net.networks
 
   function band(f) { var n = parseFloat(f); return isNaN(n) ? "" : (n >= 5900 ? "6 GHz" : n >= 4900 ? "5 GHz" : "2.4 GHz") }

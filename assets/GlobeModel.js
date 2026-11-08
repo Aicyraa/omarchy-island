@@ -1,5 +1,6 @@
 .pragma library
-// Copied from Omarchy's Elsewhen panel (plugins/panels/elsewhen/GlobeModel.js, MIT); used by components/GlobeView.qml.
+// Copied from Omarchy's Elsewhen panel (plugins/panels/elsewhen/GlobeModel.js); used by components/GlobeView.qml.
+// Its license was not verified: confirm it before this repository is published.
 
 // Orthographic globe math: projection, the day/night terminator, the moon,
 // and label placement.
