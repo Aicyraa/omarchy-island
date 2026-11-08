@@ -23,7 +23,6 @@ WidgetPanel {
   readonly property int railW: 44
   readonly property string glyphFamily: "JetBrainsMono Nerd Font"
   readonly property string homeGlyph: "󰋜"
-  readonly property string railLabel: railHover !== "" ? railHover : ""
   property string railHover: ""           // the rail item under the pointer (its name shows in the search row)
 
   property string route: "root"           // the menu being shown; "root" = a rail category (or Home)
@@ -233,7 +232,7 @@ WidgetPanel {
   }
 
   // ---- search row: the back button (in a submenu), the search box, the item count ----
-  Item { width: parent.width; height: 30
+  Item { id: searchRow; width: parent.width; height: 30
     Rectangle {
       id: back
       visible: !root.dmenu && root.route !== "root" && root.query === ""
@@ -243,19 +242,32 @@ WidgetPanel {
     }
     Rectangle {
       id: searchBox
-      anchors.left: parent.left; anchors.right: count.left; anchors.rightMargin: Theme.s8
+      anchors.left: parent.left; anchors.right: countChip.left; anchors.rightMargin: Theme.s8
       anchors.leftMargin: back.visible ? 38 : 0
       height: 30; radius: 15
       color: root.query !== "" ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface
       Icon { id: searchIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: Theme.textMuted }
       Text { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
         elide: Text.ElideRight; textFormat: Text.PlainText
-        text: root.query !== "" ? root.query : (root.dmenu && root.dmenuPrompt !== "" ? root.dmenuPrompt : "Search…")
-        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 12; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
+        text: root.query !== "" ? root.query : (root.dmenu && root.dmenuPrompt !== "" ? root.dmenuPrompt : "Search apps and actions")
+        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 13; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
     }
-    Text { id: count; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: root.dmenu ? "" : (root.railHover !== "" ? root.railHover : (root.rows.length + (root.rows.length === 1 ? " item" : " items")))
-      color: Theme.textMuted; font.pixelSize: 11 }
+    // A chip: the item count, the hovered rail item's name, or on the Install page how many installed apps were hidden.
+    readonly property int hiddenInstallCount: { MenuData.revision; return MenuData.hiddenInstallCount() }
+    readonly property bool onInstall: root.route.indexOf("install") === 0 || root.railId === "install"
+    readonly property string chipText: root.dmenu ? ""
+      : (root.railHover !== "" ? root.railHover
+        : (root.rows.length + (root.rows.length === 1 ? " item" : " items")
+           + (onInstall && hiddenInstallCount > 0 ? "  ·  " + hiddenInstallCount + " installed hidden" : "")))
+    Rectangle {
+      id: countChip
+      anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+      visible: searchRow.chipText !== ""
+      height: 22; radius: 11; width: chipLabel.implicitWidth + 2 * Theme.s12
+      color: Theme.surface
+      Text { id: chipLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: searchRow.chipText
+        color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+    }
   }
 
   // Toggle states can change outside the menu: re-read them while it is open.
@@ -346,7 +358,8 @@ WidgetPanel {
         Rectangle { visible: section === "divider"; x: Theme.s8; width: parent.width - 2 * Theme.s8; height: 1
           anchors.verticalCenter: parent.verticalCenter; color: Theme.mix(Theme.surface, Theme.text, 0.14) }
         Text { visible: section !== "" && section !== "divider"; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter
-          textFormat: Text.PlainText; text: section; color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+          textFormat: Text.PlainText; text: section.toUpperCase(); color: Theme.textMuted
+          font.pixelSize: 10; font.weight: Theme.weightStrong; font.letterSpacing: 1.2 }
       }
       delegate: Item {
         id: rowItem
@@ -375,16 +388,16 @@ WidgetPanel {
           Text { width: parent.width; elide: Text.ElideRight
             textFormat: root.qText() !== "" ? Text.StyledText : Text.PlainText
             text: root.qText() !== "" ? root.markedLabel(rowItem.modelData.label, root.qText()) : (rowItem.modelData.label || "")
-            color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+            color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel }
           Text { visible: text !== ""; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: 11 }
+            text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: 12 }
         }
         Row {
           anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
           Icon { visible: rowItem.modelData.checked === true; anchors.verticalCenter: parent.verticalCenter; size: Theme.iconSm
             name: "check"; color: Theme.text; strokeWidth: 2 }
           Text { visible: text !== ""; textFormat: Text.PlainText; text: root.trailingFor(rowItem.modelData)
-            color: Theme.textMuted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+            color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
           Text { visible: root.pinnedOn(rowItem.modelData); textFormat: Text.PlainText; text: "pinned"
             color: Theme.textMuted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
         }
@@ -394,11 +407,4 @@ WidgetPanel {
     }
   }
 
-  // Footer: the keys, or on the Install page, how many installed apps the check hid.
-  readonly property int hiddenInstallCount: { MenuData.revision; return MenuData.hiddenInstallCount() }
-  Text { y: root.bodyH + 6; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-    text: root.dmenu ? "↑↓ move · ⏎ choose · esc cancel"
-          : ((root.route.indexOf("install") === 0 || root.railId === "install") && root.hiddenInstallCount > 0)
-            ? root.hiddenInstallCount + " already installed, hidden" : "↑↓ move · ⏎ open · ⇥ rail · ctrl+p pin · esc back"
-    color: Theme.textMuted; font.pixelSize: 11 }
 }

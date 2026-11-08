@@ -15,6 +15,8 @@ PanelWindow {
   anchors.top: true; anchors.bottom: true; anchors.left: true; anchors.right: true
   exclusionMode: ExclusionMode.Ignore
   WlrLayershell.namespace: "aicyraa-island-catcher"
+  // Overlay, above the dock and the bar, so a click on them outside the island counts as outside. The island has a hole.
+  WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
   visible: IslandState.pinned && IslandState.modeFor(modelData.name) === "widget"
 
