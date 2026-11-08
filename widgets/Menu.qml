@@ -265,8 +265,8 @@ WidgetPanel {
             Text { id: railGlyph; visible: railItem.modelData.kind !== "app"
               textFormat: Text.PlainText; text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
               font.family: root.glyphFamily; font.pixelSize: 15
+              anchors.verticalCenter: parent.verticalCenter
               x: (parent.width - railInk.boundingRect.width) / 2 - railInk.boundingRect.x
-              y: (parent.height - railInk.boundingRect.height) / 2 - railInk.boundingRect.y
               TextMetrics { id: railInk; font: railGlyph.font; text: railGlyph.text } }
           }
           MouseArea { id: railArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -289,12 +289,13 @@ WidgetPanel {
       // One highlight, moved quickly to the selected row (no delay, no panel-wide scroll).
       highlightFollowsCurrentItem: true
       highlightMoveDuration: IslandState.reducedMotion ? 0 : 110
-      highlight: Rectangle { radius: 12; color: root.railFocus ? "transparent" : Theme.surfaceRaised }
+      // The highlight stops short of the scroll indicator's lane, so the indicator never sits on a row.
+      highlight: Rectangle { x: 0; width: list.width - 10; radius: 12; color: root.railFocus ? "transparent" : Theme.surfaceRaised }
       onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
       // A thin indicator, shown only while the rows run past the body.
       Rectangle {
         visible: list.contentHeight > list.height + 1
-        anchors.right: parent.right; anchors.rightMargin: 2
+        anchors.right: parent.right; anchors.rightMargin: 1
         width: 3; radius: 2; color: Theme.mix(Theme.surface, Theme.text, 0.35)
         height: Math.max(24, list.height * list.height / list.contentHeight)
         y: (list.height - height) * (list.contentY / Math.max(1, list.contentHeight - list.height))
