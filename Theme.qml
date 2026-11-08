@@ -146,8 +146,6 @@ Singleton {
   property color pillBase: luminance(background) < 0.01 ? mix(background, surface, 0.65) : background
   // The same see-through as Alacritty (opacity 0.70), so the blur behind shows through every island widget.
   property color pill: Qt.rgba(pillBase.r, pillBase.g, pillBase.b, 0.70)
-  // A light black outline on every island widget (the pill, its capsules and the battery).
-  property color pillEdge: Qt.rgba(0, 0, 0, 0.35)
 
   Behavior on background { ColorAnimation { duration: 250 } }
   Behavior on surface { ColorAnimation { duration: 250 } }

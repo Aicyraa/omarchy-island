@@ -403,3 +403,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Typed letters are bold in the matching rows (in order, fuzzy).
 - Section labels (Recent, Toggles, Pinned) stick to the top while the list scrolls.
 - Reduced motion turns off the rail colour fade and the highlight move.
+
+## Look, step 1: no outlines, soft elevation shadows
+- The pill and both capsules have no border. Instead they cast a soft shadow (`components/Elevation.qml`): eight rings, each a shape grown outward and cut out with the shape itself (even-odd), so nothing is painted under the translucent fill. The shadow falls 6 px down and reaches 22 px, peaking at about 27 % darkening at the edge.
+- Capsules no longer tuck under the ears (`satTuck` 0), so nothing overlaps at the joins.
+- Hyprland (`~/.config/hypr/looknfeel.lua`): the island layer's `ignore_alpha` is 0.5, so the translucent shadow is not blurred into a halo; the pill (alpha 0.70) still is.
