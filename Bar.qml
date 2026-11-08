@@ -51,7 +51,7 @@ Item {
       appid: "island"
       name: modelData
       description: "Toggle the island " + modelData + " widget"
-      onPressed: IslandState.toggleWidget(modelData, "")
+      onPressed: IslandState.toggleWidget(modelData, "", true)
     }
   }
 

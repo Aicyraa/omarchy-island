@@ -111,17 +111,23 @@ Singleton {
   }
 
   // ---- widgets ----
-  function openWidget(name, screenName) {
+  // A widget opened by a keybind is PINNED: it stays open until Esc or the same keybind again. It ignores the inactivity
+  // timer and focus-grab closes (keyboard focus moving away is not a decision to close it). Opened from the bar or IPC,
+  // it closes as before when the cursor leaves it.
+  property bool pinned: false
+  function openWidget(name, screenName, pin) {
+    pinned = !!pin
     activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()
     widgetName = name                    // A -> B swaps directly, never via idle
     openTimer.stop(); closeTimer.stop(); hoverOpen = false
     touch()
   }
-  function toggleWidget(name, screenName) {
-    if (widgetName === name) closeWidget(); else openWidget(name, screenName)
+  function toggleWidget(name, screenName, pin) {
+    if (widgetName === name) closeWidget(); else openWidget(name, screenName, pin)
   }
   function closeWidget(reason) {
     if (widgetName === "") return
+    pinned = false
     console.warn("island: widget closed:", widgetName, reason || "(explicit)")
     widgetName = ""
     idleTimer.stop()
@@ -185,6 +191,7 @@ Singleton {
   Timer { id: idleTimer
     interval: root.timeoutFor(root.widgetName)
     onTriggered: {
+      if (root.pinned) return           // keybind-opened: only Esc or the same keybind closes it
       // Paused (re-armed) while the cursor is over the pill or a key was
       // pressed in the last 3s.
       if (root.pointerOver || Date.now() - root.lastKeyAt < 3000) restart()
