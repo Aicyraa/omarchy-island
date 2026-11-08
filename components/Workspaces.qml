@@ -112,14 +112,20 @@ Item {
     width: Math.abs(root.headCx - root.tailCx) + root.activeW
   }
 
+  // Hyprland here runs its Lua config, so dispatchers use the hl.dsp syntax (the legacy "workspace N" is ignored).
+  function focusWorkspace(target) {
+    Hyprland.dispatch(Hyprland.usingLua ? 'hl.dsp.focus({workspace="' + target + '"})' : "workspace " + target)
+  }
+
   // Click a slot to switch; scroll anywhere to step through workspaces.
   MouseArea {
     anchors.fill: parent; anchors.margins: -4       // larger hit area than the 5px dots
     hoverEnabled: true; cursorShape: Qt.PointingHandCursor
     onClicked: function (m) {
-      var i = Math.floor((m.x + 4) / root.slot)
-      if (i >= 0 && i < root.items.length && !root.items[i].gap) Hyprland.dispatch("workspace " + root.items[i].id)
+      // m.x is in this area's coordinates, which start 4 px left of the item
+      var i = Math.floor((m.x - 4) / root.slot)
+      if (i >= 0 && i < root.items.length && !root.items[i].gap) root.focusWorkspace(root.items[i].id)
     }
-    onWheel: function (w) { Hyprland.dispatch(w.angleDelta.y > 0 ? "workspace e-1" : "workspace e+1") }
+    onWheel: function (w) { root.focusWorkspace(w.angleDelta.y > 0 ? "e-1" : "e+1") }
   }
 }

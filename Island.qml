@@ -253,6 +253,9 @@ PanelWindow {
     width: wsView.implicitWidth + 2 * 10
     x: pill.x - win.satTuck - width
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    // The capsule's padding (everything but the dots) opens the workspace overview; the dots keep switching workspace.
+    MouseArea { id: wsArea; z: -1; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+      onClicked: Cmd.run(["omarchy-shell", "-q", "io.github.aicyraa.workspace-gallery.perspective", "toggle"]) }
     Workspaces { id: wsView; anchors.centerIn: parent }
   }
   Rectangle {
