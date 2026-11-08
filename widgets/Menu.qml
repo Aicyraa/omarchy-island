@@ -291,8 +291,6 @@ WidgetPanel {
           required property int index
           readonly property bool active: modelData.id === root.highlightedRail
           width: rail.width; height: root.railItemH
-          // The active category: an accent bar on the rail's inner edge, and its box.
-          Rectangle { visible: railItem.active; x: 3; anchors.verticalCenter: parent.verticalCenter; width: 3; height: 14; radius: 2; color: Theme.accentFill }
           // A square, rounded icon box, centred in its row of the rail.
           Rectangle {
             width: Math.min(root.railItemH, root.railW - 8); height: width
