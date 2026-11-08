@@ -69,7 +69,7 @@ Item {
     visible: root.showValue && !root.thin
     anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter
     textFormat: Text.PlainText; text: Math.round(root.value * 100) + "%"
-    color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel
+    color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
   }
 
   MouseArea {

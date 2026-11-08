@@ -482,3 +482,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Shared tokens in `Theme`: a type scale (`typeCaption` 10, `typeLabel` 11, `typeBody` 12, `typeTitle` 14, `typeValue` 26) and `radiusChip` 10 next to `tileRadius` 18. New and reworked widgets should use these instead of raw numbers.
 - The System widget uses them: cards get an accent icon chip like the list rows, value and unit have clearer hierarchy, the process rows use the chip radius.
 - Not yet swept: about 11 font sizes (9 to 46 px) and about 20 hard-coded radii are still used across the other widgets.
+
+## Consistency sweep (all widgets)
+- Text sizes: 110 text sizes across 24 files now use the shared scale (`Theme.typeCaption` 10, `typeLabel` 11, `typeBody` 12, `typeTitle` 14, `typeValue` 26). Icon glyphs and the large display sizes (clock and similar) keep their own sizes.
+- Card radii: literal 16 to 20 px become `Theme.tileRadius`, and 10 px becomes `Theme.radiusChip`. Pills and circles keep their radius (half the height), since that is geometry.
+- Not standardised: tile heights differ between widgets, and a few sizes remain (for example 15 px and 17 px in some places). These need a per-widget look.

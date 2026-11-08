@@ -48,7 +48,7 @@ WidgetPanel {
 
   // Only shown when a reboot is pending (the kernel's modules are gone).
   Rectangle { antialiasing: true; visible: root.restartNeeded; height: 22; width: badge.width + 20; radius: 11; color: Theme.warning
-    Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: 11; font.weight: Theme.weightLabel } }
+    Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel } }
 
   Row {
     width: parent.width; spacing: Theme.s12

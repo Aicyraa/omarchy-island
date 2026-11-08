@@ -104,7 +104,7 @@ WidgetPanel {
       anchors.right: buttons.left; anchors.rightMargin: Theme.s8
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
         text: !Net.hasWifi ? "No Wi-Fi adapter" : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? Net.ssid : "Not connected")) }
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
+      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeBody
         text: !Net.hasWifi ? "Nothing to manage on this machine"
             : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? quality(Net.strength) + " signal" : "Pick a network below")) }
     }
@@ -125,13 +125,13 @@ WidgetPanel {
                { k: "Band", v: root.band(root.info.freq) || "—" },
                { k: "Speed", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "—" } ]
       delegate: Column { required property var modelData; width: parent.width / 4
-        Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
+        Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
         Text { width: parent.width - Theme.s8; anchors.horizontalCenter: parent.horizontalCenter; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
-          textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel } }
+          textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel } }
     }
   }
   Text { visible: Net.connected && root.loadingInfo && !root.sharing; textFormat: Text.PlainText
-    text: "Reading connection details…"; color: Theme.textMuted; font.pixelSize: 11 }
+    text: "Reading connection details…"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
 
   // ---- network rows (all the same height) ----
   // The code: white (a QR code must stay dark-on-light whatever the theme is), with a quiet zone of four modules.
@@ -162,11 +162,11 @@ WidgetPanel {
         }
       }
       Text { visible: root.qr.size === 0; anchors.centerIn: parent; textFormat: Text.PlainText
-        text: root.qr.error !== "" ? root.qr.error : "Making the code…"; color: "#444444"; font.pixelSize: 12
+        text: root.qr.error !== "" ? root.qr.error : "Making the code…"; color: "#444444"; font.pixelSize: Theme.typeBody
         horizontalAlignment: Text.AlignHCenter; width: parent.width - 24; wrapMode: Text.WordWrap }
     }
     Text { anchors.horizontalCenter: parent.horizontalCenter; anchors.top: codeCard.bottom; anchors.topMargin: Theme.s12
-      textFormat: Text.PlainText; text: "Scan with a phone to join " + root.qr.ssid; color: Theme.textMuted; font.pixelSize: 12 }
+      textFormat: Text.PlainText; text: "Scan with a phone to join " + root.qr.ssid; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
   }
   onQrChanged: codeCanvas.requestPaint()
 
@@ -191,7 +191,7 @@ WidgetPanel {
     }
   }
   Text { visible: Net.enabled && root.nets.length === 0 && !root.sharing; textFormat: Text.PlainText
-    text: "No networks found"; color: Theme.textMuted; font.pixelSize: 13 }
+    text: "No networks found"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
   // The reading is a snapshot taken when the widget opens (no polling).
   Process {

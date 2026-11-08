@@ -54,7 +54,7 @@ Item {
     anchors.top: parent.top; anchors.right: parent.right
     anchors.topMargin: root.badgeInset; anchors.rightMargin: root.badgeInset
     textFormat: Text.PlainText; text: root.keyHint
-    color: root.badgeColor; font.pixelSize: 11; font.weight: Theme.weightLabel
+    color: root.badgeColor; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
   }
 
   // Compact: big icon with hold ring, label underneath.
@@ -77,7 +77,7 @@ Item {
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.top: iconBox.bottom; anchors.topMargin: Theme.s4
-      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: 14; font.weight: Theme.weightLabel
+      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
@@ -95,7 +95,7 @@ Item {
     spacing: root.iconCircle ? Theme.s12 : Theme.s8
     Rectangle {
       visible: root.iconCircle
-      width: 38; height: 38; radius: 19
+      width: 38; height: 38; radius: Theme.tileRadius
       color: root.on ? Qt.rgba(0, 0, 0, 0.14) : Theme.surfaceRaised
       Icon { anchors.centerIn: parent; name: root.icon; size: Theme.iconMd - 2; color: root.fg }
     }
@@ -106,7 +106,7 @@ Item {
       spacing: 1
       Text { width: Math.max(10, root.width - root.textX - (root.keyHint !== "" ? root.badgeInset + 14 : Theme.s16))
         elide: Text.ElideRight; textFormat: Text.PlainText; text: root.title
-        color: root.fg; font.pixelSize: 14; font.weight: Theme.weightLabel }
+        color: root.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
       Text { visible: root.subtitle !== ""
         width: Math.max(10, root.width - root.textX - Theme.s16); elide: Text.ElideRight
         textFormat: Text.PlainText; text: root.subtitle; color: root.fgMuted; font.pixelSize: Theme.rowSub }

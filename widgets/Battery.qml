@@ -32,7 +32,7 @@ WidgetPanel {
   }
 
   Text { visible: !Power.present; textFormat: Text.PlainText
-    text: "No battery in this machine"; color: Theme.textMuted; font.pixelSize: 14 }
+    text: "No battery in this machine"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
   // Header line: the big percentage and its state on the left; "Charging at"/"Draw" and "Health" on the same line, on the right,
   // as two little cards. Metrics with no data are not drawn.
@@ -42,7 +42,7 @@ WidgetPanel {
     Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
     Column { anchors.verticalCenter: parent.verticalCenter; spacing: 1
       Text { textFormat: Text.PlainText; text: Math.round(parent.parent.shown) + "%"; color: Theme.text; font.pixelSize: 34; font.weight: Theme.weightStrong }
-      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
+      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeBody
         text: Power.stateText + (Power.timeText(Power.secondsLeft) !== ""
               ? " · " + Power.timeText(Power.secondsLeft) + (Power.charging ? " to full" : " left") : "") } }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
@@ -56,7 +56,7 @@ WidgetPanel {
         delegate: Rectangle { required property var modelData
           antialiasing: true; height: 48; width: Math.max(88, cardCol.implicitWidth + 2 * Theme.s12); radius: Theme.tileRadius - 4; color: Theme.surface
           Column { id: cardCol; anchors.centerIn: parent; spacing: 1
-            Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: 11 }
+            Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
             Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel } } } }
     }
   }

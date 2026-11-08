@@ -54,7 +54,7 @@ WidgetPanel {
 
       // header
       Item { width: parent.width; height: 36
-        Rectangle { antialiasing: true; id: disc; width: 36; height: 36; radius: 18
+        Rectangle { antialiasing: true; id: disc; width: 36; height: 36; radius: Theme.tileRadius
           color: side.muted ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.accentFill
           Behavior on color { ColorAnimation { duration: 150 } }
           Icon { anchors.centerIn: parent; name: side.isInput ? (side.muted ? "mic-off" : "mic") : "volume"; size: Theme.iconMd
@@ -65,10 +65,10 @@ WidgetPanel {
             onClicked: { root.inputSide = side.isInput; root.row = 0; side.isInput ? Audio.toggleMicMute() : Audio.toggleMute() } } }
         Column { anchors.left: disc.right; anchors.leftMargin: Theme.s12; anchors.right: pct.left; anchors.rightMargin: Theme.s8; anchors.verticalCenter: parent.verticalCenter; spacing: 0
           Text { width: parent.width; textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
-            color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel }
+            color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
           Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
             text: side.muted ? "Muted" : (side.current ? Audio.label(side.current) : "No device")
-            color: side.muted ? Theme.warningInk : Theme.textMuted; font.pixelSize: 11 } }
+            color: side.muted ? Theme.warningInk : Theme.textMuted; font.pixelSize: Theme.typeLabel } }
         Text { id: pct; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
           text: Math.round(side.vol * 100) + "%"; color: side.muted ? Theme.textMuted : Theme.text; font.pixelSize: 20; font.weight: Theme.weightStrong }
       }
@@ -85,7 +85,7 @@ WidgetPanel {
           side.isInput ? Audio.setMicVolume(v) : Audio.setVolume(v) }
       }
 
-      Text { textFormat: Text.PlainText; text: side.isInput ? "Microphones" : "Speakers and headphones"; color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+      Text { textFormat: Text.PlainText; text: side.isInput ? "Microphones" : "Speakers and headphones"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
       Column {
         width: parent.width; spacing: Theme.rowGap
         Repeater {
@@ -105,7 +105,7 @@ WidgetPanel {
           }
         }
         Text { visible: side.devs.length === 0; textFormat: Text.PlainText
-          text: side.isInput ? "No input devices" : "No output devices"; color: Theme.textMuted; font.pixelSize: 12 }
+          text: side.isInput ? "No input devices" : "No output devices"; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
       }
     }
   }

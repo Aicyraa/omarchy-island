@@ -78,17 +78,17 @@ WidgetPanel {
         Rectangle { id: badge; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; antialiasing: true
           color: Theme.mix(Theme.surface, parent.tint, 0.22)
           Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: String(modelData.name).charAt(0).toUpperCase(); color: parent.parent.tint
-            font.pixelSize: 12; font.weight: Theme.weightLabel } }
+            font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel } }
         Text { id: pname; anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: nums.left; anchors.rightMargin: Theme.s8; y: 6
-          elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.name; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
+          elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.name; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
         Rectangle { anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: parent.right; anchors.rightMargin: Theme.s12
           y: parent.height - 11; height: 4; radius: 2; antialiasing: true; color: Theme.mix(Theme.surface, Theme.text, 0.14)
           Rectangle { height: parent.height; radius: 2; antialiasing: true; color: parent.parent.tint
             width: Math.max(4, parent.width * Math.min(1, modelData.cpu / 100))
             Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } } } }
         Row { id: nums; anchors.right: parent.right; anchors.rightMargin: Theme.s12; y: 6; spacing: Theme.s8
-          Text { textFormat: Text.PlainText; text: modelData.cpu.toFixed(modelData.cpu < 10 ? 1 : 0) + "%"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
-          Text { textFormat: Text.PlainText; text: modelData.mem.toFixed(1) + "% mem"; color: Theme.textMuted; font.pixelSize: 11; anchors.baseline: parent.children[0].baseline } }
+          Text { textFormat: Text.PlainText; text: modelData.cpu.toFixed(modelData.cpu < 10 ? 1 : 0) + "%"; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
+          Text { textFormat: Text.PlainText; text: modelData.mem.toFixed(1) + "% mem"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.baseline: parent.children[0].baseline } }
       }
     }
   }

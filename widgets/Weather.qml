@@ -22,11 +22,11 @@ WidgetPanel {
 
   dataLoading: state === "loading"
   compact: state !== "ok"
-  Text { visible: root.state === "loading"; textFormat: Text.PlainText; text: "Fetching weather…"; color: Theme.textMuted; font.pixelSize: 13 }
+  Text { visible: root.state === "loading"; textFormat: Text.PlainText; text: "Fetching weather…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
   Row { visible: root.state === "error"; spacing: Theme.s8
     Icon { name: "alert"; size: Theme.iconLg; color: Theme.warningInk; anchors.verticalCenter: parent.verticalCenter }
     Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter
-      text: "Couldn't load weather. Check your connection."; color: Theme.textMuted; font.pixelSize: 12 } }
+      text: "Couldn't load weather. Check your connection."; color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
 
   // The condition card: a soft sky tint (warm by day, cool at night), the big icon and temperature, the condition
   // and place, and High / Low on the right.
@@ -43,13 +43,13 @@ WidgetPanel {
       textFormat: Text.PlainText; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 46; font.weight: Theme.weightStrong }
     Column { anchors.left: heroTemp.right; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
       Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel }
-      Text { textFormat: Text.PlainText; text: root.w.place + (WeatherData.age > 120000 ? " · " + Math.round(WeatherData.age / 60000) + " min ago" : ""); color: Theme.textMuted; font.pixelSize: 12 } }
+      Text { textFormat: Text.PlainText; text: root.w.place + (WeatherData.age > 120000 ? " · " + Math.round(WeatherData.age / 60000) + " min ago" : ""); color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
     Column { anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 4
       Row { spacing: 6; anchors.right: parent.right
-        Text { text: "High"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+        Text { text: "High"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.verticalCenter: parent.verticalCenter }
         Text { text: root.w.hi + "°"; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
       Row { spacing: 6; anchors.right: parent.right
-        Text { text: "Low"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+        Text { text: "Low"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.verticalCenter: parent.verticalCenter }
         Text { text: root.w.lo + "°"; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
     }
   }

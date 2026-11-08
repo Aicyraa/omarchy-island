@@ -51,19 +51,19 @@ WidgetPanel {
     visible: root.agents.length > 0; width: parent.width; height: 24
     Row { anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; visible: AgentUsage.fetchedAt > 0
-        text: "Updated " + root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: 11 } }
+        text: "Updated " + root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: Theme.typeLabel } }
     Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s12
-      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Today"; color: Theme.textMuted; font.pixelSize: 11 }
+      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "Today"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: root.fmt(root.todayTokens) + " tokens"
-        color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
-      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "7 days"; color: Theme.textMuted; font.pixelSize: 11 }
+        color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
+      Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: "7 days"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
       Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText; text: root.fmt(root.weekTokens)
-        color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel }
+        color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
     }
   }
   Text { visible: !root.loading && root.agents.length === 0; textFormat: Text.PlainText
-    text: "No agent usage yet"; color: Theme.textMuted; font.pixelSize: 13 }
-  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading usage…"; color: Theme.textMuted; font.pixelSize: 13 }
+    text: "No agent usage yet"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading usage…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
   // ---- one card per agent ----
   Repeater {
@@ -84,9 +84,9 @@ WidgetPanel {
             Icon { name: root.glyph(card.modelData.id); size: Theme.iconMd; anchors.verticalCenter: parent.verticalCenter
               color: card.modelData.top >= 0.9 ? Theme.dangerInk : Theme.accentInk }
             Text { anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-              text: card.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+              text: card.modelData.name; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
             Text { anchors.verticalCenter: parent.verticalCenter; visible: card.modelData.tier !== ""; textFormat: Text.PlainText
-              text: card.modelData.tier; color: Theme.textMuted; font.pixelSize: 11 } }
+              text: card.modelData.tier; color: Theme.textMuted; font.pixelSize: Theme.typeLabel } }
           Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s12
             // last 7 days, today highlighted
             Row { spacing: 3; anchors.verticalCenter: parent.verticalCenter; visible: card.modelData.week > 0
@@ -98,8 +98,8 @@ WidgetPanel {
                     color: parent.index === card.modelData.days.length - 1 ? Theme.accentInk : card.track } } } }
             Column { anchors.verticalCenter: parent.verticalCenter; spacing: 0
               Text { anchors.right: parent.right; textFormat: Text.PlainText; text: root.fmt(card.modelData.today)
-                color: card.modelData.today > 0 ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.weight: Theme.weightStrong }
-              Text { anchors.right: parent.right; textFormat: Text.PlainText; text: "tokens today"; color: Theme.textMuted; font.pixelSize: 11 } }
+                color: card.modelData.today > 0 ? Theme.text : Theme.textMuted; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong }
+              Text { anchors.right: parent.right; textFormat: Text.PlainText; text: "tokens today"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel } }
           } }
 
         // limits
@@ -110,12 +110,12 @@ WidgetPanel {
             readonly property bool known: typeof modelData.percent === "number"
             width: body.width; height: 20
             Text { id: lbl; x: 0; width: 130; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-              text: String(modelData.label || "").slice(0, 30); color: Theme.textMuted; font.pixelSize: 11 }
+              text: String(modelData.label || "").slice(0, 30); color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
             Text { id: rst; anchors.right: parent.right; width: 86; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter
-              textFormat: Text.PlainText; text: known ? root.resets(modelData.resetsAt) : ""; color: Theme.textMuted; font.pixelSize: 11 }
+              textFormat: Text.PlainText; text: known ? root.resets(modelData.resetsAt) : ""; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
             Text { id: pct; anchors.right: rst.left; anchors.rightMargin: Theme.s8; width: 36; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter
               textFormat: Text.PlainText; text: known ? Math.round(modelData.percent * 100) + "%" : "—"; color: known ? Theme.text : Theme.textMuted
-              font.pixelSize: 11; font.weight: Theme.weightLabel }
+              font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
             Rectangle { anchors.left: lbl.right; anchors.leftMargin: Theme.s8; anchors.right: pct.left; anchors.rightMargin: Theme.s8
               anchors.verticalCenter: parent.verticalCenter; height: 8; radius: 4; color: card.track; opacity: known ? 1 : 0.5
               Rectangle { antialiasing: true; visible: known; height: parent.height; radius: 4; width: parent.width * Math.min(1, modelData.percent)
@@ -125,7 +125,7 @@ WidgetPanel {
 
         // analytics line
         Text {
-          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
+          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeLabel
           visible: text !== ""
           text: {
             var m = card.modelData, p = []

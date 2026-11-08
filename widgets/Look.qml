@@ -92,7 +92,7 @@ WidgetPanel {
 
   // ---- backgrounds ----
   Text { textFormat: Text.PlainText; text: "Background"; color: root.sec === 0 ? Theme.text : Theme.textMuted
-    font.pixelSize: 12; font.weight: Theme.weightLabel }
+    font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
   ListView {
     id: bgList
     width: parent.width; height: 74
@@ -117,7 +117,7 @@ WidgetPanel {
         Rectangle { visible: isCurrent; antialiasing: true; x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accentFill
           Icon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText; strokeWidth: 2.4 } }
         Text { visible: isNext; anchors.horizontalCenter: parent.horizontalCenter; y: parent.height - 20
-          textFormat: Text.PlainText; text: "Next"; color: Theme.text; font.pixelSize: 11; font.weight: Theme.weightLabel }
+          textFormat: Text.PlainText; text: "Next"; color: Theme.text; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
         FocusRing { on: selected; radius: Theme.tileRadius }
         MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
           onClicked: { root.sec = 0; root.bgIdx = index; root.applyBg(index) } }
@@ -125,11 +125,11 @@ WidgetPanel {
     }
   }
   Text { visible: root.bgs.length === 0; textFormat: Text.PlainText; text: "No backgrounds for this theme"
-    color: Theme.textMuted; font.pixelSize: 12 }
+    color: Theme.textMuted; font.pixelSize: Theme.typeBody }
 
   // ---- fonts ----
   Text { topPadding: Theme.s12; textFormat: Text.PlainText; text: "Font"; color: root.sec === 1 ? Theme.text : Theme.textMuted
-    font.pixelSize: 12; font.weight: Theme.weightLabel }
+    font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
   Column {
     width: parent.width
     Repeater {

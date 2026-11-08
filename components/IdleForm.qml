@@ -16,7 +16,7 @@ Item {
   property var win: null                  // the PanelWindow (for screen name + widget toggling)
 
   readonly property int pad: 22
-  TextMetrics { id: timeM; font.pixelSize: 12; font.weight: Theme.weightLabel; text: "00:00" }
+  TextMetrics { id: timeM; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; text: "00:00" }
   readonly property real timeW: timeM.advanceWidth
 
   readonly property bool playing: Quickshell.env("ISLAND_FORCE_VIZ") === "1" || Mpris.players.values.some(function (p) { return p.isPlaying })
@@ -49,7 +49,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     textFormat: Text.PlainText
     text: Qt.formatDateTime(clock.date, "HH:mm")
-    color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel
+    color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
     TapHandler { onTapped: IslandState.toggleWidget("calendar", form.win ? form.win.screenName : "") }
   }
 

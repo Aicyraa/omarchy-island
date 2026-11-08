@@ -64,7 +64,7 @@ WidgetPanel {
       anchors.right: buttons.left; anchors.rightMargin: Theme.s8
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
         text: !Bt.hasAdapter ? "No Bluetooth adapter" : (!Bt.enabled ? "Bluetooth is off" : (Bt.connectedName !== "" ? Bt.connectedName : "On")) }
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 12
+      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeBody
         text: !Bt.hasAdapter ? "Nothing to manage on this machine" : (!Bt.enabled ? "Bluetooth is off"
             : (root.connected.length + " connected" + (root.paired.length > 0 ? " · " + root.paired.length + " more paired" : ""))) }
     }
@@ -82,7 +82,7 @@ WidgetPanel {
     property int offset: 0
     width: parent.width; spacing: Theme.rowGap
     visible: devices.length > 0
-    Text { textFormat: Text.PlainText; text: g.label; color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+    Text { textFormat: Text.PlainText; text: g.label; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
     Repeater {
       model: g.devices
       delegate: ListRow {
@@ -103,5 +103,5 @@ WidgetPanel {
   Group { visible: Bt.enabled && devices.length > 0; label: "Paired"; devices: root.paired; offset: root.connected.length }
   Group { visible: Bt.enabled && devices.length > 0; label: "Available"; devices: root.available; offset: root.connected.length + root.paired.length }
   Text { visible: Bt.enabled && root.flat.length === 0; textFormat: Text.PlainText
-    text: "No devices yet. Use the scan button."; color: Theme.textMuted; font.pixelSize: 13 }
+    text: "No devices yet. Use the scan button."; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 }

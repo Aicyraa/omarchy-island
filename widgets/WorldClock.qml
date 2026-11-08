@@ -138,16 +138,16 @@ WidgetPanel {
       GlobeView { anchors.horizontalCenter: parent.horizontalCenter; width: 156; height: 156; markers: root.sunMarkers; focusLon: root.focusLon }
       Column { width: parent.width; spacing: 1
         Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-          text: root.rows[root.sel] ? root.rows[root.sel].city : ""; color: Theme.text; font.pixelSize: 14; font.weight: Theme.weightLabel }
+          text: root.rows[root.sel] ? root.rows[root.sel].city : ""; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
         Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
           text: root.rows[root.sel] ? root.rows[root.sel].time + (root.rows[root.sel].night ? "  ·  night" : "  ·  day") : ""
-          color: Theme.textMuted; font.pixelSize: 12 } }
+          color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
       Rectangle { antialiasing: true; visible: !root.searching; width: parent.width; height: 30; radius: 15
         color: addArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.surface
         Behavior on color { ColorAnimation { duration: 120 } }
         Row { anchors.centerIn: parent; spacing: 6
           Icon { name: "plus"; size: Theme.iconSm; color: Theme.text; anchors.verticalCenter: parent.verticalCenter }
-          Text { textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: 12; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
+          Text { textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
         MouseArea { id: addArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
           onClicked: { root.query = ""; root.pick = 0; root.searching = true } } }
     }
@@ -173,8 +173,8 @@ WidgetPanel {
             Icon { x: 0; anchors.verticalCenter: parent.verticalCenter; name: modelData.night ? "moon" : "sun"; size: Theme.iconMd
               color: modelData.night ? Theme.textMuted : Theme.warningInk }
             Column { x: Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter
-              Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
-              Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
+              Text { textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+              Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeLabel
                 text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · "); visible: text !== "" } }
             Text { x: 118; width: 70; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
               text: modelData.time; color: Theme.text; font.pixelSize: 16; font.weight: Theme.weightStrong }
@@ -191,20 +191,20 @@ WidgetPanel {
         }
       }
       Text { visible: !root.searching && root.rows.length === 0; textFormat: Text.PlainText
-        text: "Reading time zones…"; color: Theme.textMuted; font.pixelSize: 12 }
+        text: "Reading time zones…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
 
       // ---- search ----
       Column { id: searchCol; visible: root.searching; width: parent.width; spacing: Theme.s8
-        Rectangle { antialiasing: true; width: parent.width; height: 40; radius: 20; color: Theme.surface
+        Rectangle { antialiasing: true; width: parent.width; height: 40; radius: Theme.tileRadius; color: Theme.surface
           Icon { x: Theme.s16; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm }
           Text { x: Theme.s16 + Theme.iconSm + Theme.s8; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-            text: root.query === "" ? "Search time zones…" : root.query; color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 13 } }
+            text: root.query === "" ? "Search time zones…" : root.query; color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: Theme.typeTitle } }
         Repeater { model: root.matches
           delegate: ListRow { required property string modelData; required property int index
             width: parent.width; height: 36; icon: "globe"; title: modelData; selected: root.pick === index
             onClicked: root.addZone(modelData) } }
         Text { visible: root.matches.length === 0; textFormat: Text.PlainText; text: root.allZones.length === 0 ? "Loading…" : "No match"
-          color: Theme.textMuted; font.pixelSize: 12 }
+          color: Theme.textMuted; font.pixelSize: Theme.typeBody }
       }
     }
   }

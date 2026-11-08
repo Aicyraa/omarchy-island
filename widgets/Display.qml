@@ -94,7 +94,7 @@ WidgetPanel {
     onMoved: function (v) { root.row = 0; Brightness.set(v) }
   }
   Text { visible: !Brightness.available; textFormat: Text.PlainText
-    text: "No controllable backlight"; color: Theme.textMuted; font.pixelSize: 12 }
+    text: "No controllable backlight"; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
   Tile {
     width: parent.width
     icon: "moon"; title: "Night light"; subtitle: Indicators.nightLight ? "On" : "Off"
@@ -132,14 +132,14 @@ WidgetPanel {
     border.width: root.row === 2 ? 2 : 0; border.color: Theme.text
     Icon { x: Theme.s16 + 2; anchors.verticalCenter: parent.verticalCenter; name: "type"; size: Theme.iconMd }
     Text { x: Theme.s16 + 2 + Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: "Text size"; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+      text: "Text size"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
     Row {
       anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
       Rectangle { antialiasing: true; width: 34; height: 34; radius: 17; color: Theme.surfaceRaised
         Icon { anchors.centerIn: parent; name: "chevron-left"; size: Theme.iconSm }
         MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize - 1) } } }
       Text { width: 44; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter
-        textFormat: Text.PlainText; text: root.textSize + " px"; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+        textFormat: Text.PlainText; text: root.textSize + " px"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
       Rectangle { antialiasing: true; width: 34; height: 34; radius: 17; color: Theme.surfaceRaised
         Icon { anchors.centerIn: parent; name: "chevron-right"; size: Theme.iconSm }
         MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize + 1) } } }

@@ -105,24 +105,24 @@ WidgetPanel {
       Text { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
         elide: Text.ElideRight; textFormat: Text.PlainText
         text: root.query === "" ? "Search themes…" : root.query
-        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 12; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
+        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: Theme.typeBody; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
       Rectangle {                                    // a caret after the typed text
         visible: root.query !== "" && root.activeFocus; antialiasing: true
         x: Math.min(parent.width - 10, Theme.s12 + Theme.iconSm + Theme.s8 + queryM.advanceWidth + 2); anchors.verticalCenter: parent.verticalCenter
         width: 1.5; height: 13; color: Theme.text
         SequentialAnimation on opacity { running: parent.visible; loops: Animation.Infinite
           NumberAnimation { to: 0; duration: 500 } NumberAnimation { to: 1; duration: 500 } } }
-      TextMetrics { id: queryM; font.pixelSize: 12; font.weight: Theme.weightLabel; text: root.query }
+      TextMetrics { id: queryM; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; text: root.query }
     }
     Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
       text: root.applying !== "" ? "Applying " + root.applying + "…"
             : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length
                : (root.query !== "" ? "0 / " + root.all.length : ""))
-      color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: 12 }
+      color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: Theme.typeBody }
   }
   Text { visible: !root.loading && root.all.length > 0 && root.themes.length === 0; textFormat: Text.PlainText
-    text: "No theme matches \"" + root.query + "\""; color: Theme.textMuted; font.pixelSize: 13 }
-  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: 13 }
+    text: "No theme matches \"" + root.query + "\""; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
   // ---- the strip ----
   // Taller than a card by the selected card's growth, so its scale is never clipped.
@@ -176,7 +176,7 @@ WidgetPanel {
               GradientStop { position: 0.55; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.88) }
               GradientStop { position: 1; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.96) } } }
           Text { x: Theme.s12; y: parent.height - 38; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: modelData.name; color: card.themeFg; font.pixelSize: 12; font.weight: Theme.weightLabel }
+            text: modelData.name; color: card.themeFg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
           Row { x: Theme.s12; y: parent.height - 19; spacing: 4
             Repeater { model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
               delegate: Rectangle { antialiasing: true; required property string modelData; width: 10; height: 10; radius: 5; color: modelData

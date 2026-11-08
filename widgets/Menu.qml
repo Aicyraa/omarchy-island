@@ -257,7 +257,7 @@ WidgetPanel {
       Text { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
         elide: Text.ElideRight; textFormat: Text.PlainText
         text: root.query !== "" ? root.query : (root.dmenu && root.dmenuPrompt !== "" ? root.dmenuPrompt : "Search apps and actions")
-        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 13; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
+        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: Theme.typeTitle; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
     }
     // A chip: the item count, the hovered rail item's name, or on the Install page how many installed apps were hidden.
     readonly property int hiddenInstallCount: { MenuData.revision; return MenuData.hiddenInstallCount() }
@@ -273,7 +273,7 @@ WidgetPanel {
       height: 22; radius: 11; width: chipLabel.implicitWidth + 2 * Theme.s12
       color: Theme.surface
       Text { id: chipLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: searchRow.chipText
-        color: Theme.textMuted; font.pixelSize: 11; font.weight: Theme.weightLabel }
+        color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
     }
   }
 
@@ -287,7 +287,7 @@ WidgetPanel {
     Rectangle {
       id: rail
       visible: !root.dmenu
-      width: root.railW; height: root.bodyH; color: Theme.surface; radius: 16
+      width: root.railW; height: root.bodyH; color: Theme.surface; radius: Theme.tileRadius
       Column {
       anchors.fill: parent; anchors.topMargin: root.railPad; anchors.bottomMargin: root.railPad; spacing: root.railGap
       Repeater {
@@ -302,10 +302,10 @@ WidgetPanel {
           Rectangle {
             width: Math.min(root.railItemH, root.railW - 8); height: width
             anchors.centerIn: parent
-            radius: 10
+            radius: Theme.radiusChip
             color: railItem.active ? Theme.surfaceRaised : (railArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.06) : "transparent")
             Behavior on color { ColorAnimation { duration: IslandState.reducedMotion ? 0 : 90 } }
-            FocusRing { on: root.railFocus && railItem.active; radius: 10 }
+            FocusRing { on: root.railFocus && railItem.active; radius: Theme.radiusChip }
           }
           Item {
             anchors.centerIn: parent; width: 18; height: 18
@@ -354,7 +354,7 @@ WidgetPanel {
           anchors.verticalCenter: parent.verticalCenter; color: Theme.mix(Theme.surface, Theme.text, 0.14) }
         Text { visible: section !== "" && section !== "divider"; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText; text: section.toUpperCase(); color: Theme.textMuted
-          font.pixelSize: 10; font.weight: Theme.weightStrong; font.letterSpacing: 1.2 }
+          font.pixelSize: Theme.typeCaption; font.weight: Theme.weightStrong; font.letterSpacing: 1.2 }
       }
       delegate: Item {
         id: rowItem
@@ -399,7 +399,7 @@ WidgetPanel {
             text: root.qText() !== "" ? root.markedLabel(rowItem.modelData.label, root.qText()) : (rowItem.modelData.label || "")
             color: Theme.text; font.pixelSize: Theme.rowTitle; font.letterSpacing: Theme.rowLetter; font.weight: Theme.weightLabel }
           Text { visible: text !== ""; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: 12 }
+            text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
         }
         Row {
           anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
@@ -422,7 +422,7 @@ WidgetPanel {
           Text { visible: text !== ""; textFormat: Text.PlainText; text: root.trailingFor(rowItem.modelData)
             color: Theme.textMuted; font.pixelSize: Theme.rowTrail; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
           Text { visible: root.pinnedOn(rowItem.modelData); textFormat: Text.PlainText; text: "pinned"
-            color: Theme.textMuted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
+            color: Theme.textMuted; font.pixelSize: Theme.typeCaption; anchors.verticalCenter: parent.verticalCenter }
         }
       }
       // A thin indicator in the lane right of the list, shown only while the rows run past the body.
@@ -435,7 +435,7 @@ WidgetPanel {
         transform: Translate { y: (list.height - height) * (list.contentY / Math.max(1, list.contentHeight - list.height)) }
       }
       Text { anchors.centerIn: parent; visible: list.count === 0; textFormat: Text.PlainText
-        text: root.query !== "" ? "No match" : "Nothing here"; color: Theme.textMuted; font.pixelSize: 13 }
+        text: root.query !== "" ? "No match" : "Nothing here"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
     }
   }
 
