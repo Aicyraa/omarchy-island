@@ -39,6 +39,8 @@ ShellIpc {
   // mode select|input, options, selectionFile, doneFile). `menuRefresh` re-reads the tree; `menuState` reports the request.
   function openMenu(payload: string): void { MenuData.openFromPayload(payload) }
   function menuRefresh(): void { MenuData.refresh() }
+  // Closes the menu if it is the open widget (the menu shim calls this on the shell's hide).
+  function closeMenu(): void { MenuData.close() }
   function menuState(): string {
     return JSON.stringify({ request: MenuData.request.active === true, mode: MenuData.request.mode || "", route: MenuData.pendingRoute, revision: MenuData.revision })
   }

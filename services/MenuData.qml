@@ -183,6 +183,22 @@ Singleton {
 
   // Entry point for `omarchy-shell island openMenu <json>` (and the shim plugin): a dmenu request, or a route. A route
   // that Omarchy's bindings ask for but that the island has replaced opens that island widget instead.
+  // The widget that the last openFromPayload opened (the menu, or a widget a route redirected to), and whether it is still
+  // open. The menu shim reads "open" from the shell, so when this widget closes, for any reason, the shim is told.
+  property bool shown: false
+  property string shownWidget: ""
+  Connections {
+    target: IslandState
+    function onWidgetNameChanged() {
+      if (root.shown && IslandState.widgetName !== root.shownWidget) {
+        root.shown = false
+        Cmd.run(["omarchy-shell", "-q", "menu", "closed"])
+      }
+    }
+  }
+  // Closes what the shell opened (the menu, or the widget it redirected to); does nothing otherwise.
+  function close() { if (shown && IslandState.widgetName === shownWidget) IslandState.closeWidget("menu closed by shell") }
+
   function openFromPayload(json) {
     var p = ({})
     try { p = JSON.parse(json || "{}") } catch (e) { p = ({}) }
@@ -190,6 +206,7 @@ Singleton {
       startRequest(p)
       pendingRoute = "root"
       openSerial += 1
+      shown = true; shownWidget = "menu"
       IslandState.openWidget("menu", "", true)
       return
     }
@@ -198,13 +215,14 @@ Singleton {
     var target = resolveRoute(raw)
     // A route the island replaced opens its widget. Checked on the raw name first: a hidden section (and its alias) is not in the tree, so the lookup cannot find it.
     var widget = MenuHidden.redirectFor(raw, MenuHidden.hide) || MenuHidden.redirectFor(target, MenuHidden.hide)
-    if (widget !== "") { IslandState.intent = MenuHidden.intents[raw] || MenuHidden.intents[target] || ""; IslandState.openWidget(widget, "", true); return }
+    if (widget !== "") { IslandState.intent = MenuHidden.intents[raw] || MenuHidden.intents[target] || ""; shown = true; shownWidget = widget; IslandState.openWidget(widget, "", true); return }
     // An unknown route opens the top level; a route that is an action (a row, not a menu) runs it, as the stock menu does.
     var entry = item(target)
     if (!entry) target = "root"
     else if (entry.kind === "action" && entry.provider === "" && target !== "apps") { activate(entry); return }
     pendingRoute = target
     openSerial += 1
+    shown = true; shownWidget = "menu"
     IslandState.openWidget("menu", "", true)
   }
 

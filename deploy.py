@@ -13,7 +13,7 @@ import shutil, sys
 
 src = Path(__file__).resolve().parent
 plugins = Path.home() / ".config/omarchy/plugins"
-SKIP = {"deploy.py", "README.md", "LICENSE", "rig.qml", "tools", "osd", ".git", "__pycache__"}
+SKIP = {"deploy.py", "README.md", "LICENSE", "rig.qml", "tools", "osd", "menu-shim", ".git", "__pycache__"}
 
 def copy_tree(source: Path, target: Path, skip=frozenset()):
     # Replace the plugin's OWN directory so deleted files don't linger.
@@ -33,3 +33,6 @@ print("Updated", plugins / "io.github.aicyraa.island")
 if "--no-osd" not in sys.argv:
     copy_tree(src / "osd", plugins / "io.github.aicyraa.island-osd")
     print("Updated", plugins / "io.github.aicyraa.island-osd")
+if "--no-menu" not in sys.argv:
+    copy_tree(src / "menu-shim", plugins / "io.github.aicyraa.island-menu")
+    print("Updated", plugins / "io.github.aicyraa.island-menu")

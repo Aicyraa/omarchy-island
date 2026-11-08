@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.aicyraa.island-menu",
+  "name": "Island menu bridge",
+  "version": "0.1.0",
+  "author": "aicyraa",
+  "description": "Opens Omarchy's menu (summons, dmenu requests and refresh) in the island's Menu widget, so there is only one menu.",
+  "kinds": ["menu"],
+  "keepLoaded": true,
+  "entryPoints": { "menu": "Menu.qml" },
+  "omarchy": { "clonedFrom": "omarchy.menu" }
+}

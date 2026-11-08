@@ -67,6 +67,7 @@ WidgetPanel {
   Connections { target: MenuData; function onOpenSerialChanged() { root.applyOpen() } }
   Component.onCompleted: { MenuData.refresh(); applyOpen() }
   // Leaving by any path other than a choice cancels the request (a script waiting on it must not hang).
+  // However the menu closes (Esc, click outside, an action), a pending dmenu request is cancelled. MenuData tells the shim.
   Component.onDestruction: MenuData.cancelRequest()
   readonly property var debugState: ({ route: route, query: query, sel: sel, rows: rows.length, rail: highlightedRail,
     apps: Object.keys(MenuData.items).filter(function (k) { return MenuData.items[k].kind === "app" }).length,
