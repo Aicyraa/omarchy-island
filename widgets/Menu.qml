@@ -47,7 +47,8 @@ WidgetPanel {
   }
   // The rail: boxes fill the height (the old 30 px boxes with 2 px between them for ten items).
   readonly property int railGap: 8
-  readonly property int railItemH: Math.max(24, Math.min(40, Math.floor((bodyH - (railRows.length - 1) * railGap) / Math.max(1, railRows.length))))
+  readonly property int railPad: 8        // space between the sidebar's top and bottom edges and its first and last icon
+  readonly property int railItemH: Math.max(24, Math.min(40, Math.floor((bodyH - 2 * railPad - (railRows.length - 1) * railGap) / Math.max(1, railRows.length))))
   readonly property string highlightedRail: route === "root" ? railId : MenuModel.topLevelFor(MenuData.items, route)
 
   // The rows. Toggles are re-read when their state changes, so the checks follow the switch.
@@ -288,7 +289,7 @@ WidgetPanel {
       visible: !root.dmenu
       width: root.railW; height: root.bodyH; color: Theme.surface; radius: 16
       Column {
-      anchors.fill: parent; spacing: root.railGap
+      anchors.fill: parent; anchors.topMargin: root.railPad; anchors.bottomMargin: root.railPad; spacing: root.railGap
       Repeater {
         model: root.railRows
         delegate: Item {

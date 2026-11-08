@@ -455,3 +455,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Smaller sidebar icons
 - Sidebar glyphs are 17 px (were 20) and app icons 18 px (were 22), in the same 32 px boxes.
+
+## Sidebar top and bottom padding
+- The sidebar has 8 px above its first icon and below its last one (`railPad`). Its boxes are 30 px to fit.
