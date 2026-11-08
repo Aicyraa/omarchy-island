@@ -348,3 +348,9 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Not yet in this milestone: recents and frecency, the Tab rail focus, the dmenu mode, the summon routes and the shim plugin (milestones 5 and 7).
 - Debug: `omarchy-shell island debug measure` reports the menu's route, rows and install-check counts in `widgetState`.
 - Caveat: the install checks take about one second to run in the background, so right after startup a row can briefly show before its check result arrives.
+
+## Menu requests and routes (milestone 5 of the menu merge)
+- `omarchy-shell island openMenu '<json>'` opens the menu with the stock summon payload. A `menu` (or `initialMenu`) route opens that section (aliases resolve; an unknown route opens the top level; a route that is an action runs it). A route the island has replaced (see `menu-core/MenuHidden.js`) opens its island widget instead. A dmenu payload (`mode: select|input`, `options`, `prompt`, `selectionFile`, `doneFile`) opens the menu as a picker.
+- dmenu answers: a choice writes the selection file (`<label>` or `<label>\t<detail>`) and then the done file; any other exit (Esc, closing, a click outside, a newer request) writes only the done file. The writes run through `Cmd.run` with positional arguments.
+- `omarchy-shell island menuState` reports whether a request is open, its mode, the route and a revision counter. `menuRefresh` re-reads the menu tree.
+- Not yet: the shim plugin that makes `omarchy-shell shell summon omarchy.menu` reach this widget (milestone 7), and the keyboard checks for the picker, which need a focused widget.

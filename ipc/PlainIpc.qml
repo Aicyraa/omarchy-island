@@ -33,4 +33,11 @@ IpcHandler {
     return "usage: debug layout|measure|contrast|off"
   }
   function mode(): string { return IslandState.mode }
+  // The menu: `openMenu` takes the same JSON as the stock menu's summon payload (a route, or a dmenu request with
+  // mode select|input, options, selectionFile, doneFile). `menuRefresh` re-reads the tree; `menuState` reports the request.
+  function openMenu(payload: string): void { MenuData.openFromPayload(payload) }
+  function menuRefresh(): void { MenuData.refresh() }
+  function menuState(): string {
+    return JSON.stringify({ request: MenuData.request.active === true, mode: MenuData.request.mode || "", route: MenuData.pendingRoute, revision: MenuData.revision })
+  }
 }

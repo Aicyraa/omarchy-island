@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import "../menu-core/MenuModel.js" as MenuModel
 import "../menu-core/MenuHidden.js" as MenuHidden
+import ".."
 
 // MenuData: Omarchy's menu tree as the island's menu widget shows it.
 //   * The tree: the stock jsonc, overridden by the user's extension, minus the sections the island replaces
@@ -145,6 +146,65 @@ Singleton {
     return hits.slice(0, limit || 60).map(function (h) { return h.entry })
   }
   function item(id) { return items[id] || null }
+
+  // ---- opening the menu (summon routes and dmenu requests) ----
+  // openSerial changes on every open, so an already-open menu can follow a new request.
+  property int openSerial: 0
+  property string pendingRoute: "root"
+  // A dmenu request (mode select|input) from one of Omarchy's scripts. `active` is true until its result is written.
+  property var request: ({ active: false })
+  function resolveRoute(input) { return MenuModel.resolveRoute(items, itemOrder, input) }
+
+  function startRequest(p) {
+    cancelRequest()
+    request = { active: true, mode: p.mode === "input" ? "input" : "select", prompt: String(p.prompt || ""),
+                options: Array.isArray(p.options) ? p.options : [], selectionFile: String(p.selectionFile || ""),
+                doneFile: String(p.doneFile || "") }
+  }
+  // Every exit that is not a choice (Esc, a click outside, a newer request, closing) writes ONLY the done file, so the
+  // script that asked waits no longer and sees that nothing was chosen.
+  function cancelRequest() {
+    if (!request.active) return
+    var done = request.doneFile
+    request = ({ active: false })
+    if (done) Cmd.run(["bash", "-c", ': > "$1"', "_", done])
+  }
+  // A choice: the selection goes to the selection file, then the done file is written (the same order as the stock menu).
+  function finishRequest(selection) {
+    if (!request.active) return
+    var r = request
+    request = ({ active: false })
+    if (!r.doneFile) return
+    if (selection === null || selection === undefined || r.selectionFile === "")
+      Cmd.run(["bash", "-c", ': > "$1"', "_", r.doneFile])
+    else
+      Cmd.run(["bash", "-c", 'printf "%s\\n" "$1" > "$2"; : > "$3"', "_", String(selection), r.selectionFile, r.doneFile])
+  }
+
+  // Entry point for `omarchy-shell island openMenu <json>` (and the shim plugin): a dmenu request, or a route. A route
+  // that Omarchy's bindings ask for but that the island has replaced opens that island widget instead.
+  function openFromPayload(json) {
+    var p = ({})
+    try { p = JSON.parse(json || "{}") } catch (e) { p = ({}) }
+    if (p.mode === "select" || p.mode === "input") {
+      startRequest(p)
+      pendingRoute = "root"
+      openSerial += 1
+      IslandState.openWidget("menu", "", true)
+      return
+    }
+    cancelRequest()
+    var target = resolveRoute(p.initialMenu || p.menu || "root")
+    // An unknown route opens the top level; a route that is an action (a row, not a menu) runs it, as the stock menu does.
+    var entry = item(target)
+    if (!entry) target = "root"
+    else if (entry.kind === "action" && entry.provider === "" && target !== "apps") { activate(entry); return }
+    var widget = MenuHidden.redirectFor(target, MenuHidden.hide)
+    if (widget !== "") { IslandState.openWidget(widget, "", true); return }
+    pendingRoute = target
+    openSerial += 1
+    IslandState.openWidget("menu", "", true)
+  }
 
   // Run a row: apps launch through DesktopEntries; actions run through a login shell (the same as the stock menu).
   function activate(entry) {
