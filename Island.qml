@@ -243,24 +243,7 @@ PanelWindow {
   // so when the pill grows into a widget they are pushed outward, and they come back with it.
   readonly property int satY: 3
   readonly property int satH: 20
-  readonly property int satTuck: 0       // capsules stop at the ears (no overlap: an overlap composites darker through the translucent fill)
-  // Soft elevation under the pill and the capsules (a shadow outside each shape only; see components/Elevation.qml).
-  Elevation {
-    z: -0.5
-    rx: pill.x; ry: pill.y; rw: pill.width; rh: pill.height
-    tl: 0; tr: 0; br: pill.bottomRightRadius; bl: pill.bottomLeftRadius
-  }
-  Elevation {
-    z: -0.5
-    rx: leftSat.x; ry: leftSat.y; rw: leftSat.width; rh: leftSat.height
-    tl: leftSat.height / 2; tr: leftSat.height / 2; br: leftSat.height / 2; bl: leftSat.height / 2
-  }
-  Elevation {
-    z: -0.5; visible: rightSat.visible
-    rx: rightSat.x; ry: rightSat.y; rw: rightSat.width; rh: rightSat.height
-    tl: rightSat.height / 2; tr: rightSat.height / 2; br: rightSat.height / 2; bl: rightSat.height / 2
-  }
-
+  readonly property int satTuck: 6       // how far a capsule slides under the pill's concave ear (the ear is drawn above it)
   Rectangle {
     id: leftSat
     z: 0

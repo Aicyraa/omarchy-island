@@ -421,3 +421,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Menu toggles are switches (the track fills with the accent when on) instead of a tick; menu sections have a hairline that fades out.
 - The first eight menu rows fade in one after another when the list is built; reduced motion turns all motion off.
 - Not done yet: the menu's own rows have no icon chip (they draw their own icons), and the search caret blink is left out.
+
+## Look, correction: the elevation shadow is removed
+- The shadow (`components/Elevation.qml`) is gone. Capsules slide 6 px under the ears again (`satTuck` 6), which restores the gap between the workspace capsule, the clock pill and the battery capsule. The island's Hyprland blur threshold is back to 0.05. Outlines stay off.
