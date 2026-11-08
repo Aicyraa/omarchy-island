@@ -437,3 +437,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Home cards line up; Audio has no restart button
 - Home's quick tiles are all 62 px tall, so the Wi-Fi and Bluetooth cards line up with the grid of icon tiles beside them.
 - The Audio widget no longer has its restart button (the stock restart action is still in the menu's Update > Hardware).
+
+## Home tiles are square
+- The six icon tiles are 62 x 62, so the grid is 202 px wide. The Wi-Fi and Bluetooth cards are narrower as a result; long Bluetooth names truncate.

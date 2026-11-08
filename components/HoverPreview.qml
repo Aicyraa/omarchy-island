@@ -121,7 +121,7 @@ Item {
     Row {
       id: toggles
       width: parent.width; spacing: Theme.s8
-      readonly property real gridW: 3 * 48 + 2 * Theme.s8
+      readonly property real gridW: 3 * 62 + 2 * Theme.s8   // the icon tiles are square: 62 x 62
 
       Column {
         width: toggles.width - toggles.gridW - Theme.s8; spacing: Theme.s8
@@ -147,18 +147,18 @@ Item {
       }
       Grid {
         columns: 3; spacing: Theme.s8; width: toggles.gridW
-        QuickTile { width: 48; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
+        QuickTile { width: 62; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
           onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
-        QuickTile { width: 48; label: "Night"; icon: "moon"; on: Indicators.nightLight
+        QuickTile { width: 62; label: "Night"; icon: "moon"; on: Indicators.nightLight
           onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
-        QuickTile { width: 48; label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
+        QuickTile { width: 62; label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
           onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
-        QuickTile { width: 48; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
+        QuickTile { width: 62; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
           onToggled: Indicators.toggleDictation() }
         // Trigger > Toggle in the menu had these two as well (the menu section is hidden in favour of this form).
-        QuickTile { width: 48; label: "Saver"; icon: "eye"; on: Indicators.screensaver
+        QuickTile { width: 62; label: "Saver"; icon: "eye"; on: Indicators.screensaver
           onToggled: Indicators.toggleScreensaver() }
-        QuickTile { width: 48; label: "Crash"; icon: "alert"; on: Indicators.crashCapture
+        QuickTile { width: 62; label: "Crash"; icon: "alert"; on: Indicators.crashCapture
           onToggled: Indicators.toggleCrashCapture() }
       }
     }
