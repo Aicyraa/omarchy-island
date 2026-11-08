@@ -115,6 +115,10 @@ Singleton {
   // timer and focus-grab closes (keyboard focus moving away is not a decision to close it). Opened from the bar or IPC,
   // it closes as before when the cursor leaves it.
   property bool pinned: false
+  // Each screen's island clickable zone (pill, widget and ears), in that screen's coordinates. The click catcher leaves
+  // this hole in its input region, so clicks on the island and on an open widget reach the island.
+  property var zoneRects: ({})
+  function setZone(name, r) { var z = Object.assign({}, zoneRects); z[name] = r; zoneRects = z }
   function openWidget(name, screenName, pin) {
     pinned = !!pin
     activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()

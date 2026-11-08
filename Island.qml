@@ -63,7 +63,7 @@ PanelWindow {
   readonly property size target: sizeFor(myMode)
   // Used by State to decide whether a still cursor is on the widget (width includes the ears).
   function pillBox() { return Qt.size(target.width + 2 * ear, target.height) }
-  Component.onCompleted: IslandState.islands[screenName] = win
+  Component.onCompleted: { IslandState.islands[screenName] = win; IslandState.setZone(screenName, zoneRect) }
   Component.onDestruction: delete IslandState.islands[screenName]
   // The size of what is actually ON SCREEN right now. It lags `target` by the fade-out beat, and it is
   // what the content is laid out at. This is what keeps an outgoing widget at its OWN size while it
@@ -105,6 +105,9 @@ PanelWindow {
   // is mid-spring so moving into the expanded pill never counts as leaving. For a
   // widget it is EXACTLY the pill (plus the ears), so clicks just outside pass through.
   // Clickable: the centre zone and the two side capsules; everything else passes clicks through.
+  // Published for the click catcher (see ClickCatcher.qml): the zone in this screen's coordinates.
+  readonly property rect zoneRect: Qt.rect(zone.x, zone.y, zone.width, zone.height)
+  onZoneRectChanged: IslandState.setZone(screenName, zoneRect)
   mask: Region { item: zone; Region { item: leftSat } Region { item: rightSat } }
   Item {
     id: zone

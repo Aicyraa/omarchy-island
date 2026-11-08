@@ -24,6 +24,18 @@ PanelWindow {
   onVisibleChanged: { armed = false; if (visible) armTimer.restart() }
   Timer { id: armTimer; interval: 300; onTriggered: catcher.armed = true }
 
+  // The input region: the whole screen, minus the island's zone (a hole), so the island keeps every click on it.
+  readonly property var hole: IslandState.zoneRects[modelData.name] || Qt.rect(0, 0, 0, 0)
+  mask: Region {
+    item: full
+    Region { item: holeItem; intersection: Intersection.Subtract }
+  }
+  Item { id: full; anchors.fill: parent }
+  Item {
+    id: holeItem
+    x: catcher.hole.x; y: catcher.hole.y; width: catcher.hole.width; height: catcher.hole.height
+  }
+
   MouseArea {
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
