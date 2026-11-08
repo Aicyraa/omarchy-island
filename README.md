@@ -323,4 +323,4 @@ A widget whose content arrives late (Wi-Fi networks, Bluetooth devices, the worl
 
 ## Theme picker search and selection
 - Type to search: every typed character narrows the list to themes whose name contains those letters in order ("gru" finds Gruvbox). Backspace deletes; Esc clears the search first and closes the widget only when the search is empty. Enter applies the selected match. The header shows the search box and the position (for example "1 / 28").
-- The selected card springs up in scale (1.06) and back down when the selection moves; hover is a smaller spring (1.025).
+- The selected card grows (12 % wider and larger, a spring) and its neighbours move aside to make room; the strip glides (a spring) so the selected card stays centred. No outline. Drag and wheel scrolling are not interrupted by the glide.

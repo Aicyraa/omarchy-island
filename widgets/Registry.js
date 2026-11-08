@@ -19,7 +19,7 @@ var widgets = {
   notifications: { file: "Notifications.qml", w: 480, h: 420 },
   system: { file: "System.qml", w: 620, h: 420 },
   tray: { file: "Tray.qml", w: 200, h: 48 },
-  theme:         { file: "ThemePicker.qml", w: 720, h: 188 },
+  theme:         { file: "ThemePicker.qml", w: 720, h: 203 },
   weather: { file: "Weather.qml", w: 440, h: 190 },
   agent: { file: "Agent.qml", w: 600, h: 372 }
 }

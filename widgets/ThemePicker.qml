@@ -8,8 +8,7 @@ import "../services"
 //
 // Each card shows the theme's wallpaper, its name over a scrim in the theme's OWN background and
 // foreground colours (so the label is always legible, whatever the island's current theme), five colour
-// swatches, a sun/moon chip for light/dark, and a check on the current theme. The selected card is ringed
-// and gently scaled. Cards come from the theme folders (user themes in ~/.config/omarchy/themes, built-ins
+// swatches, a sun/moon chip for light/dark, and a check on the current theme. The selected card grows. Cards come from the theme folders (user themes in ~/.config/omarchy/themes, built-ins
 // in OMARCHY_PATH) and apply with Omarchy's own `omarchy-theme-set`.
 // Keys: ←/→ move · Home/End jump · Enter apply · Esc clears the search, then closes. Type to search by name.
 // The mouse wheel scrolls the strip sideways. The selected card springs up in scale as it is picked.
@@ -39,19 +38,32 @@ WidgetPanel {
   readonly property bool loading: !Themes.loaded
   dataLoading: !Themes.loaded
   readonly property var debugState: ({ sel: sel, count: themes.length, total: all.length, query: query, contentX: Math.round(strip.contentX) })
-  onQueryChanged: { moved = true; sel = 0; if (themes.length > 0) Qt.callLater(function () { strip.positionViewAtBeginning() }) }
+  onQueryChanged: { moved = true; sel = 0; Qt.callLater(function () { snapTo() }) }
 
   readonly property int cardW: 156
   readonly property int cardH: 108
+  readonly property real growK: 0.12          // the selected card is this much wider and larger (fraction)
+  readonly property int gap: Theme.s8
+  property real selGrow: 0                    // the selected card\'s current growth 0..1, driven by its spring
+
+  // Keep the selected card centred. The strip's contentX glides after it (a spring), so the card, the neighbours and
+  // the strip all move together instead of the view jumping.
+  property bool snapping: false
+  function follow() {
+    if (sel < 0) return
+    var w = cardW * (1 + growK * selGrow)
+    var target = sel * (cardW + gap) + w / 2 - strip.width / 2
+    strip.contentX = Math.max(0, Math.min(Math.max(0, strip.contentWidth - strip.width), target))
+  }
+  function snapTo() { snapping = true; follow(); snapping = false }
 
   function apply(t) {
     Cmd.run(["omarchy-theme-set", t.name]); Themes.setCurrent(t.name); applying = t.name; applyTimer.restart()
   }
   Timer { id: applyTimer; interval: 4000; onTriggered: root.applying = "" }
 
-  onSelChanged: strip.positionViewAtIndex(sel, ListView.Contain)
-  // On open, centre the current theme in the strip (arrow keys then only scroll as far as needed).
-  function centerSelected() { Qt.callLater(function () { strip.positionViewAtIndex(root.sel, ListView.Center) }) }
+  // On open, centre the current theme in the strip without animating.
+  function centerSelected() { Qt.callLater(function () { snapTo() }) }
   Keys.onPressed: function (e) {
     var n = themes.length
     moved = true
@@ -113,10 +125,10 @@ WidgetPanel {
   Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: 13 }
 
   // ---- the strip ----
-  // Slightly taller than a card so the selection ring and scale are never clipped.
+  // Taller than a card by the selected card's growth, so its scale is never clipped.
   Item {
     visible: !root.loading
-    width: parent.width; height: root.cardH + 12
+    width: parent.width; height: Math.round(root.cardH * (1 + root.growK)) + 12
     ListView {
       id: strip
       anchors.fill: parent
@@ -126,6 +138,9 @@ WidgetPanel {
       model: root.themes
       boundsBehavior: Flickable.StopAtBounds
       highlightMoveDuration: 0
+      // The strip glides (a spring) toward the selection; not while the user drags it.
+      Behavior on contentX { enabled: !IslandState.reducedMotion && !root.snapping && !strip.dragging && !strip.flicking
+        SpringAnimation { spring: 5.0; damping: 0.5; epsilon: 0.5 } }
       delegate: Item {
         id: card
         required property var modelData
@@ -135,17 +150,21 @@ WidgetPanel {
         readonly property bool hasImage: /\.(png|jpe?g|webp)$/i.test(modelData.preview)
         readonly property color themeBg: Qt.color(modelData.bg)
         readonly property color themeFg: Qt.color(modelData.fg)
-        width: root.cardW; height: strip.height
+        // Growth: 0 for every card, springing to 1 for the selected one. The card gets wider by that much, which
+        // pushes the neighbours beside it apart; the face inside is scaled by the same amount.
+        property real grow: selected ? 1 : 0
+        Behavior on grow { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 3.6; damping: 0.5; epsilon: 0.001 } }
+        onGrowChanged: if (selected) { root.selGrow = grow; root.follow() }
+        onSelectedChanged: if (selected) { root.selGrow = grow; root.follow() }
+        width: root.cardW * (1 + root.growK * grow); height: strip.height
 
         ClippingRectangle {
           id: face
           width: root.cardW; height: root.cardH; anchors.centerIn: parent
           radius: Theme.tileRadius
           color: card.themeBg
-          border.width: card.selected ? 2 : 0; border.color: Theme.text
-          // The selected card springs up in scale (and back down when the selection leaves it); hover is a smaller spring.
-          scale: card.selected ? 1.06 : (cardArea.containsMouse ? 1.025 : 1)
-          Behavior on scale { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 4.2; damping: 0.36; epsilon: 0.002 } }
+          // The same growth as the card, so the face fills the card at every frame. No outline.
+          scale: 1 + root.growK * card.grow
 
           Image { visible: card.hasImage; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
             sourceSize: Qt.size(320, 216); source: card.hasImage ? "file://" + modelData.preview : "" }
