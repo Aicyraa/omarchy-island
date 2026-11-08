@@ -335,3 +335,6 @@ A widget opened by its keybind (`island:<name>` global shortcut) is **pinned**: 
 
 ## Click catcher: the hole follows the drawn pill
 The click catcher's hole covers the island's zone in screen coordinates. The zone is the larger of the target size and the pill as it is drawn right now, so it follows the spring frame by frame (a list that shrinks leaves the drawn pill briefly taller than its target). `omarchy-shell island debug zones` prints the hole. For every keybind widget the zone is the pill plus the 12 px ears, with the same height, centred on the screen.
+
+## Menu core (milestone 2 of the menu merge)
+`menu-core/` holds the menu model that the island's menu widget will use: a copy of Compass's `MenuModel.js` (pure JS, no QML dependencies) with `mergeMenuSources(defaults, user, hiddenPrefixes)`, which removes hidden sections from the items and the order. `menu-core/MenuHidden.js` lists the hidden prefixes (empty until the widgets that replace them land) and the routes that redirect to an island widget once hidden. Run the tests with `node menu-core/menu.test.js`; they include checks against the real stock menu file.
