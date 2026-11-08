@@ -24,3 +24,4 @@ FocusTarget 1.0 components/FocusTarget.qml
 StatTile 1.0 components/StatTile.qml
 Vinyl 1.0 components/Vinyl.qml
 GlobeView 1.0 components/GlobeView.qml
+ClickCatcher 1.0 components/ClickCatcher.qml

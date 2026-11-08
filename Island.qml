@@ -94,8 +94,8 @@ PanelWindow {
   property bool grabHold: false
   HyprlandFocusGrab {
     windows: [win]
-    active: win.myMode === "widget" && !win.grabHold
-    onCleared: if (IslandState.pinned) { /* keybind-opened: focus moving elsewhere does not close it */ } else IslandState.guard("focus grab cleared", function (stayed) {
+    active: win.myMode === "widget" && !win.grabHold && !IslandState.pinned
+    onCleared: if (IslandState.pinned) { /* keybind-opened: a click outside is caught by ClickCatcher instead */ } else IslandState.guard("focus grab cleared", function (stayed) {
       if (stayed) { win.grabHold = true; Qt.callLater(function () { win.grabHold = false }) } })
   }
 

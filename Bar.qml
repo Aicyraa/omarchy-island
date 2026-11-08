@@ -28,6 +28,11 @@ Item {
 
   // One Island window per screen. When monitors are plugged/unplugged,
   // Variants creates/destroys the matching windows for us.
+  // The click catcher goes first: the island is created after it and so stacks above it.
+  Variants {
+    model: Quickshell.screens
+    delegate: ClickCatcher {}
+  }
   Variants {
     model: Quickshell.screens
     delegate: Island { rig: root.rig }
