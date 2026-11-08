@@ -470,3 +470,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Menu rows clear the focus highlight
 - Menu rows are 16 px narrower than the list, because the shared highlight bleeds 8 px past each row. The switches and the scroll lane no longer sit under its edge.
+
+## Menu focus highlight kept inside the list
+- The list starts 8 px further left and the rows sit 8 px in from its edges, so the highlight's bleed is inside the list's clip. The flat cut (and the black strip on the left of the focused row) is gone; the rows did not move.

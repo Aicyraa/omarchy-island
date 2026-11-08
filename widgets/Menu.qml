@@ -331,7 +331,7 @@ WidgetPanel {
 
     ListView {
       id: list
-      x: root.dmenu ? 0 : root.railW + Theme.s12
+      x: root.dmenu ? 0 : root.railW + Theme.s12 - 8     // 8 px further left: the highlight's bleed stays inside the list's clip
       width: parent.width - x - 14    // 14 px lane: the scroll indicator sits in it, clear of the rows
       height: root.bodyH
       clip: true
@@ -365,9 +365,10 @@ WidgetPanel {
         id: rowItem
         required property var modelData
         required property int index
-        // 16 px narrower than the list: the shared highlight bleeds 8 px past a row, so this keeps the highlight clear of the
+        // The shared highlight bleeds 8 px past a row on each side. Rows sit 8 px in from the list's edges, and are 24 px
+        // narrower, so the whole highlight stays inside the list's clip (no flat cut, no black strip) and clear of the
         // trailing switches and the scroll lane.
-        width: list.width - 16; height: Theme.rowHeight
+        x: 8; width: list.width - 24; height: Theme.rowHeight
         opacity: 0
         FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: rowItem }
         // The rows fade in one after another when the list is built (the first eight), and at once with reduced motion.
