@@ -36,10 +36,15 @@ Item {
 
   Loader { id: lead; x: 0; anchors.verticalCenter: parent.verticalCenter
     sourceComponent: root.leading ? root.leading : defaultLead }
-  Component { id: defaultLead; Icon { name: root.icon; size: Theme.rowIcon; color: root.active ? Theme.accentInk : Theme.text; opacity: root.pending ? 0.5 : 1 } }
+  Component { id: defaultLead
+    // The icon sits in a soft rounded chip, tinted with the accent (a little more when the row is active).
+    Item { width: Theme.rowIcon + 8; height: Theme.rowIcon + 8
+      Rectangle { anchors.fill: parent; radius: 10
+        color: root.active ? Qt.rgba(Theme.accentFill.r, Theme.accentFill.g, Theme.accentFill.b, 0.24) : Theme.mix(Theme.surface, Theme.accentFill, 0.12) }
+      Icon { anchors.centerIn: parent; name: root.icon; size: Theme.rowIcon; color: root.active ? Theme.accentInk : Theme.text; opacity: root.pending ? 0.5 : 1 } } }
 
   Column {
-    anchors.left: parent.left; anchors.leftMargin: Theme.rowIcon + Theme.s16
+    anchors.left: parent.left; anchors.leftMargin: Theme.rowIcon + Theme.s16 + 8
     anchors.right: trail.left; anchors.rightMargin: Theme.s8
     anchors.verticalCenter: parent.verticalCenter
     spacing: 1

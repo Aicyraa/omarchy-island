@@ -23,7 +23,7 @@ Rectangle {
   readonly property real eT: fT + (tT - fT) * (goDown ? pTail : pHead)
   readonly property real eB: fB + (tB - fB) * (goDown ? pHead : pTail)
   x: eL; y: eT; width: Math.max(0, eR - eL); height: Math.max(0, eB - eT)
-  radius: Theme.tileRadius; color: Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.09)   // translucent: also reads over cards
+  radius: Theme.tileRadius; color: Qt.rgba(Theme.accentFill.r, Theme.accentFill.g, Theme.accentFill.b, 0.16)   // a soft accent glow: translucent, so it also reads over cards
   z: 1
   opacity: has ? 1 : 0
   Behavior on opacity { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140 } }

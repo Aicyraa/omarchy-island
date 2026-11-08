@@ -340,7 +340,7 @@ WidgetPanel {
       highlightFollowsCurrentItem: true
       highlightMoveDuration: IslandState.reducedMotion ? 0 : 110
       // The highlight stops short of the scroll indicator's lane, so the indicator never sits on a row.
-      highlight: Rectangle { x: 0; width: list.width; radius: 12; color: root.railFocus ? "transparent" : Theme.surfaceRaised }
+      highlight: Rectangle { x: 0; width: list.width; radius: 12; color: root.railFocus ? "transparent" : Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.18) }
       onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
       section.property: "section"
       section.criteria: ViewSection.FullString
@@ -351,6 +351,11 @@ WidgetPanel {
         height: section === "" ? 0 : (section === "divider" ? 12 : 26)
         Rectangle { visible: section === "divider"; x: Theme.s8; width: parent.width - 2 * Theme.s8; height: 1
           anchors.verticalCenter: parent.verticalCenter; color: Theme.mix(Theme.surface, Theme.text, 0.14) }
+        // A hairline that fades out to the right, under the label.
+        Rectangle { visible: section !== "" && section !== "divider"; x: Theme.s8; y: parent.height - 3; width: parent.width - 2 * Theme.s8; height: 1
+          gradient: Gradient { orientation: Gradient.Horizontal
+            GradientStop { position: 0; color: Theme.mix(Theme.surface, Theme.text, 0.18) }
+            GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0) } } }
         Text { visible: section !== "" && section !== "divider"; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText; text: section.toUpperCase(); color: Theme.textMuted
           font.pixelSize: 10; font.weight: Theme.weightStrong; font.letterSpacing: 1.2 }
@@ -360,6 +365,13 @@ WidgetPanel {
         required property var modelData
         required property int index
         width: list.width; height: Theme.rowHeight
+        opacity: 0
+        // The rows fade in one after another when the list is built (the first eight), and at once with reduced motion.
+        SequentialAnimation on opacity {
+          running: true
+          PauseAnimation { duration: IslandState.reducedMotion ? 0 : Math.min(rowItem.index, 8) * 16 }
+          NumberAnimation { to: 1; duration: IslandState.reducedMotion ? 0 : 160; easing.type: Easing.OutCubic }
+        }
         MouseArea { anchors.fill: parent; hoverEnabled: true
           onEntered: if (!root.railFocus) root.sel = index
           onClicked: { root.railFocus = false; root.sel = index; root.open(rowItem.modelData) } }
@@ -388,7 +400,21 @@ WidgetPanel {
         }
         Row {
           anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-          Icon { visible: rowItem.modelData.checked === true; anchors.verticalCenter: parent.verticalCenter; size: Theme.iconSm
+          // A toggle shows a switch (the track fills when it is on); other checked rows keep the tick.
+          Rectangle {
+            visible: rowItem.modelData.kind === "toggle"
+            anchors.verticalCenter: parent.verticalCenter
+            width: 32; height: 18; radius: 9
+            color: rowItem.modelData.checked === true ? Theme.accentFill : Theme.surfaceRaised
+            Behavior on color { ColorAnimation { duration: IslandState.reducedMotion ? 0 : 160 } }
+            Rectangle {
+              width: 14; height: 14; radius: 7; anchors.verticalCenter: parent.verticalCenter
+              x: rowItem.modelData.checked === true ? parent.width - width - 2 : 2
+              color: Theme.surface
+              Behavior on x { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 160; easing.type: Easing.OutCubic } }
+            }
+          }
+          Icon { visible: rowItem.modelData.checked === true && rowItem.modelData.kind !== "toggle"; anchors.verticalCenter: parent.verticalCenter; size: Theme.iconSm
             name: "check"; color: Theme.text; strokeWidth: 2 }
           Text { visible: text !== ""; textFormat: Text.PlainText; text: root.trailingFor(rowItem.modelData)
             color: Theme.textMuted; font.pixelSize: Theme.rowTrail; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }

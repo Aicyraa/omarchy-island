@@ -42,6 +42,11 @@ Item {
     width: Math.max(root.thin ? 0 : height, root.width * root.value) + (area.pressed && !root.thin ? 6 : 0)
     height: parent.height; radius: height / 2
     color: root.fillColor
+    // A light sheen from the top edge: the same accent, a touch brighter at the top.
+    gradient: Gradient {
+      GradientStop { position: 0; color: Qt.lighter(root.fillColor, 1.1) }
+      GradientStop { position: 1; color: root.fillColor }
+    }
     Behavior on width { enabled: !area.pressed; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
     Behavior on color { ColorAnimation { duration: 200 } }
 

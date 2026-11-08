@@ -413,3 +413,11 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Rows are 48 px (was 44), with 24 px icons, 14 px titles, 12 px subtitles and trailing text, and a 16 px gap from icon to text. Tiles have 38 px icon circles and 14 px titles. The menu's rows are 48 px with 26 px app icons and 18 px glyphs.
 - Matched letters in search results are drawn in the accent-ink colour (contrast-checked by the theme) instead of bold, so no glyph widths change and neighbouring letters do not touch. Titles get 0.2 px of letter spacing.
 - Measured with `debug measure`: every shared widget stays within the 420 px panel cap.
+
+## Look, step 3: a livelier feel (theme palette only)
+- Selected rows glow with a soft accent tint (the shared highlight, and the menu's highlight mixed from the accent).
+- List rows put their icon on a soft rounded chip tinted with the accent (brighter when the row is active).
+- Icon buttons squeeze to 94 % while pressed; sliders' fills have a light sheen from the top.
+- Menu toggles are switches (the track fills with the accent when on) instead of a tick; menu sections have a hairline that fades out.
+- The first eight menu rows fade in one after another when the list is built; reduced motion turns all motion off.
+- Not done yet: the menu's own rows have no icon chip (they draw their own icons), and the search caret blink is left out.
