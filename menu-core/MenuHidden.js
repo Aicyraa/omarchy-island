@@ -6,7 +6,7 @@
 // redirect: route -> island widget, used only when the route is hidden: a binding that asks the menu for a hidden
 //           section opens the widget instead. Routes that are still in the menu (root, background, capture, share)
 //           have no entry.
-var hide = ["system", "trigger.toggle", "trigger.reminder"]
+var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr"]
 
 var redirect = {
   "system": "power",
@@ -15,11 +15,17 @@ var redirect = {
   "hardware": "display",
   "reminder-set": "calendar",
   "reminder": "calendar",
+  "wifi-qr": "wifi",
   "theme": "theme"
 }
 
 // The stock menu id each redirect route stands for. The redirect applies when that section is hidden (an alias such as
 // "toggle" is not in the tree once its section is hidden, so the route name alone cannot say whether it is hidden).
+// A widget entered with an intent (see State.intent). The QR entry asks the Wi-Fi widget to show its code.
+var intents = {
+  "wifi-qr": "wifi-share"
+}
+
 var sourceId = {
   "system": "system",
   "power-menu": "system",
@@ -27,6 +33,7 @@ var sourceId = {
   "hardware": "trigger.hardware",
   "reminder-set": "trigger.reminder",
   "reminder": "trigger.reminder",
+  "wifi-qr": "setup.network.qr",
   "theme": "appearance.theme"
 }
 
@@ -47,5 +54,5 @@ function redirectFor(route, prefixes) {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { hide: hide, redirect: redirect, sourceId: sourceId, isHiddenId: isHiddenId, redirectFor: redirectFor }
+  module.exports = { hide: hide, redirect: redirect, intents: intents, sourceId: sourceId, isHiddenId: isHiddenId, redirectFor: redirectFor }
 }

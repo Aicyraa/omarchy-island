@@ -365,3 +365,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Duplicate removal, step 3: Calendar replaces the menu's Reminder section
 - Calendar already sets, lists and clears reminders (quick-add +5/+15/+30/+1 h, Custom, the list with cancel, and Clear all), so the menu's Reminder section (set, show, clear) is hidden. The routes `reminder` and `reminder-set` open Calendar.
+
+## Duplicate removal, step 4: Wi-Fi shows the share code (the menu's Setup > Network > Wi-Fi QR)
+- The Wi-Fi widget has a share button (QR icon, while connected). It runs `omarchy-network-qr --meta` and draws the code on a white card (dark modules, four-module quiet zone) in place of the network list; the password is only inside the code. Esc, the same button or Q goes back to the list.
+- The menu's `setup.network.qr` section is hidden. The route `wifi-qr` opens Wi-Fi in share mode. The intent is taken once the network is connected, so it also works when the widget is created right after start.
+- Left in the menu for now: DNS (Setup > Network > DNS) stays as it is, by request.

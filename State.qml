@@ -115,6 +115,8 @@ Singleton {
   // timer and focus-grab closes (keyboard focus moving away is not a decision to close it). Opened from the bar or IPC,
   // it closes as before when the cursor leaves it.
   property bool pinned: false
+  // A one-shot instruction for the widget that opens next (e.g. "wifi-share" from the menu's QR entry).
+  property string intent: ""
   // Each screen's island clickable zone (pill, widget and ears), in that screen's coordinates. The click catcher leaves
   // this hole in its input region, so clicks on the island and on an open widget reach the island.
   property var zoneRects: ({})
