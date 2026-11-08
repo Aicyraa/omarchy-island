@@ -38,7 +38,7 @@ Four layers, each a flag that only its own functions touch:
 |--------------|--------------------------------|--------------------------------------------|
 | widget       | `openWidget` / `toggleWidget`  | Esc, click outside, same key, inactivity   |
 | HUD          | `showHud` / `showHudPayload`   | 1.5 s timer                                |
-| notification | (milestone 3)                  | timer                                      |
+| notification | `Notifs` `arrived` (one per new history entry) | 4.5 s per toast, queue of 6, pauses while hovered or outranked |
 | hover        | pointer over pill 120 ms       | pointer away 300 ms                        |
 
 `mode` is **derived**, never assigned: `widget > hud > notification > hover > idle`.
@@ -47,6 +47,11 @@ keeps showing the higher one, and when the higher layer ends `mode` falls back t
 whatever is still active. Rapid keybind presses and hover flicker therefore cannot
 leave it in a broken state. Opening widget B while A is open just changes
 `widgetName`: A morphs straight into B without passing through idle.
+
+Notification toasts (`State.showNotif`, `components/NotifToast.qml`): every notification the shell writes to
+`history.json` is announced once (a key not seen before; silenced ones and anything under Focus are skipped; the first
+read announces nothing). Each shows its picture (`components/NotifThumb.qml`, shared with the widget), summary and body
+with a drain bar, slides in, and waits its turn in a queue of six. Click opens the Notifications widget; C there clears them.
 
 Other rules: the inactivity timer re-arms while the pointer is over the pill or a key
 was pressed in the last 3 s; widgets and HUD show only on the focused monitor (others
@@ -462,3 +467,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Menu focus animation matches the lists
 - The menu's list uses the shared sliding highlight (`ListHighlight`, the same as Notifications, Wi-Fi, Bluetooth, Audio and Look), not its own fast highlight. Rows register with `FocusTarget`.
 - Tile-based widgets (Power, Display, the Home tiles) keep their ring focus (`FocusRing`, 200 ms ease-out), since their items are a grid, not a list.
+
+## Menu rows clear the focus highlight
+- Menu rows are 16 px narrower than the list, because the shared highlight bleeds 8 px past each row. The switches and the scroll lane no longer sit under its edge.

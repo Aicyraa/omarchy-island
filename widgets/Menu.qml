@@ -365,7 +365,9 @@ WidgetPanel {
         id: rowItem
         required property var modelData
         required property int index
-        width: list.width; height: Theme.rowHeight
+        // 16 px narrower than the list: the shared highlight bleeds 8 px past a row, so this keeps the highlight clear of the
+        // trailing switches and the scroll lane.
+        width: list.width - 16; height: Theme.rowHeight
         opacity: 0
         FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: rowItem }
         // The rows fade in one after another when the list is built (the first eight), and at once with reduced motion.
