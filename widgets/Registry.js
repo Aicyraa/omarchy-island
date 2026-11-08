@@ -20,6 +20,7 @@ var widgets = {
   system: { file: "System.qml", w: 620, h: 420 },
   tray: { file: "Tray.qml", w: 200, h: 48 },
   theme:         { file: "ThemePicker.qml", w: 720, h: 203 },
+  look:          { file: "Look.qml", w: 640, h: 340 },
   weather: { file: "Weather.qml", w: 440, h: 190 },
   agent: { file: "Agent.qml", w: 600, h: 372 },
   menu: { file: "Menu.qml", w: 720, h: 380 }

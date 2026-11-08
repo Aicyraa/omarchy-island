@@ -6,7 +6,7 @@
 // redirect: route -> island widget, used only when the route is hidden: a binding that asks the menu for a hidden
 //           section opens the widget instead. Routes that are still in the menu (root, background, capture, share)
 //           have no entry.
-var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr", "update.hardware.wifi", "update.hardware.bluetooth", "update.hardware.audio", "trigger.hardware.laptop-display-on", "trigger.hardware.laptop-display-off", "trigger.hardware.mirror-display-on", "trigger.hardware.mirror-display-off", "trigger.hardware.touchpad-on", "trigger.hardware.touchpad-off", "trigger.hardware.touchscreen-on", "trigger.hardware.touchscreen-off"]
+var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr", "update.hardware.wifi", "update.hardware.bluetooth", "update.hardware.audio", "trigger.hardware.laptop-display-on", "trigger.hardware.laptop-display-off", "trigger.hardware.mirror-display-on", "trigger.hardware.mirror-display-off", "trigger.hardware.touchpad-on", "trigger.hardware.touchpad-off", "trigger.hardware.touchscreen-on", "trigger.hardware.touchscreen-off", "appearance.theme", "appearance.background", "appearance.font"]
 
 var redirect = {
   "system": "power",
@@ -16,14 +16,26 @@ var redirect = {
   "reminder-set": "calendar",
   "reminder": "calendar",
   "wifi-qr": "wifi",
-  "theme": "theme"
+  "theme": "theme",
+  "themes": "theme",
+  "background": "look",
+  "wallpaper": "look",
+  "font": "look",
+  "appearance.theme": "theme",
+  "appearance.background": "look",
+  "appearance.font": "look"
 }
 
 // The stock menu id each redirect route stands for. The redirect applies when that section is hidden (an alias such as
 // "toggle" is not in the tree once its section is hidden, so the route name alone cannot say whether it is hidden).
 // A widget entered with an intent (see State.intent). The QR entry asks the Wi-Fi widget to show its code.
 var intents = {
-  "wifi-qr": "wifi-share"
+  "wifi-qr": "wifi-share",
+  "background": "background",
+  "wallpaper": "background",
+  "font": "font",
+  "appearance.background": "background",
+  "appearance.font": "font"
 }
 
 var sourceId = {
@@ -34,7 +46,14 @@ var sourceId = {
   "reminder-set": "trigger.reminder",
   "reminder": "trigger.reminder",
   "wifi-qr": "setup.network.qr",
-  "theme": "appearance.theme"
+  "theme": "appearance.theme",
+  "themes": "appearance.theme",
+  "background": "appearance.background",
+  "wallpaper": "appearance.background",
+  "font": "appearance.font",
+  "appearance.theme": "appearance.theme",
+  "appearance.background": "appearance.background",
+  "appearance.font": "appearance.font"
 }
 
 function isHiddenId(id, prefixes) {

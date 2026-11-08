@@ -378,3 +378,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Duplicate removal, step 6: Display gets the hardware switches (the menu's Trigger > Hardware)
 - Display has four more rows, each shown only when the machine has the device: Laptop display (on/off, laptops only), Mirror to external (laptops only), Touchpad and Touchscreen. They use the same helpers as the menu (`omarchy-hyprland-monitor-internal`, `omarchy-hyprland-monitor-internal-mirror`, `omarchy-toggle-touchpad`, `omarchy-toggle-touchscreen`) and read their state from the same flag files. Keys skip the rows a machine does not have.
 - The menu hides only those four switches (eight ids: the `-on`/`-off` pairs). Hybrid GPU and touchpad haptics stay in Trigger > Hardware, since the island has no equivalent.
+
+## Duplicate removal, step 7: Look (Background and Font) and the island theme picker replace Appearance > Theme, Background and Font
+- New widget `widgets/Look.qml`: a Background section (Next, which cycles like `omarchy-theme-bg-next`, and the still images of the current theme, the current one checked; click or Enter sets it with `omarchy-theme-bg-set`) and a Font section (the monospace families from `omarchy-font-list`, the current one marked; click or Enter sets it with `omarchy-font-set`). Tab switches sections.
+- The menu's `appearance.theme`, `appearance.background` and `appearance.font` are hidden. Their routes (`theme`, `themes`, `background`, `wallpaper`, `font` and the full ids) open ThemePicker or Look, on the matching section through `IslandState.intent`.
+- Not copied: the stock image picker for backgrounds (Look lists the images without a picker and shows only still images; videos are left to Next).
