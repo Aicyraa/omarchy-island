@@ -305,14 +305,14 @@ WidgetPanel {
             FocusRing { on: root.railFocus && railItem.active; radius: 10 }
           }
           Item {
-            anchors.centerIn: parent; width: 18; height: 18
+            anchors.centerIn: parent; width: 22; height: 22
             Image { visible: railItem.modelData.kind === "app"; anchors.fill: parent; sourceSize: Qt.size(36, 36)
               asynchronous: true; smooth: true; mipmap: true
               source: railItem.modelData.kind === "app" && railItem.modelData.icon ? (Quickshell.iconPath(railItem.modelData.icon, true) || "") : "" }
             // Centred by its ink, not its advance: nerd-font glyphs have uneven side bearings, so a centred advance sits off-centre.
             Text { id: railGlyph; visible: railItem.modelData.kind !== "app"
               textFormat: Text.PlainText; text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
-              font.family: root.glyphFamily; font.pixelSize: 17
+              font.family: root.glyphFamily; font.pixelSize: 20
               anchors.verticalCenter: parent.verticalCenter
               x: (parent.width - railInk.boundingRect.width) / 2 - railInk.boundingRect.x
               TextMetrics { id: railInk; font: railGlyph.font; text: railGlyph.text } }

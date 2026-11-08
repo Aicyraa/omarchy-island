@@ -248,6 +248,7 @@ PanelWindow {
     id: leftSat
     z: 0
     antialiasing: true
+    layer.enabled: true; layer.samples: 4      // an offscreen layer with 4x multisampling: smooth rounded edges
     y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
     width: wsView.implicitWidth + 2 * 10
     x: pill.x - win.satTuck - width
@@ -258,6 +259,7 @@ PanelWindow {
     id: rightSat
     z: 0
     antialiasing: true
+    layer.enabled: true; layer.samples: 4
     visible: Power.present || Indicators.recording
     y: win.satY; height: win.satH; radius: height / 2
     color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
@@ -290,6 +292,7 @@ PanelWindow {
     id: pill
     z: 2
     antialiasing: true
+    layer.enabled: true; layer.samples: 4
     y: win.topMargin
     anchors.horizontalCenter: parent.horizontalCenter
     width: win.target.width

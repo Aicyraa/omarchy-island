@@ -424,3 +424,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Look, correction: the elevation shadow is removed
 - The shadow (`components/Elevation.qml`) is gone. Capsules slide 6 px under the ears again (`satTuck` 6), which restores the gap between the workspace capsule, the clock pill and the battery capsule. The island's Hyprland blur threshold is back to 0.05. Outlines stay off.
+
+## Edges and rail icons
+- The jagged edges came from Hyprland's blur: it blurs by alpha, so the stepped alpha at a translucent edge becomes a stepped blur boundary. With blur off the edge is smooth. The pill, capsules and layers are now also drawn with 4x multisampling, and the pill opacity is 0.90 (was 0.70), which hides most of the step while keeping the blur. Lower the opacity for more glass and more visible steps.
+- Menu rail icons are 20 px glyphs (was 17) in 22 px boxes.
