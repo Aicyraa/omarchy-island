@@ -99,7 +99,7 @@ WidgetPanel {
             Column { anchors.verticalCenter: parent.verticalCenter; spacing: 0
               Text { anchors.right: parent.right; textFormat: Text.PlainText; text: root.fmt(card.modelData.today)
                 color: card.modelData.today > 0 ? Theme.text : Theme.textMuted; font.pixelSize: 14; font.weight: Theme.weightStrong }
-              Text { anchors.right: parent.right; textFormat: Text.PlainText; text: "tokens today"; color: Theme.textMuted; font.pixelSize: 9 } }
+              Text { anchors.right: parent.right; textFormat: Text.PlainText; text: "tokens today"; color: Theme.textMuted; font.pixelSize: 11 } }
           } }
 
         // limits
@@ -125,7 +125,7 @@ WidgetPanel {
 
         // analytics line
         Text {
-          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 10
+          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: 11
           visible: text !== ""
           text: {
             var m = card.modelData, p = []

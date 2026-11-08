@@ -11,20 +11,35 @@ import "../services"
 // swatches, a sun/moon chip for light/dark, and a check on the current theme. The selected card is ringed
 // and gently scaled. Cards come from the theme folders (user themes in ~/.config/omarchy/themes, built-ins
 // in OMARCHY_PATH) and apply with Omarchy's own `omarchy-theme-set`.
-// Keys: ←/→ move · Home/End jump · Enter apply · Esc close. The mouse wheel scrolls the strip sideways.
+// Keys: ←/→ move · Home/End jump · Enter apply · Esc clears the search, then closes. Type to search by name.
+// The mouse wheel scrolls the strip sideways. The selected card springs up in scale as it is picked.
 WidgetPanel {
   id: root
   preferredWidth: 720
-  hint: "←/→ move · Home/End jump · Enter apply · Esc close"
+  hint: "type to search · ←/→ move · Enter apply · Esc close"
   // Data comes from the Themes service (cached, preloaded): the strip is populated on the first frame.
-  readonly property var themes: Themes.list
+  readonly property var all: Themes.list
+  property string query: ""
+  // Esc clears a non-empty search before it closes the widget (Island checks this flag).
+  readonly property bool capturesEscape: query !== ""
+  // The themes whose name matches the search: every character in order (case-insensitive), so "gru" finds Gruvbox.
+  readonly property var themes: {
+    var q = query.toLowerCase().replace(/\s+/g, "")
+    if (q === "") return all
+    return all.filter(function (t) {
+      var n = String(t.name).toLowerCase(), i = 0
+      for (var k = 0; k < n.length && i < q.length; k++) if (n[k] === q[i]) i++
+      return i === q.length
+    })
+  }
   readonly property string current: Themes.current
   property bool moved: false              // the user has moved the selection: stop re-syncing it to the current theme
   property string applying: ""            // name being applied (clears itself after a few seconds)
   property int sel: 0
   readonly property bool loading: !Themes.loaded
   dataLoading: !Themes.loaded
-  readonly property var debugState: ({ sel: sel, count: themes.length, contentX: Math.round(strip.contentX) })
+  readonly property var debugState: ({ sel: sel, count: themes.length, total: all.length, query: query, contentX: Math.round(strip.contentX) })
+  onQueryChanged: { moved = true; sel = 0; if (themes.length > 0) Qt.callLater(function () { strip.positionViewAtBeginning() }) }
 
   readonly property int cardW: 156
   readonly property int cardH: 108
@@ -38,13 +53,18 @@ WidgetPanel {
   // On open, centre the current theme in the strip (arrow keys then only scroll as far as needed).
   function centerSelected() { Qt.callLater(function () { strip.positionViewAtIndex(root.sel, ListView.Center) }) }
   Keys.onPressed: function (e) {
-    var n = themes.length; if (n === 0) return
+    var n = themes.length
     moved = true
-    if (e.key === Qt.Key_Right) sel = Math.min(sel + 1, n - 1)
+    if (e.key === Qt.Key_Escape && query !== "") query = ""
+    else if (e.key === Qt.Key_Backspace && query !== "") query = query.slice(0, -1)
+    else if (n === 0 && e.text.length === 1 && e.text >= " " && e.text !== " ") query += e.text
+    else if (n === 0) return
+    else if (e.text.length === 1 && e.text >= " " && e.text !== " " && !(e.key === Qt.Key_Return || e.key === Qt.Key_Enter)) query += e.text
+    else if (e.key === Qt.Key_Right) sel = Math.min(sel + 1, n - 1)
     else if (e.key === Qt.Key_Left) sel = Math.max(sel - 1, 0)
     else if (e.key === Qt.Key_Home) sel = 0
     else if (e.key === Qt.Key_End) sel = n - 1
-    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) apply(themes[sel])
+    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (themes[sel]) apply(themes[sel]) }
     else return
     e.accepted = true
   }
@@ -60,12 +80,36 @@ WidgetPanel {
   onCurrentChanged: syncToCurrent()
   onThemesChanged: syncToCurrent()
 
-  // ---- header: position / status on the right ----
-  Item { width: parent.width; height: 24
+  // ---- header: the search box on the left; the position (or "Applying …") on the right ----
+  Item { width: parent.width; height: 26
+    Rectangle {
+      id: searchBox
+      antialiasing: true
+      anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
+      height: 26; width: 230; radius: 13
+      color: root.query !== "" ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface
+      Behavior on color { ColorAnimation { duration: 120 } }
+      Icon { id: searchIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: Theme.textMuted }
+      Text { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
+        elide: Text.ElideRight; textFormat: Text.PlainText
+        text: root.query === "" ? "Search themes…" : root.query
+        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 12; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
+      Rectangle {                                    // a caret after the typed text
+        visible: root.query !== "" && root.activeFocus; antialiasing: true
+        x: Math.min(parent.width - 10, Theme.s12 + Theme.iconSm + Theme.s8 + queryM.advanceWidth + 2); anchors.verticalCenter: parent.verticalCenter
+        width: 1.5; height: 13; color: Theme.text
+        SequentialAnimation on opacity { running: parent.visible; loops: Animation.Infinite
+          NumberAnimation { to: 0; duration: 500 } NumberAnimation { to: 1; duration: 500 } } }
+      TextMetrics { id: queryM; font.pixelSize: 12; font.weight: Theme.weightLabel; text: root.query }
+    }
     Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: root.applying !== "" ? "Applying " + root.applying + "…" : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length : "")
+      text: root.applying !== "" ? "Applying " + root.applying + "…"
+            : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length
+               : (root.query !== "" ? "0 / " + root.all.length : ""))
       color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: 12 }
   }
+  Text { visible: !root.loading && root.all.length > 0 && root.themes.length === 0; textFormat: Text.PlainText
+    text: "No theme matches \"" + root.query + "\""; color: Theme.textMuted; font.pixelSize: 13 }
   Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: 13 }
 
   // ---- the strip ----
@@ -99,8 +143,9 @@ WidgetPanel {
           radius: Theme.tileRadius
           color: card.themeBg
           border.width: card.selected ? 2 : 0; border.color: Theme.text
-          scale: card.selected ? 1.04 : (cardArea.containsMouse ? 1.025 : 1)
-          Behavior on scale { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
+          // The selected card springs up in scale (and back down when the selection leaves it); hover is a smaller spring.
+          scale: card.selected ? 1.06 : (cardArea.containsMouse ? 1.025 : 1)
+          Behavior on scale { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 4.2; damping: 0.36; epsilon: 0.002 } }
 
           Image { visible: card.hasImage; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
             sourceSize: Qt.size(320, 216); source: card.hasImage ? "file://" + modelData.preview : "" }
