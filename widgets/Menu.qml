@@ -325,7 +325,7 @@ WidgetPanel {
     ListView {
       id: list
       x: root.dmenu ? 0 : root.railW + Theme.s12
-      width: parent.width - x
+      width: parent.width - x - 14    // 14 px lane: the scroll indicator sits in it, clear of the rows
       height: root.bodyH
       clip: true
       model: root.rows
@@ -336,16 +336,8 @@ WidgetPanel {
       highlightFollowsCurrentItem: true
       highlightMoveDuration: IslandState.reducedMotion ? 0 : 110
       // The highlight stops short of the scroll indicator's lane, so the indicator never sits on a row.
-      highlight: Rectangle { x: 0; width: list.width - 10; radius: 12; color: root.railFocus ? "transparent" : Theme.surfaceRaised }
+      highlight: Rectangle { x: 0; width: list.width; radius: 12; color: root.railFocus ? "transparent" : Theme.surfaceRaised }
       onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-      // A thin indicator, shown only while the rows run past the body.
-      Rectangle {
-        visible: list.contentHeight > list.height + 1
-        anchors.right: parent.right; anchors.rightMargin: 1
-        width: 3; radius: 2; color: Theme.mix(Theme.surface, Theme.text, 0.35)
-        height: Math.max(24, list.height * list.height / list.contentHeight)
-        y: (list.height - height) * (list.contentY / Math.max(1, list.contentHeight - list.height))
-      }
       section.property: "section"
       section.criteria: ViewSection.FullString
       section.labelPositioning: ViewSection.CurrentLabelAtStart
@@ -399,6 +391,15 @@ WidgetPanel {
           Text { visible: root.pinnedOn(rowItem.modelData); textFormat: Text.PlainText; text: "pinned"
             color: Theme.textMuted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
         }
+      }
+      // A thin indicator in the lane right of the list, shown only while the rows run past the body.
+      Rectangle {
+        parent: list.parent
+        visible: list.contentHeight > list.height + 1
+        x: list.x + list.width + 5; y: list.y
+        width: 3; radius: 2; color: Theme.mix(Theme.surface, Theme.text, 0.35)
+        height: Math.max(24, list.height * list.height / list.contentHeight)
+        transform: Translate { y: (list.height - height) * (list.contentY / Math.max(1, list.contentHeight - list.height)) }
       }
       Text { anchors.centerIn: parent; visible: list.count === 0; textFormat: Text.PlainText
         text: root.query !== "" ? "No match" : "Nothing here"; color: Theme.textMuted; font.pixelSize: 13 }

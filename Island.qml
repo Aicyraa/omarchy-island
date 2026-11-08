@@ -241,7 +241,7 @@ PanelWindow {
     id: leftSat
     z: 0
     antialiasing: true
-    y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
+    y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill; border.width: 1; border.color: Theme.pillEdge
     width: wsView.implicitWidth + 2 * 10
     x: pill.x - win.satTuck - width
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
@@ -254,6 +254,7 @@ PanelWindow {
     visible: Power.present || Indicators.recording
     y: win.satY; height: win.satH; radius: height / 2
     color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
+    border.width: 1; border.color: Theme.pillEdge
     Behavior on color { ColorAnimation { duration: 120 } }
     width: 2 * 10 + (Power.present ? 18 : 0) + (Indicators.recording ? 8 + (Power.present ? 9 : 0) : 0)
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -293,6 +294,7 @@ PanelWindow {
     topRightRadius: 0
     bottomLeftRadius: Math.min(Theme.pillRadius, height / 2)
     bottomRightRadius: Math.min(Theme.pillRadius, height / 2)
+    border.width: 1; border.color: Theme.pillEdge
     color: Theme.pill
     clip: true                           // content never spills while resizing
 
