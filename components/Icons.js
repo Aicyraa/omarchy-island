@@ -80,7 +80,9 @@ var paths = {
   "gamepad": "M7 8h10a4 4 0 0 1 4 4l-1 4a2.5 2.5 0 0 1-4.5.5L14.5 15h-5l-1 1.5A2.5 2.5 0 0 1 4 16l-1-4a4 4 0 0 1 4-4z",
   "scan": "M4 8V5a1 1 0 0 1 1-1h3 M16 4h3a1 1 0 0 1 1 1v3 M20 16v3a1 1 0 0 1-1 1h-3 M8 20H5a1 1 0 0 1-1-1v-3 M4 12h16",
   "lock-small": "M7 11h10v8H7z M9.5 11V8.5a2.5 2.5 0 0 1 5 0V11",
-  "dash": "M7 12h10"
+  "dash": "M7 12h10",
+  "logout": "M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4 M10 16l-4-4 4-4 M6 12h10",
+  "eye": "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"
 }
 
 // Vertical extent (y0, y1 on the 24-grid) of the PATH of the icons that appear as status indicators in the bar.

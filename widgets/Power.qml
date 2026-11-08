@@ -3,17 +3,17 @@ import Quickshell.Io
 import ".."
 import "../services"
 
-// Power: Shutdown, Reboot, Sleep, Lock.
-// Keys: 1-4 pick a tile, arrows/Tab move, Enter confirms, Esc closes (Island).
-// Shutdown/Reboot are destructive: they need a second step (Enter, the same number
-// again, or click-and-hold 600 ms). Sleep and Lock run immediately.
+// Power: Lock, Sleep, Screensaver, Logout, Reboot, Shutdown. Replaces the menu's System section (the menu redirects to it).
+// Keys: 1-6 pick a tile, arrows/Tab move, Enter confirms, Esc closes (Island).
+// Logout, Reboot and Shutdown are destructive: they need a second step (Enter, the same number
+// again, or click-and-hold 600 ms). Lock, Sleep and Screensaver run immediately.
 WidgetPanel {
   id: root
   preferredWidth: 660
-  hint: hibernate ? "1-4 pick · ←/→ move · Enter confirm · H hibernate · Esc close"
-                  : "1-4 pick · ←/→ move · Enter confirm · Esc close"
+  hint: hibernate ? "1-6 pick · ←/→ move · Enter confirm · H hibernate · Esc close"
+                  : "1-6 pick · ←/→ move · Enter confirm · Esc close"
 
-  property int sel: 3                     // starts on Lock, the safest action
+  property int sel: 0                     // starts on Lock, the safest action
   property bool hibernate: false          // only true if the system really supports it
   property bool restartNeeded: false
   property string booted: ""
@@ -22,11 +22,13 @@ WidgetPanel {
   property string session: ""
 
   readonly property var actions: [
-    { icon: "power",   title: "Shutdown", destructive: true,  cmd: ["omarchy-system", "shutdown"] },
-    { icon: "restart", title: "Reboot",   destructive: true,  cmd: ["omarchy-system", "reboot"] },
+    { icon: "lock",    title: "Lock",        destructive: false, cmd: ["omarchy-system-lock"] },
     // Sleep locks first (Omarchy also hooks the lock into suspend itself).
-    { icon: "moon",    title: "Sleep",    destructive: false, cmd: ["bash", "-c", "omarchy-system-lock; systemctl suspend"] },
-    { icon: "lock",    title: "Lock",     destructive: false, cmd: ["omarchy-system-lock"] }
+    { icon: "moon",    title: "Sleep",       destructive: false, cmd: ["bash", "-c", "omarchy-system-lock; systemctl suspend"] },
+    { icon: "eye",     title: "Screensaver", destructive: false, cmd: ["omarchy-launch-screensaver", "force"] },
+    { icon: "logout",  title: "Logout",      destructive: true,  cmd: ["omarchy-system", "logout"] },
+    { icon: "restart", title: "Reboot",      destructive: true,  cmd: ["omarchy-system", "reboot"] },
+    { icon: "power",   title: "Shutdown",    destructive: true,  cmd: ["omarchy-system", "shutdown"] }
   ]
   function run(i) { Cmd.run(actions[i].cmd); IslandState.closeWidget() }
   // A number key: pick the tile. Non-destructive tiles run at once; a destructive
@@ -36,9 +38,10 @@ WidgetPanel {
     if (sel === i) run(i); else sel = i
   }
   Keys.onPressed: function (e) {
-    if (e.key >= Qt.Key_1 && e.key <= Qt.Key_4) { pick(e.key - Qt.Key_1); e.accepted = true }
-    else if (e.key === Qt.Key_Left || e.key === Qt.Key_Backtab) { sel = (sel + 3) % 4; e.accepted = true }
-    else if (e.key === Qt.Key_Right || e.key === Qt.Key_Tab) { sel = (sel + 1) % 4; e.accepted = true }
+    var n = actions.length
+    if (e.key >= Qt.Key_1 && e.key < Qt.Key_1 + n) { pick(e.key - Qt.Key_1); e.accepted = true }
+    else if (e.key === Qt.Key_Left || e.key === Qt.Key_Backtab) { sel = (sel + n - 1) % n; e.accepted = true }
+    else if (e.key === Qt.Key_Right || e.key === Qt.Key_Tab) { sel = (sel + 1) % n; e.accepted = true }
     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { run(sel); e.accepted = true }
     else if (e.key === Qt.Key_H && hibernate) { Cmd.run(["bash", "-c", "omarchy-system-lock; systemctl hibernate"]); IslandState.closeWidget(); e.accepted = true }
   }
@@ -54,12 +57,12 @@ WidgetPanel {
       delegate: Tile {
         required property var modelData
         required property int index
-        width: (parent.width - 3 * Theme.s12) / 4
+        width: (parent.width - (root.actions.length - 1) * Theme.s12) / root.actions.length
         compact: true
         icon: modelData.icon; title: modelData.title
         selected: root.sel === index; danger: modelData.destructive
         holdMs: modelData.destructive ? 600 : 0
-        subtitle: modelData.destructive ? "Hold to confirm"
+        subtitle: modelData.destructive ? "Hold"
                   : "Runs now"
         onClicked: { if (modelData.destructive) root.sel = index; else root.pick(index) }
         onHeld: root.run(index)

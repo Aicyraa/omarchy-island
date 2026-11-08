@@ -354,3 +354,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - dmenu answers: a choice writes the selection file (`<label>` or `<label>\t<detail>`) and then the done file; any other exit (Esc, closing, a click outside, a newer request) writes only the done file. The writes run through `Cmd.run` with positional arguments.
 - `omarchy-shell island menuState` reports whether a request is open, its mode, the route and a revision counter. `menuRefresh` re-reads the menu tree.
 - Not yet: the shim plugin that makes `omarchy-shell shell summon omarchy.menu` reach this widget (milestone 7), and the keyboard checks for the picker, which need a focused widget.
+
+## Duplicate removal, step 1: Power replaces the menu's System section
+- The Power widget now has the six System actions the menu had: Lock, Sleep, Screensaver, Logout, Reboot and Shutdown (Logout, Reboot and Shutdown need a hold or a second press).
+- `menu-core/MenuHidden.js` hides `system` from the menu, and `system` and `power-menu` route to the Power widget. Hibernate stays on the H key when the machine supports it, as before (it has no tile).

@@ -6,10 +6,11 @@
 // redirect: route -> island widget, used only when the route is hidden: a binding that asks the menu for a hidden
 //           section opens the widget instead. Routes that are still in the menu (root, background, capture, share)
 //           have no entry.
-var hide = []
+var hide = ["system"]
 
 var redirect = {
   "system": "power",
+  "power-menu": "power",
   "toggle": "home",
   "hardware": "display",
   "reminder-set": "calendar",

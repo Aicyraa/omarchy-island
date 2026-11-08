@@ -195,12 +195,13 @@ Singleton {
     }
     cancelRequest()
     var target = resolveRoute(p.initialMenu || p.menu || "root")
+    // A route the island replaced opens its widget. This is checked before the lookup, because a hidden section is not in the tree.
+    var widget = MenuHidden.redirectFor(target, MenuHidden.hide)
+    if (widget !== "") { IslandState.openWidget(widget, "", true); return }
     // An unknown route opens the top level; a route that is an action (a row, not a menu) runs it, as the stock menu does.
     var entry = item(target)
     if (!entry) target = "root"
     else if (entry.kind === "action" && entry.provider === "" && target !== "apps") { activate(entry); return }
-    var widget = MenuHidden.redirectFor(target, MenuHidden.hide)
-    if (widget !== "") { IslandState.openWidget(widget, "", true); return }
     pendingRoute = target
     openSerial += 1
     IslandState.openWidget("menu", "", true)
