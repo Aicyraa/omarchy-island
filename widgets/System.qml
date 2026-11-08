@@ -29,66 +29,92 @@ WidgetPanel {
     return d > 0 ? d + "d " + h + "h" : (h > 0 ? h + "h " + m + "m" : m + "m") }
   Timer { interval: 2500; repeat: true; running: true; triggeredOnStart: true; onTriggered: SysInfo.refresh() }
 
+  // A card: the hero (large, full-height chart) or a compact one with a small chart beside the value.
   component Card: Rectangle {
     id: card
+    property bool hero: false
     property string icon; property string label; property string value; property string unit
     property var hist: []; property color tint: Theme.accentInk
-    width: (parent.width - 2 * Theme.s12) / 3; height: 104; radius: Theme.tileRadius; color: Theme.surface
-    // An icon chip (the same as the list rows) and the label beside it.
-    Rectangle { x: Theme.s16; y: Theme.s16; width: 30; height: 30; radius: Theme.radiusChip
+    radius: Theme.tileRadius; color: Theme.surface
+    // icon chip and label, the same as the list rows
+    Rectangle { x: Theme.s12; y: Theme.s12; width: 28; height: 28; radius: Theme.radiusChip
       color: Qt.rgba(card.tint.r, card.tint.g, card.tint.b, 0.16)
-      Icon { anchors.centerIn: parent; name: card.icon; size: Theme.iconSm + 2; color: card.tint } }
-    Text { x: Theme.s16 + 30 + Theme.s8; y: Theme.s16; height: 30; verticalAlignment: Text.AlignVCenter
+      Icon { anchors.centerIn: parent; name: card.icon; size: Theme.iconSm; color: card.tint } }
+    Text { x: Theme.s12 + 28 + Theme.s8; y: Theme.s12; height: 28; verticalAlignment: Text.AlignVCenter
       textFormat: Text.PlainText; text: card.label; color: Theme.textMuted; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
     // value and unit share a baseline
-    Item { x: Theme.s16; y: 54; width: parent.width - 2 * Theme.s16; height: 34
-      Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text; font.pixelSize: Theme.typeValue; font.weight: Theme.weightStrong }
+    Item { x: Theme.s12; y: card.hero ? 52 : 46; width: card.hero ? parent.width - 2 * Theme.s12 : parent.width * 0.5; height: 36
+      Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text
+        font.pixelSize: card.hero ? 34 : Theme.typeTitle + 8; font.weight: Theme.weightStrong }
       Text { anchors.left: val.right; anchors.leftMargin: 4; anchors.baseline: val.baseline; textFormat: Text.PlainText
         text: card.unit; color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
-    Sparkline { x: Theme.s16; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
-      width: parent.width - 2 * Theme.s16; height: 22; samples: card.hist; color: card.tint }
+    // hero: a tall chart across the bottom; compact: a small chart on the right
+    Sparkline { visible: card.hero
+      x: Theme.s12; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
+      width: parent.width - 2 * Theme.s12; height: 52
+      samples: card.hist; color: card.tint; lineWidth: 2.5; fillAlpha: 0.28 }
+    Sparkline { visible: !card.hero
+      anchors.right: parent.right; anchors.rightMargin: Theme.s12; y: 50
+      width: parent.width * 0.36; height: 22
+      samples: card.hist; color: card.tint; lineWidth: 2; fillAlpha: 0.26 }
   }
 
+  // Asymmetric: a large CPU card on the left; memory and temperature stacked on the right.
+  readonly property real colL: (width - Theme.s12) * 0.58
+  readonly property real colR: width - Theme.s12 - colL
   Row {
     width: parent.width; spacing: Theme.s12
-    Card { icon: "cpu"; label: "CPU"; value: Math.round(Stats.cpu * 100); unit: "%"; hist: Stats.cpuHist }
-    Card { icon: "ram"; label: "Memory"; value: Stats.memUsedGb.toFixed(1); unit: "/ " + Stats.memTotalGb.toFixed(0) + " GB"; hist: Stats.memHist }
-    Card { icon: "thermo"; label: "CPU temperature"; value: Stats.temp > 0 ? Math.round(Stats.temp) : "—"; unit: Stats.temp > 0 ? "°C" : ""; hist: Stats.tempHist
-      tint: root.tempWarn === 2 ? Theme.dangerInk : (root.tempWarn === 1 ? Theme.warningInk : Theme.accentInk) }
+    Card { hero: true; width: root.colL; height: 152; icon: "cpu"; label: "CPU"; value: Math.round(Stats.cpu * 100); unit: "%"; hist: Stats.cpuHist }
+    Column {
+      width: root.colR; spacing: Theme.s12
+      Card { width: parent.width; height: 70; icon: "ram"; label: "Memory"; value: Stats.memUsedGb.toFixed(1); unit: "/ " + Stats.memTotalGb.toFixed(0) + " GB"; hist: Stats.memHist }
+      Card { width: parent.width; height: 70; icon: "thermo"; label: "Temperature"; value: Stats.temp > 0 ? Math.round(Stats.temp) : "—"; unit: Stats.temp > 0 ? "°C" : ""; hist: Stats.tempHist
+        tint: root.tempWarn === 2 ? Theme.dangerInk : (root.tempWarn === 1 ? Theme.warningInk : Theme.accentInk) }
+    }
   }
 
-  // ---- detail tiles ----
-  Flow {
+  // ---- details, split unevenly too: three on the left, two on the right ----
+  Row {
     width: parent.width; spacing: Theme.s12
-    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Load average"; value: root.load1.toFixed(2) + " · " + root.load5.toFixed(2) + " · " + root.load15.toFixed(2); fraction: root.cores > 0 ? root.load1 / root.cores : -1 }
-    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "CPU clock"; value: root.freqMHz > 0 ? (root.freqMHz / 1000).toFixed(2) + " GHz · " + root.cores + " cores" : "—" }
-    StatTile { width: (parent.width - 2 * Theme.s12) / 3; label: "Disk /"; value: root.bytes(root.diskUsed) + " / " + root.bytes(root.diskSize); fraction: root.diskUsed / root.diskSize }
-    StatTile { width: (parent.width - Theme.s12) / 2; label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
-    StatTile { width: (parent.width - Theme.s12) / 2; label: "Network"; value: root.rxRate >= 0 ? "↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "measuring…" }
+    Column {
+      width: root.colL; spacing: Theme.s8
+      StatTile { width: parent.width; label: "Load average"; value: root.load1.toFixed(2) + " · " + root.load5.toFixed(2) + " · " + root.load15.toFixed(2); fraction: root.cores > 0 ? root.load1 / root.cores : -1 }
+      StatTile { width: parent.width; label: "Disk /"; value: root.bytes(root.diskUsed) + " / " + root.bytes(root.diskSize); fraction: root.diskUsed / root.diskSize }
+    }
+    Column {
+      width: root.colR; spacing: Theme.s8
+      StatTile { width: parent.width; label: "CPU clock"; value: root.freqMHz > 0 ? (root.freqMHz / 1000).toFixed(2) + " GHz · " + root.cores + " cores" : "—" }
+      StatTile { width: parent.width; label: "Swap"; value: root.swapTotal > 0 ? root.bytes(root.swapUsed) + " / " + root.bytes(root.swapTotal) : "None"; fraction: root.swapTotal > 0 ? root.swapUsed / root.swapTotal : -1 }
+    }
   }
 
-  // ---- busiest processes (share of the whole CPU): a letter badge, the name, a bar and the numbers ----
+  // ---- busiest processes: three slim rows (a badge, the name, the share, a hairline bar under it) ----
   Column {
-    width: parent.width; spacing: Theme.s8; visible: root.procs.length > 0
-    Text { textFormat: Text.PlainText; text: "Busiest processes"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
-    Repeater { model: root.procs
+    width: parent.width; spacing: Theme.s4; visible: root.procs.length > 0
+    // The header line: the busiest processes, and the network rates on the right (kept off the details to save height)
+    Item { width: parent.width; height: 16
+      Text { anchors.left: parent.left; textFormat: Text.PlainText; text: "Busiest now"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
+      Text { anchors.right: parent.right; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeCaption
+        text: root.rxRate >= 0 ? "Network  ↓ " + root.bytes(root.rxRate) + "/s  ↑ " + root.bytes(root.txRate) + "/s" : "Network  measuring…" } }
+    Repeater { model: root.procs.slice(0, 3)
       delegate: Rectangle { required property var modelData; required property int index
-        width: parent.width; height: 40; radius: Theme.radiusChip; color: Theme.surface; antialiasing: true
+        width: parent.width; height: 28; radius: Theme.radiusChip; color: Theme.surface; antialiasing: true
         readonly property color tint: modelData.cpu >= 50 ? Theme.dangerInk : (modelData.cpu >= 25 ? Theme.warningInk : Theme.accentInk)
-        Rectangle { id: badge; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; antialiasing: true
+        Rectangle { id: badge; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 18; height: 18; radius: 9; antialiasing: true
           color: Theme.mix(Theme.surface, parent.tint, 0.22)
           Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: String(modelData.name).charAt(0).toUpperCase(); color: parent.parent.tint
-            font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel } }
-        Text { id: pname; anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: nums.left; anchors.rightMargin: Theme.s8; y: 6
-          elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.name; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
-        Rectangle { anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: parent.right; anchors.rightMargin: Theme.s12
-          y: parent.height - 11; height: 4; radius: 2; antialiasing: true; color: Theme.mix(Theme.surface, Theme.text, 0.14)
-          Rectangle { height: parent.height; radius: 2; antialiasing: true; color: parent.parent.tint
-            width: Math.max(4, parent.width * Math.min(1, modelData.cpu / 100))
-            Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } } } }
-        Row { id: nums; anchors.right: parent.right; anchors.rightMargin: Theme.s12; y: 6; spacing: Theme.s8
+            font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel } }
+        Text { anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: nums.left; anchors.rightMargin: Theme.s8
+          anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.name
+          color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
+        Row { id: nums; anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
           Text { textFormat: Text.PlainText; text: modelData.cpu.toFixed(modelData.cpu < 10 ? 1 : 0) + "%"; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
-          Text { textFormat: Text.PlainText; text: modelData.mem.toFixed(1) + "% mem"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.baseline: parent.children[0].baseline } }
+          Text { textFormat: Text.PlainText; text: modelData.mem.toFixed(1) + "% mem"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; anchors.baseline: parent.children[0].baseline } }
+        Rectangle { anchors.left: badge.right; anchors.leftMargin: Theme.s8; anchors.right: parent.right; anchors.rightMargin: Theme.s12
+          y: parent.height - 5; height: 2; radius: 1; color: Theme.mix(Theme.surface, Theme.text, 0.12)
+          Rectangle { height: parent.height; radius: 1; color: parent.parent.tint
+            width: Math.max(2, parent.width * Math.min(1, modelData.cpu / 100))
+            Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } } } }
       }
     }
   }

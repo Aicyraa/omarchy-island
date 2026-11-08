@@ -50,22 +50,44 @@ WidgetPanel {
   Rectangle { antialiasing: true; visible: root.restartNeeded; height: 22; width: badge.width + 20; radius: 11; color: Theme.warning
     Text { id: badge; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Restart needed"; color: Theme.textOnWarning; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel } }
 
+  // Asymmetric: Lock and Sleep in a narrow column on the left, the other four in a 2 x 2 grid on the right.
+  // Both sides are the same height, so the block reads as one shape.
+  readonly property real colW: (width - Theme.s12) * 0.4
+  readonly property real gridW: width - Theme.s12 - colW
   Row {
     width: parent.width; spacing: Theme.s12
-    Repeater {
-      model: root.actions
-      delegate: Tile {
-        required property var modelData
-        required property int index
-        width: (parent.width - (root.actions.length - 1) * Theme.s12) / root.actions.length
-        compact: true
-        icon: modelData.icon; title: modelData.title
-        selected: root.sel === index; danger: modelData.destructive
-        holdMs: modelData.destructive ? 600 : 0
-        subtitle: modelData.destructive ? "Hold"
-                  : "Runs now"
-        onClicked: { if (modelData.destructive) root.sel = index; else root.pick(index) }
-        onHeld: root.run(index)
+    Column {
+      width: root.colW; spacing: Theme.s12
+      Repeater {
+        model: 2
+        delegate: Tile {
+          required property int index
+          width: parent.width
+          icon: root.actions[index].icon; title: root.actions[index].title
+          selected: root.sel === index; danger: root.actions[index].destructive
+          holdMs: root.actions[index].destructive ? 600 : 0
+          subtitle: root.actions[index].destructive ? "Hold" : "Runs now"
+          onClicked: { if (root.actions[index].destructive) root.sel = index; else root.pick(index) }
+          onHeld: root.run(index)
+        }
+      }
+    }
+    Grid {
+      columns: 2; spacing: Theme.s12
+      width: root.gridW
+      Repeater {
+        model: 4
+        delegate: Tile {
+          required property int index
+          readonly property int gi: index + 2
+          width: (parent.width - Theme.s12) / 2
+          icon: root.actions[gi].icon; title: root.actions[gi].title
+          selected: root.sel === gi; danger: root.actions[gi].destructive
+          holdMs: root.actions[gi].destructive ? 600 : 0
+          subtitle: root.actions[gi].destructive ? "Hold" : "Runs now"
+          onClicked: { if (root.actions[gi].destructive) root.sel = gi; else root.pick(gi) }
+          onHeld: root.run(gi)
+        }
       }
     }
   }

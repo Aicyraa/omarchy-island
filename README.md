@@ -487,3 +487,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Text sizes: 110 text sizes across 24 files now use the shared scale (`Theme.typeCaption` 10, `typeLabel` 11, `typeBody` 12, `typeTitle` 14, `typeValue` 26). Icon glyphs and the large display sizes (clock and similar) keep their own sizes.
 - Card radii: literal 16 to 20 px become `Theme.tileRadius`, and 10 px becomes `Theme.radiusChip`. Pills and circles keep their radius (half the height), since that is geometry.
 - Not standardised: tile heights differ between widgets, and a few sizes remain (for example 15 px and 17 px in some places). These need a per-widget look.
+
+## Power and System layouts (asymmetric, like Home)
+- Power: Lock and Sleep in a narrow column on the left (40 %), the other four in a 2 x 2 grid on the right (60 %). Both sides have the same height.
+- System: a large CPU card on the left (58 %) with its chart across the bottom; Memory and Temperature stacked on the right. Load and Disk below on the left, CPU clock and Swap on the right. The three busiest processes are slim 28 px rows, and the network rates sit in the header line, so the widget fits its 470 px cap.
+- Sparklines take a fill opacity (`fillAlpha`); the System charts use a bolder line and fill. A chart is only a short spike right after a restart, because the history starts empty.

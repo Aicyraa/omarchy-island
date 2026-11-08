@@ -11,6 +11,7 @@ Item {
   property int slots: 60
   property color color: Theme.accentInk
   property real lineWidth: 2
+  property real fillAlpha: 0.18
 
   readonly property real dx: width / (slots - 1)
   function yOf(v) { return height - 2 - Math.max(0, Math.min(1, v)) * (height - 4) }
@@ -33,7 +34,7 @@ Item {
   Shape {
     anchors.fill: parent; preferredRendererType: Shape.CurveRenderer
     ShapePath { strokeWidth: 0; strokeColor: "transparent"
-      fillColor: Qt.rgba(root.color.r, root.color.g, root.color.b, 0.18)
+      fillColor: Qt.rgba(root.color.r, root.color.g, root.color.b, root.fillAlpha)
       PathPolyline { path: root.area } }
     ShapePath { strokeWidth: root.lineWidth; strokeColor: root.color; fillColor: "transparent"; joinStyle: ShapePath.RoundJoin; capStyle: ShapePath.RoundCap
       PathPolyline { path: root.pts } }
