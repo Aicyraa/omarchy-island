@@ -338,3 +338,6 @@ The click catcher's hole covers the island's zone in screen coordinates. The zon
 
 ## Menu core (milestone 2 of the menu merge)
 `menu-core/` holds the menu model that the island's menu widget will use: a copy of Compass's `MenuModel.js` (pure JS, no QML dependencies) with `mergeMenuSources(defaults, user, hiddenPrefixes)`, which removes hidden sections from the items and the order. `menu-core/MenuHidden.js` lists the hidden prefixes (empty until the widgets that replace them land) and the routes that redirect to an island widget once hidden. Run the tests with `node menu-core/menu.test.js`; they include checks against the real stock menu file.
+
+## Shared list highlight (milestone 3 of the menu merge)
+The sliding highlight behind the rows moved out of `WidgetPanel` into `components/ListHighlight.qml` unchanged. It takes `host` (the panel, which provides `focusItem`), `container` (the scrolled content) and `content` (the column whose height change re-places it). Pixel check against the original, at rest on Notifications, Wi-Fi, Bluetooth and Theme: at a 5 % tolerance the images are identical, and the largest per-channel difference anywhere is about 4.7 %. Moving the selection still slides the highlight to the next row.
