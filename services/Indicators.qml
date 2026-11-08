@@ -13,6 +13,8 @@ Singleton {
   property bool dnd: false
   property bool nightLight: false
   property bool stayAwake: false
+  property bool screensaver: false        // on = the screensaver is enabled (its off-flag is absent)
+  property bool crashCapture: false       // on = crash capture is enabled (its off-flag is absent)
   property bool recording: false
   property real recSeconds: 0
   property string dictation: "idle"
@@ -32,6 +34,8 @@ Singleton {
       "echo dnd=$(omarchy-shell -q notifications isDnd 2>/dev/null);" +
       "echo night=$(omarchy-toggle-nightlight --status 2>/dev/null | jq -r '.enabled' 2>/dev/null);" +
       "[ -f \"$HOME/.local/state/omarchy/indicators/stay-awake\" ] && echo awake=1 || echo awake=0;" +
+      "[ -f \"$HOME/.local/state/omarchy/toggles/screensaver-off\" ] && echo ss=0 || echo ss=1;" +
+      "[ -f \"$HOME/.local/state/omarchy/toggles/crash-capture-off\" ] && echo cc=0 || echo cc=1;" +
       "p=$(pgrep -f '^gpu-screen-recorder' | head -1); if [ -n \"$p\" ]; then echo rec=1; echo recsec=$(ps -o etimes= -p $p | tr -d ' '); else echo rec=0; fi;" +
       "if command -v voxtype >/dev/null; then echo dictavail=1; else echo dictavail=0; fi"]
     stdout: StdioCollector { onStreamFinished: {
@@ -40,6 +44,8 @@ Singleton {
       root.dnd = kv.dnd === "on"
       root.nightLight = kv.night === "true"
       root.stayAwake = kv.awake === "1"
+      root.screensaver = kv.ss === "1"
+      root.crashCapture = kv.cc === "1"
       root.recording = kv.rec === "1"
       root.recSeconds = parseInt(kv.recsec || "0") || 0
       var avail = kv.dictavail === "1"
@@ -71,6 +77,8 @@ Singleton {
   function toggleDnd() { dnd = !dnd; act(["omarchy-shell", "-q", "notifications", "toggleDnd"]) }
   function toggleNightLight() { nightLight = !nightLight; act(["omarchy-toggle-nightlight"]) }
   function toggleStayAwake() { stayAwake = !stayAwake; act(["omarchy-toggle-idle", "toggle"]) }
+  function toggleScreensaver() { screensaver = !screensaver; act(["omarchy-toggle-screensaver"]) }
+  function toggleCrashCapture() { crashCapture = !crashCapture; act(["omarchy-toggle-crash-capture"]) }
   Timer { id: settle; interval: 450; onTriggered: root.refresh() }
   function toggleDictation() { act(["omarchy-dictation", "toggle"]) }
 }

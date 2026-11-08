@@ -6,7 +6,7 @@
 // redirect: route -> island widget, used only when the route is hidden: a binding that asks the menu for a hidden
 //           section opens the widget instead. Routes that are still in the menu (root, background, capture, share)
 //           have no entry.
-var hide = ["system"]
+var hide = ["system", "trigger.toggle"]
 
 var redirect = {
   "system": "power",
@@ -15,6 +15,17 @@ var redirect = {
   "hardware": "display",
   "reminder-set": "calendar",
   "theme": "theme"
+}
+
+// The stock menu id each redirect route stands for. The redirect applies when that section is hidden (an alias such as
+// "toggle" is not in the tree once its section is hidden, so the route name alone cannot say whether it is hidden).
+var sourceId = {
+  "system": "system",
+  "power-menu": "system",
+  "toggle": "trigger.toggle",
+  "hardware": "trigger.hardware",
+  "reminder-set": "trigger.reminder",
+  "theme": "appearance.theme"
 }
 
 function isHiddenId(id, prefixes) {
@@ -29,10 +40,10 @@ function isHiddenId(id, prefixes) {
 // The widget a route should open instead, or "" when the route stays in the menu.
 function redirectFor(route, prefixes) {
   var r = String(route || "")
-  if (!redirect[r]) return ""
-  return isHiddenId(r, prefixes) || isHiddenId("route." + r, prefixes) ? redirect[r] : ""
+  if (!redirect[r] || !sourceId[r]) return ""
+  return isHiddenId(sourceId[r], prefixes) ? redirect[r] : ""
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { hide: hide, redirect: redirect, isHiddenId: isHiddenId, redirectFor: redirectFor }
+  module.exports = { hide: hide, redirect: redirect, sourceId: sourceId, isHiddenId: isHiddenId, redirectFor: redirectFor }
 }

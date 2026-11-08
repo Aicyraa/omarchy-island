@@ -358,3 +358,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Duplicate removal, step 1: Power replaces the menu's System section
 - The Power widget now has the six System actions the menu had: Lock, Sleep, Screensaver, Logout, Reboot and Shutdown (Logout, Reboot and Shutdown need a hold or a second press).
 - `menu-core/MenuHidden.js` hides `system` from the menu, and `system` and `power-menu` route to the Power widget. Hibernate stays on the H key when the machine supports it, as before (it has no tile).
+
+## Duplicate removal, step 2: Home replaces the menu's Toggle section
+- Home's hover form now has the six switches the menu's Trigger > Toggle had: Focus (silence notifications), Night light, Awake (stay awake), Dictation (when available), Screensaver and Crash capture. The last two read the toggle flags in `~/.local/state/omarchy/toggles`; the grid is three columns, so the form keeps its height.
+- `menu-core/MenuHidden.js` hides `trigger.toggle`; the routes `toggle` and `toggles` open Home. A redirect now checks the stock section it stands for (`sourceId`), since an alias is gone from the tree once its section is hidden.

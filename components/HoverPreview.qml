@@ -116,7 +116,7 @@ Item {
     Row {
       id: toggles
       width: parent.width; spacing: Theme.s8
-      readonly property real gridW: 2 * 48 + Theme.s8
+      readonly property real gridW: 3 * 48 + 2 * Theme.s8
 
       Column {
         width: toggles.width - toggles.gridW - Theme.s8; spacing: Theme.s8
@@ -141,7 +141,7 @@ Item {
         }
       }
       Grid {
-        columns: 2; spacing: Theme.s8; width: toggles.gridW
+        columns: 3; spacing: Theme.s8; width: toggles.gridW
         QuickTile { width: 48; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
           onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
         QuickTile { width: 48; icon: "moon"; on: Indicators.nightLight
@@ -150,6 +150,11 @@ Item {
           onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
         QuickTile { width: 48; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
           onToggled: Indicators.toggleDictation() }
+        // Trigger > Toggle in the menu had these two as well (the menu section is hidden in favour of this form).
+        QuickTile { width: 48; icon: "eye"; on: Indicators.screensaver
+          onToggled: Indicators.toggleScreensaver() }
+        QuickTile { width: 48; icon: "alert"; on: Indicators.crashCapture
+          onToggled: Indicators.toggleCrashCapture() }
       }
     }
 
