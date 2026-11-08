@@ -446,3 +446,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Sidebar gaps, wider
 - The sidebar icon boxes are a fixed 24 px, and the gap between them takes the rest of the rail's height (about 9 px for ten items, never under 4 px).
+
+## Sidebar padding restored
+- The sidebar boxes are back to the old size (the rail fits ten boxes in its height, with 2 px between them).

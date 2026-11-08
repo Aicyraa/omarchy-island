@@ -45,10 +45,9 @@ WidgetPanel {
     MenuData.revision
     return [{ id: "home", label: "Home", icon: homeGlyph, kind: "home" }].concat(MenuData.childrenOf("root"))
   }
-  // The rail: fixed 24 px icon boxes, and the gap between them takes the rest of the rail's height (about 9 px for ten).
-  readonly property int railBox: 24
-  readonly property int railGap: Math.max(4, Math.floor((bodyH - railRows.length * railBox) / Math.max(1, railRows.length - 1)))
-  readonly property int railItemH: railBox
+  // The rail: boxes fill the height (the old 30 px boxes with 2 px between them for ten items).
+  readonly property int railGap: 2
+  readonly property int railItemH: Math.max(24, Math.min(40, Math.floor((bodyH - (railRows.length - 1) * railGap) / Math.max(1, railRows.length))))
   readonly property string highlightedRail: route === "root" ? railId : MenuModel.topLevelFor(MenuData.items, route)
 
   // The rows. Toggles are re-read when their state changes, so the checks follow the switch.
