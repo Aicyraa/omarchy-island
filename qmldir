@@ -26,3 +26,5 @@ Vinyl 1.0 components/Vinyl.qml
 GlobeView 1.0 components/GlobeView.qml
 ClickCatcher 1.0 components/ClickCatcher.qml
 ListHighlight 1.0 components/ListHighlight.qml
+NotifThumb 1.0 components/NotifThumb.qml
+NotifToast 1.0 components/NotifToast.qml

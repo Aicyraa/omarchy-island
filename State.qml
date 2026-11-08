@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
+import "services"
 
 // State: the one brain of the island.
 //
@@ -183,6 +184,48 @@ Singleton {
       showHud(String(p.icon || ""), pct, hasProgress ? "" : String(p.message || ""),
               parseInt(p.duration || "1500", 10))
     } catch (e) { console.warn("island: bad HUD payload", e) }
+  }
+
+  // ---- notification toast: every new notification gets a turn, one after another ----
+  // Each one shows for notifMs; notifLeft runs 1 -> 0 over that time (the toast's drain bar). The animation pauses
+  // while the pointer is on the pill and while anything outranks the toast, so a widget or HUD never lets it expire
+  // unseen, and it resumes where it stopped. Newer ones queue behind; only the newest 6 are kept.
+  readonly property int notifMs: 4500
+  property var notifItem: null          // the notification on screen, null when no toast
+  property var notifQueue: []
+  property int notifSerial: 0           // bumps each time a toast starts, so the view replays its entrance
+  property real notifLeft: 1
+  Connections {
+    target: Notifs
+    function onArrived(n) { root.showNotif(n) }
+  }
+  function showNotif(n) {
+    var q = notifQueue.slice(); q.push(n)
+    if (q.length > 6) q.splice(0, q.length - 6)
+    notifQueue = q
+    if (notifItem === null) nextNotif()
+  }
+  function nextNotif() {
+    if (notifQueue.length === 0) { notifAnim.stop(); notifItem = null; notifActive = false; return }
+    var q = notifQueue.slice()
+    notifItem = q.shift(); notifQueue = q
+    if (widgetName === "" && !hudActive) activeScreen = focusedScreenName()
+    notifActive = true
+    notifLeft = 1
+    notifSerial++
+    notifAnim.restart()
+    notifAnim.paused = notifHeld
+  }
+  // Held = the pointer is on the pill, or something outranks the toast. The countdown only pauses; it never resets.
+  readonly property bool notifHeld: pointerOver || mode !== "notification"
+  onNotifHeldChanged: if (notifAnim.running) notifAnim.paused = notifHeld
+  // Clears every toast on screen and queued (the Notifications widget's C key).
+  function clearNotifs() { notifQueue = []; notifAnim.stop(); notifItem = null; notifActive = false }
+  NumberAnimation {
+    id: notifAnim
+    target: root; property: "notifLeft"; from: 1; to: 0
+    duration: root.notifMs
+    onFinished: root.nextNotif()
   }
 
   // Timers exist but only RUN when started, so nothing ticks while idle.

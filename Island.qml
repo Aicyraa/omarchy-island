@@ -45,18 +45,18 @@ PanelWindow {
     var saved = savedHeight(name)
     return Qt.size(Registry.width(name), saved > 0 ? saved : Registry.height(name))
   }
-  // The hover preview sizes itself; before it is loaded, estimate from whether a player exists.
+  // The hover preview sizes itself; before it is loaded, use its fixed height (the media card always has a slot now).
   function hoverSize() {
     var it = hoverLoader.item
     if (it && it.implicitHeight > 0) return Qt.size(it.implicitWidth, it.implicitHeight)
-    return Qt.size(440, Mpris.players.values.some(function (q) { return q.isPlaying || String(q.trackTitle || "") !== "" }) ? 434 : 284)
+    return Qt.size(440, 374)
   }
   function sizeFor(m) {
     switch (m) {
     case "hover":        return hoverSize()
     case "widget":       return widgetSizeOf(IslandState.widgetName)
     case "hud":          return Qt.size(300, 42)
-    case "notification": return Qt.size(420, 52)
+    case "notification": return Qt.size(420, 64)
     default:             return Qt.size(idleForm.widthFor(), 26)     // idle
     }
   }
@@ -448,6 +448,14 @@ PanelWindow {
           Text { textFormat: Text.PlainText; text: IslandState.hudMessage; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel
             anchors.verticalCenter: parent.verticalCenter }
         }
+      }
+
+      // ---------- notification toast: the newest notification, see components/NotifToast.qml ----------
+      Loader {
+        id: toastLoader
+        anchors.fill: parent
+        active: pill.shownMode === "notification"
+        sourceComponent: NotifToast { screenName: win.screenName }
       }
 
       // ---------- widget host ----------
