@@ -16,6 +16,8 @@ PanelWindow {
   exclusionMode: ExclusionMode.Ignore
   WlrLayershell.namespace: "aicyraa-island-catcher"
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+  // Overlay: above the bar and the dock, so a click on them while the widget is open counts as outside (the island has a hole).
+  WlrLayershell.layer: WlrLayer.Overlay
   visible: IslandState.pinned && IslandState.modeFor(modelData.name) === "widget"
 
   // A stray press can arrive as the layer appears (the keypress that opened the widget is not a click): ignore anything
