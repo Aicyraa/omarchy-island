@@ -374,3 +374,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Duplicate removal, step 5: restart buttons replace the menu's Update > Hardware (Wi-Fi, Bluetooth, Audio)
 - Wi-Fi, Bluetooth and Audio each have a restart button (the restart icon). It runs `omarchy-restart-wifi`, `omarchy-restart-bluetooth` or `omarchy-restart-audio` directly, without the floating terminal the stock menu used. Audio's button is in a footer under the two cards.
 - The menu's `update.hardware.wifi`, `update.hardware.bluetooth` and `update.hardware.audio` rows are hidden. Trackpad stays in the menu, since no island widget covers it.
+
+## Duplicate removal, step 6: Display gets the hardware switches (the menu's Trigger > Hardware)
+- Display has four more rows, each shown only when the machine has the device: Laptop display (on/off, laptops only), Mirror to external (laptops only), Touchpad and Touchscreen. They use the same helpers as the menu (`omarchy-hyprland-monitor-internal`, `omarchy-hyprland-monitor-internal-mirror`, `omarchy-toggle-touchpad`, `omarchy-toggle-touchscreen`) and read their state from the same flag files. Keys skip the rows a machine does not have.
+- The menu hides only those four switches (eight ids: the `-on`/`-off` pairs). Hybrid GPU and touchpad haptics stay in Trigger > Hardware, since the island has no equivalent.

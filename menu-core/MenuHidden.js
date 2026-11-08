@@ -6,7 +6,7 @@
 // redirect: route -> island widget, used only when the route is hidden: a binding that asks the menu for a hidden
 //           section opens the widget instead. Routes that are still in the menu (root, background, capture, share)
 //           have no entry.
-var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr", "update.hardware.wifi", "update.hardware.bluetooth", "update.hardware.audio"]
+var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr", "update.hardware.wifi", "update.hardware.bluetooth", "update.hardware.audio", "trigger.hardware.laptop-display-on", "trigger.hardware.laptop-display-off", "trigger.hardware.mirror-display-on", "trigger.hardware.mirror-display-off", "trigger.hardware.touchpad-on", "trigger.hardware.touchpad-off", "trigger.hardware.touchscreen-on", "trigger.hardware.touchscreen-off"]
 
 var redirect = {
   "system": "power",

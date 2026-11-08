@@ -83,7 +83,9 @@ var paths = {
   "dash": "M7 12h10",
   "logout": "M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4 M10 16l-4-4 4-4 M6 12h10",
   "qr": "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h2v2h-2z M19 14h2v2h-2z M14 19h2v2h-2z M18 18h3v3h-3z",
-  "eye": "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"
+  "eye": "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
+  "monitor": "M3 4h18v12H3z M8 20h8 M12 16v4",
+  "mirror": "M3 5h11v8H3z M10 11h11v8H10z"
 }
 
 // Vertical extent (y0, y1 on the 24-grid) of the PATH of the icons that appear as status indicators in the bar.

@@ -11,7 +11,7 @@ var widgets = {
   wifi: { file: "Wifi.qml", w: 480, h: 364 },
   bluetooth: { file: "Bluetooth.qml", w: 480, h: 149 },
   audio: { file: "Audio.qml", w: 640, h: 278 },
-  display: { file: "Display.qml", w: 460, h: 212 },
+  display: { file: "Display.qml", w: 460, h: 416 },
   battery: { file: "Battery.qml", w: 480, h: 172 },
   calendar: { file: "Calendar.qml", w: 400, h: 348 },
   worldclock: { file: "WorldClock.qml", w: 620, h: 340 },
