@@ -19,7 +19,7 @@ WidgetPanel {
   // The fixed body. Search (30) + section gap (12) + body (340) + padding (2 x 16) is 398, within the 420 px panel
   // limit, so the panel itself never scrolls: only the list does, and only when its rows overflow.
   readonly property int bodyH: 340
-  readonly property int railW: 48
+  readonly property int railW: 44
   readonly property string glyphFamily: "JetBrainsMono Nerd Font"
   readonly property string homeGlyph: "󰋜"
 
@@ -103,6 +103,7 @@ WidgetPanel {
   // Apply the request or the route this menu was opened for (also when it is already open and gets a new one).
   function applyOpen() {
     query = ""; sel = 0; railFocus = false
+    root.forceActiveFocus()
     if (dmenu) { route = "root"; return }
     route = MenuData.pendingRoute || "root"
     if (route === "root") railId = "home"
@@ -230,10 +231,13 @@ WidgetPanel {
   // ---- body: rail (fixed) + list (scrolls on its own) ----
   Item {
     width: parent.width; height: root.bodyH
-    Column {
+    // The rail is a square container; its items are square too, so the whole column reads as one block.
+    Rectangle {
       id: rail
       visible: !root.dmenu
-      width: root.railW; height: root.bodyH; spacing: 2
+      width: root.railW; height: root.bodyH; color: Theme.surface; radius: 0
+      Column {
+      anchors.fill: parent; spacing: 2
       Repeater {
         model: root.railRows
         delegate: Item {
@@ -243,10 +247,10 @@ WidgetPanel {
           readonly property bool active: modelData.id === root.highlightedRail
           width: rail.width; height: root.railItemH
           Rectangle {
-            anchors.fill: parent; radius: 12
-            color: railItem.active ? Theme.surfaceRaised : (railArea.containsMouse ? Theme.surface : "transparent")
+            anchors.fill: parent; radius: 0
+            color: railItem.active ? Theme.surfaceRaised : (railArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.06) : "transparent")
             Behavior on color { ColorAnimation { duration: 90 } }
-            FocusRing { on: root.railFocus && railItem.active; radius: 12 }
+            FocusRing { on: root.railFocus && railItem.active; radius: 0 }
           }
           Item {
             anchors.centerIn: parent; width: 18; height: 18
@@ -261,6 +265,7 @@ WidgetPanel {
           MouseArea { id: railArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
             onClicked: { root.railFocus = false; root.selectRail(modelData.id) } }
         }
+      }
       }
     }
 

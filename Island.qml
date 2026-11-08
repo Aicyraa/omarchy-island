@@ -82,7 +82,10 @@ PanelWindow {
 
   WlrLayershell.namespace: "aicyraa-island"
   // Only grab the keyboard while a widget is open on this screen.
-  WlrLayershell.keyboardFocus: myMode === "widget" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+  // The menu holds the keyboard while it is open (as Compass does), so typing searches it at once. Other widgets take it on click.
+  WlrLayershell.keyboardFocus: myMode === "widget"
+    ? (IslandState.widgetName === "menu" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand)
+    : WlrKeyboardFocus.None
 
   // Hide in fullscreen unless the user explicitly opened a widget; always hide under the screensaver.
   visible: !IslandState.barHidden && !IslandState.screensaver && !(IslandState.fullscreen && myMode !== "widget")
