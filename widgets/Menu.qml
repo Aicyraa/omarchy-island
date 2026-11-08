@@ -370,7 +370,10 @@ WidgetPanel {
         // trailing switches and the scroll lane.
         x: 8; width: list.width - 24; height: Theme.rowHeight
         opacity: 0
-        FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: rowItem }
+        // The focus highlight follows this box (8 px in from the row on each side); it bleeds 8 px more, so it starts 12 px
+        // from the sidebar, the same gap as before, and stays inside the list's clip.
+        Item { id: focusBox; anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8 }
+        FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: focusBox }
         // The rows fade in one after another when the list is built (the first eight), and at once with reduced motion.
         SequentialAnimation on opacity {
           running: true

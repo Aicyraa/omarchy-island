@@ -473,3 +473,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Menu focus highlight kept inside the list
 - The list starts 8 px further left and the rows sit 8 px in from its edges, so the highlight's bleed is inside the list's clip. The flat cut (and the black strip on the left of the focused row) is gone; the rows did not move.
+
+## Focus highlight clear of the sidebar
+- The focus highlight follows an inset box in each row, so it starts 12 px from the sidebar (it reached it before).
