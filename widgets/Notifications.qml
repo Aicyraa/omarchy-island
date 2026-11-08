@@ -14,55 +14,43 @@ WidgetPanel {
   preferredWidth: 480
   hint: "↑/↓ select · D focus mode · C dismiss toasts · R replay · Esc close"
   property int sel: 0
+  readonly property int count: Notifs.history.length
   Component.onCompleted: Indicators.refresh()
 
-  // First absolute image path found anywhere in a notification's open/edit action (JSON text), "" if none.
-  function imageIn(v) {
-    if (typeof v === "string") return /^\/.*\.(png|jpe?g|webp|gif|bmp)$/i.test(v) ? v : ""
-    if (Array.isArray(v)) { for (var i = 0; i < v.length; i++) { var r = imageIn(v[i]); if (r !== "") return r } return "" }
-    if (v && typeof v === "object") { for (var k in v) { var q = imageIn(v[k]); if (q !== "") return q } }
-    return ""
-  }
-  function previewOf(n) {
-    try { var a = imageIn(JSON.parse(n.execArgv || "[]")); if (a !== "") return a } catch (e) {}
-    try { return imageIn(JSON.parse(n.execActions || "[]")) } catch (e) { return "" }
-  }
-  // The app icon: the notification's own icon name, else its desktop entry's icon, else an icon named like the app.
-  // Quickshell.iconPath(name, true) is "" when the theme has no such icon.
-  function iconNameOf(n) {
-    var app = String(n.app || "")
-    var e = app !== "" ? (DesktopEntries.heuristicLookup(app) || DesktopEntries.heuristicLookup(app.toLowerCase())) : null
-    var cands = [String(n.appIcon || ""), e ? String(e.icon || "") : "", app.toLowerCase(), app.toLowerCase().replace(/\s+/g, "-")]
-    for (var i = 0; i < cands.length; i++) if (cands[i] !== "" && Quickshell.iconPath(cands[i], true) !== "") return cands[i]
-    return ""
-  }
+  // The picture helpers (previewOf, iconNameOf) live in Notifs, shared with the toast.
 
   Keys.onPressed: function (e) {
     if (e.key === Qt.Key_Down) { sel = Math.min(sel + 1, Notifs.history.length - 1); e.accepted = true }
     else if (e.key === Qt.Key_Up) { sel = Math.max(sel - 1, 0); e.accepted = true }
     else if (e.key === Qt.Key_D) { Indicators.toggleDnd(); e.accepted = true }
-    else if (e.key === Qt.Key_C) { Cmd.run(["omarchy-shell", "-q", "notifications", "dismissAll"]); e.accepted = true }
+    else if (e.key === Qt.Key_C) { Cmd.run(["omarchy-shell", "-q", "notifications", "dismissAll"]); IslandState.clearNotifs(); e.accepted = true }
     else if (e.key === Qt.Key_R) { Cmd.run(["omarchy-shell", "-q", "notifications", "showHistory"]); e.accepted = true }
   }
 
-  // Header: a Focus button that shows its state, on one centre line.
-  Item { width: parent.width; height: 36
+  // Header: the title and how many are recent, with the Focus button on the right.
+  Item { width: parent.width; height: 40
+    Row { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+      Text { textFormat: Text.PlainText; text: "Notifications"; color: Theme.text
+        font.pixelSize: 15; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
+      Text { visible: root.count > 0; textFormat: Text.PlainText; text: root.count
+        color: Theme.textMuted; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
+    }
     Rectangle {
       anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-      height: 32; width: focusRow.implicitWidth + Theme.s16 * 2; radius: 16
+      height: 30; width: focusRow.implicitWidth + Theme.s16 * 2; radius: 15
       color: Indicators.dnd ? Theme.accentFill : Theme.surface
       Behavior on color { ColorAnimation { duration: 150 } }
       Row { id: focusRow; anchors.centerIn: parent; spacing: Theme.s8
         Icon { name: Indicators.dnd ? "bell-off" : "bell"; size: Theme.iconSm; color: Indicators.dnd ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-        Text { textFormat: Text.PlainText; text: Indicators.dnd ? "Focus on" : "Focus off"; font.pixelSize: 12; font.weight: Theme.weightLabel
+        Text { textFormat: Text.PlainText; text: Indicators.dnd ? "Focus on" : "Focus off"; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
           color: Indicators.dnd ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter } }
       MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Indicators.toggleDnd() }
     }
   }
 
   Column {
-    visible: Notifs.history.length > 0
-    width: parent.width; spacing: Theme.rowGap
+    visible: root.count > 0
+    width: parent.width; spacing: 0
     Repeater {
       model: Notifs.history
       delegate: Item {
@@ -70,51 +58,66 @@ WidgetPanel {
         required property var modelData
         required property int index
         width: parent.width
-        height: Math.max(64, textCol.implicitHeight + 2 * Theme.s12)
+        height: Math.max(60, textCol.implicitHeight + 2 * Theme.s12)
         readonly property bool selected: root.sel === index
-        readonly property string preview: root.previewOf(modelData)
-        readonly property string iconName: root.iconNameOf(modelData)
+        readonly property string preview: Notifs.previewOf(modelData)
+        readonly property string iconName: Notifs.iconNameOf(modelData)
         onSelectedChanged: if (selected) root.reveal(this)
         FocusTarget { selected: card.selected; target: card }
         Rectangle { antialiasing: true; anchors.fill: parent; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8; radius: Theme.tileRadius
           color: Theme.text; opacity: area.containsMouse && !card.selected ? 0.07 : 0; Behavior on opacity { NumberAnimation { duration: 120 } } }
 
-        // thumbnail: the notification's image, else the app icon, else a bell
-        ClippingRectangle {
+        // thumbnail: the notification's image (with the app chip), else the app icon, else a bell
+        NotifThumb {
           id: thumb
           x: 0; anchors.verticalCenter: parent.verticalCenter
-          width: 48; height: 48; radius: 13; color: Theme.surface
-          Image { id: previewImg; anchors.fill: parent; visible: status === Image.Ready
-            source: card.preview !== "" ? "file://" + card.preview : ""
-            fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: false; smooth: true; mipmap: true
-            sourceSize.width: 192; sourceSize.height: 192 }
-          Image { anchors.centerIn: parent; width: 30; height: 30; visible: previewImg.status !== Image.Ready && card.iconName !== ""
-            source: card.iconName !== "" ? "image://icon/" + card.iconName : ""
-            fillMode: Image.PreserveAspectFit; smooth: true; mipmap: true; sourceSize.width: 96; sourceSize.height: 96 }
-          Icon { anchors.centerIn: parent; name: "bell"; size: Theme.iconMd; color: Theme.textMuted
-            visible: previewImg.status !== Image.Ready && card.iconName === "" }
+          size: 44; badge: true; preview: card.preview; iconName: card.iconName
         }
 
         Column {
           id: textCol
           anchors.left: thumb.right; anchors.leftMargin: Theme.s12; anchors.right: parent.right
-          anchors.verticalCenter: parent.verticalCenter; spacing: 2
-          Item { width: parent.width; height: 18
-            Text { anchors.left: parent.left; anchors.right: when.left; anchors.rightMargin: Theme.s8; anchors.verticalCenter: parent.verticalCenter
-              elide: Text.ElideRight; textFormat: Text.PlainText; text: card.modelData.summary || card.modelData.app || ""
-              color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+          anchors.verticalCenter: parent.verticalCenter; spacing: 3
+          Item { width: parent.width; height: 14
+            Text { anchors.left: parent.left; anchors.right: when.left; anchors.rightMargin: Theme.s8
+              anchors.verticalCenter: parent.verticalCenter
+              elide: Text.ElideRight; textFormat: Text.PlainText; text: card.modelData.app || ""
+              color: Theme.accentInk; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; font.letterSpacing: 0.3 }
             Text { id: when; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-              text: Notifs.ago(card.modelData.ts); color: Theme.textMuted; font.pixelSize: 11 } }
+              text: Notifs.ago(card.modelData.ts); color: Theme.textMuted; font.pixelSize: Theme.typeLabel } }
+          Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+            text: card.modelData.summary || card.modelData.app || ""
+            color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong; font.letterSpacing: 0.1 }
           Text { visible: text !== ""; width: parent.width; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: card.modelData.body || ""; color: Theme.textMuted; font.pixelSize: 12 }
-          Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; visible: text !== ""
-            text: card.modelData.app || ""; color: Theme.mix(Theme.textMuted, Theme.pill, 0.25); font.pixelSize: 10 }
+            text: card.modelData.body || ""; color: Theme.textMuted; font.pixelSize: Theme.typeBody; lineHeight: 1.1 }
         }
+
+        // hairline between rows, not after the last one
+        Rectangle { visible: card.index < root.count - 1
+          anchors.bottom: parent.bottom; anchors.left: textCol.left; anchors.right: parent.right
+          height: 1; color: Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.07) }
+
         MouseArea { id: area; anchors.fill: parent; anchors.leftMargin: -Theme.s8; anchors.rightMargin: -Theme.s8
           hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.sel = card.index }
       }
     }
   }
-  Text { visible: Notifs.history.length === 0; textFormat: Text.PlainText
-    text: "All caught up"; color: Theme.textMuted; font.pixelSize: 14 }
+
+  // Empty state: a soft chip with the bell, and two lines of text, centred in the panel.
+  Item {
+    visible: root.count === 0
+    width: parent.width; height: 120
+    Column {
+      anchors.centerIn: parent; spacing: Theme.s8
+      Rectangle { anchors.horizontalCenter: parent.horizontalCenter
+        width: 52; height: 52; radius: 26; color: Theme.surface
+        Icon { anchors.centerIn: parent; name: "bell"; size: Theme.iconMd; color: Theme.textMuted }
+      }
+      Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText
+        text: "All caught up"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong }
+      Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText
+        text: Indicators.dnd ? "Focus is on: new ones stay quiet" : "Nothing new right now"
+        color: Theme.textMuted; font.pixelSize: Theme.typeBody }
+    }
+  }
 }

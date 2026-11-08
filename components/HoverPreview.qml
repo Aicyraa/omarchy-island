@@ -6,11 +6,13 @@ import Quickshell.Widgets
 import ".."
 import "../services"
 
-// What the pill shows on hover: a preview of the essentials.
-//   profile header (current wallpaper as its background) · Wi-Fi and Bluetooth tiles with live details beside a 2x2 grid
-//   of icon toggles · volume + brightness · media player.
-// Everything is live and clickable; right-click on a toggle opens its full widget. The media card only
-// takes space while a player exists. The pill sizes itself from implicitWidth/implicitHeight.
+// What the pill shows on hover (and the Home widget, which is the same form pinned): a preview of the essentials.
+//   profile header (current wallpaper as its background)
+//   body, two columns:
+//     left  (narrow): Wi-Fi and Bluetooth tiles with live details, then the six icon toggles as a 3 x 2 grid
+//     right (wide):   the media card (always shown: a placeholder when nothing plays), then volume and brightness
+// Everything is live and clickable; right-click on a toggle opens its full widget. The pill sizes itself from
+// implicitWidth/implicitHeight. Height: 16 + 84 (header) + 10 + 248 (body) + 16 = 374, the fallback in Island.qml.
 Item {
   id: root
   property var win: null
@@ -66,65 +68,69 @@ Item {
       }
       Column {
         anchors.left: avatar.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: 2
-        Text { textFormat: Text.PlainText; text: root.greeting; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
+        Text { textFormat: Text.PlainText; text: root.greeting; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
         Text { textFormat: Text.PlainText; text: root.userName; color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 18; font.weight: Theme.weightStrong }
-        Text { textFormat: Text.PlainText; text: root.host; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
+        Text { textFormat: Text.PlainText; text: root.host; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
       }
       Column {
         anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
         Text { anchors.right: parent.right; textFormat: Text.PlainText; text: Qt.formatDateTime(clock.date, "HH:mm")
           color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 24; font.weight: Theme.weightStrong }
         Text { anchors.right: parent.right; textFormat: Text.PlainText; text: Qt.formatDateTime(clock.date, "ddd, MMM d")
-          color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
+          color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
         Text { anchors.right: parent.right; visible: Power.present; textFormat: Text.PlainText
-          text: Math.round(Power.level * 100) + "%" + (Power.charging ? " · charging" : ""); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 11 }
+          text: Math.round(Power.level * 100) + "%" + (Power.charging ? " · charging" : ""); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
       }
       MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: IslandState.openWidget("calendar", root.screen()) }
     }
 
-    // ---------------- quick toggles ----------------
-    // Left: Wi-Fi and Bluetooth as wide tiles with live details. Right: the other toggles as a 2x2 grid of icons.
-    component QuickTile: Rectangle {
-      id: qt
-      property string icon; property bool on: false; property bool wide: false
-      property string line1; property string line2
-      property string label: ""        // a name under an icon-only tile
-      signal toggled(); signal opened()
-      radius: Theme.tileRadius; height: 62      // the same height for the wide and the icon tiles, so the two columns line up
-      color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
-      readonly property color fill: on ? Theme.accentFill : Theme.surface
-      Behavior on color { ColorAnimation { duration: 140 } }
-      readonly property color fg: on ? Theme.accentText : Theme.text
-      readonly property color fgMuted: on ? Theme.textOnAccentMuted : Theme.textMuted
-      Rectangle {                                          // icon disc (wide tiles)
-        visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 34; height: 34; radius: 17
-        color: qt.on ? Qt.rgba(1, 1, 1, 0.16) : Theme.mix(Theme.surface, Theme.text, 0.10)
-        Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconMd; color: qt.fg } }
-      Icon { visible: !qt.wide; anchors.horizontalCenter: parent.horizontalCenter
-        y: qt.label !== "" ? 10 : (qt.height - height) / 2; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
-      Text { visible: !qt.wide && qt.label !== ""; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
-        anchors.bottomMargin: 7; textFormat: Text.PlainText; text: qt.label; color: qt.fg
-        font.pixelSize: 10; font.weight: Theme.weightLabel }
-      Column {
-        visible: qt.wide
-        anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 34 + Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s12
-        anchors.verticalCenter: parent.verticalCenter; spacing: 1
-        Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line1
-          color: qt.fg; font.pixelSize: 13; font.weight: Theme.weightLabel }
-        Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line2
-          color: qt.fgMuted; font.pixelSize: 11 }
-      }
-      MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onClicked: function (m) { if (m.button === Qt.RightButton) qt.opened(); else qt.toggled() } }
-    }
-
+    // ---------------- body: two columns ----------------
     Row {
-      id: toggles
+      id: body
       width: parent.width; spacing: Theme.s8
-      readonly property real gridW: 3 * 62 + 2 * Theme.s8   // the icon tiles are square: 62 x 62
+      readonly property int tile: 56                              // every tile is 56 px: the wide tiles, the squares, the media slot
+      readonly property int leftW: 3 * tile + 2 * Theme.s8        // three squares across, so the wide tiles match the grid
 
+      // ---- left: Wi-Fi, Bluetooth, then the six icon toggles ----
       Column {
-        width: toggles.width - toggles.gridW - Theme.s8; spacing: Theme.s8
+        id: leftCol
+        width: body.leftW; spacing: Theme.s8
+
+        // Wide tile: an icon disc, a name and a detail line. Also used for the 56 px squares (icon + label).
+        component QuickTile: Rectangle {
+          id: qt
+          property string icon; property bool on: false; property bool wide: false
+          property string line1; property string line2
+          property string label: ""        // a name under an icon-only tile
+          signal toggled(); signal opened()
+          radius: Theme.tileRadius; height: body.tile
+          color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
+          readonly property color fill: on ? Theme.accentFill : Theme.surface
+          Behavior on color { ColorAnimation { duration: 140 } }
+          readonly property color fg: on ? Theme.accentText : Theme.text
+          readonly property color fgMuted: on ? Theme.textOnAccentMuted : Theme.textMuted
+          Rectangle {                                          // icon disc (wide tiles)
+            visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 34; height: 34; radius: 17
+            color: qt.on ? Qt.rgba(1, 1, 1, 0.16) : Theme.mix(Theme.surface, Theme.text, 0.10)
+            Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconMd; color: qt.fg } }
+          Icon { visible: !qt.wide; anchors.horizontalCenter: parent.horizontalCenter
+            y: qt.label !== "" ? 10 : (qt.height - height) / 2; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
+          Text { visible: !qt.wide && qt.label !== ""; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
+            anchors.bottomMargin: 7; textFormat: Text.PlainText; text: qt.label; color: qt.fg
+            font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+          Column {
+            visible: qt.wide
+            anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 34 + Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s8
+            anchors.verticalCenter: parent.verticalCenter; spacing: 1
+            Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line1
+              color: qt.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+            Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line2
+              color: qt.fgMuted; font.pixelSize: Theme.typeLabel }
+          }
+          MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: function (m) { if (m.button === Qt.RightButton) qt.opened(); else qt.toggled() } }
+        }
+
         QuickTile {
           width: parent.width; wide: true; visible: Net.hasWifi
           icon: Net.enabled ? "wifi" : "wifi-off"; on: Net.enabled
@@ -144,44 +150,56 @@ Item {
                    : Bt.sorted.length + " paired")
           onToggled: Bt.toggle(); onOpened: IslandState.openWidget("bluetooth", root.screen())
         }
+
+        Grid {
+          columns: 3; spacing: Theme.s8; width: parent.width
+          QuickTile { width: body.tile; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
+            onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
+          QuickTile { width: body.tile; label: "Night"; icon: "moon"; on: Indicators.nightLight
+            onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
+          QuickTile { width: body.tile; label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
+            onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
+          QuickTile { width: body.tile; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
+            onToggled: Indicators.toggleDictation() }
+          // Trigger > Toggle in the menu had these two as well (the menu section is hidden in favour of this form).
+          QuickTile { width: body.tile; label: "Saver"; icon: "eye"; on: Indicators.screensaver
+            onToggled: Indicators.toggleScreensaver() }
+          QuickTile { width: body.tile; label: "Crash"; icon: "alert"; on: Indicators.crashCapture
+            onToggled: Indicators.toggleCrashCapture() }
+        }
       }
-      Grid {
-        columns: 3; spacing: Theme.s8; width: toggles.gridW
-        QuickTile { width: 62; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
-          onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
-        QuickTile { width: 62; label: "Night"; icon: "moon"; on: Indicators.nightLight
-          onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
-        QuickTile { width: 62; label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
-          onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
-        QuickTile { width: 62; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
-          onToggled: Indicators.toggleDictation() }
-        // Trigger > Toggle in the menu had these two as well (the menu section is hidden in favour of this form).
-        QuickTile { width: 62; label: "Saver"; icon: "eye"; on: Indicators.screensaver
-          onToggled: Indicators.toggleScreensaver() }
-        QuickTile { width: 62; label: "Crash"; icon: "alert"; on: Indicators.crashCapture
-          onToggled: Indicators.toggleCrashCapture() }
+
+      // ---- right: the media card, then volume and brightness ----
+      Column {
+        id: rightCol
+        width: parent.width - body.leftW - Theme.s8
+        height: leftCol.implicitHeight
+        spacing: Theme.s8
+
+        MediaCard {
+          id: media
+          width: parent.width
+          height: rightCol.height - sliders.height - Theme.s8   // fills the column beside the left stack
+          p: root.player
+        }
+        Column {
+          id: sliders
+          width: parent.width; spacing: Theme.s8
+          PillSlider {
+            width: parent.width
+            icon: "volume"
+            iconItem: VolumeIcon { level: Audio.volume; muted: Audio.muted; size: Theme.iconMd; color: Theme.accentText }
+            value: Audio.muted ? 0 : Audio.volume
+            onMoved: function (v) { Audio.setVolume(v) }
+          }
+          PillSlider {
+            visible: Brightness.available
+            width: parent.width
+            icon: "sun"; value: Brightness.level
+            onMoved: function (v) { Brightness.set(v) }
+          }
+        }
       }
     }
-
-    // ---------------- volume + brightness ----------------
-    Row {
-      width: parent.width; spacing: Theme.s8
-      PillSlider {
-        width: Brightness.available ? (parent.width - Theme.s8) / 2 : parent.width
-        icon: "volume"
-        iconItem: VolumeIcon { level: Audio.volume; muted: Audio.muted; size: Theme.iconMd; color: Theme.accentText }
-        value: Audio.muted ? 0 : Audio.volume
-        onMoved: function (v) { Audio.setVolume(v) }
-      }
-      PillSlider {
-        visible: Brightness.available
-        width: (parent.width - Theme.s8) / 2
-        icon: "sun"; value: Brightness.level
-        onMoved: function (v) { Brightness.set(v) }
-      }
-    }
-
-    // ---------------- media ----------------
-    MediaCard { width: parent.width; visible: root.player !== null; p: root.player }
   }
 }
