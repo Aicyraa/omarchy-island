@@ -428,3 +428,8 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 ## Edges and rail icons
 - The jagged edges came from Hyprland's blur: it blurs by alpha, so the stepped alpha at a translucent edge becomes a stepped blur boundary. With blur off the edge is smooth. The pill, capsules and layers are now also drawn with 4x multisampling, and the pill opacity is 0.90 (was 0.70), which hides most of the step while keeping the blur. Lower the opacity for more glass and more visible steps.
 - Menu rail icons are 20 px glyphs (was 17) in 22 px boxes.
+
+## Home labels, rail gaps, more transparency
+- Home's icon-only quick tiles have names under the icons: Focus, Night, Awake, Dictate, Saver, Crash.
+- The menu rail has 4 px between its icons (the boxes shrink to fit the same height).
+- The pill is 0.70 opacity again, like Alacritty, for more glass. With the blur on, the stepped edge from the previous change comes back at this opacity; raise `Theme.pill` alpha (0.90 hid most of it) if that bothers you.

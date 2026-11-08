@@ -151,7 +151,7 @@ Singleton {
   // the pill is a deep tone, not pure black (Material dark guidance: ~#121212, never #000). Lighter backgrounds are kept.
   property color pillBase: luminance(background) < 0.01 ? mix(background, surface, 0.65) : background
   // The same see-through as Alacritty (opacity 0.70), so the blur behind shows through every island widget.
-  property color pill: Qt.rgba(pillBase.r, pillBase.g, pillBase.b, 0.90)
+  property color pill: Qt.rgba(pillBase.r, pillBase.g, pillBase.b, 0.70)
 
   Behavior on background { ColorAnimation { duration: 250 } }
   Behavior on surface { ColorAnimation { duration: 250 } }

@@ -88,8 +88,9 @@ Item {
       id: qt
       property string icon; property bool on: false; property bool wide: false
       property string line1; property string line2
+      property string label: ""        // a name under an icon-only tile
       signal toggled(); signal opened()
-      radius: Theme.tileRadius; height: 48
+      radius: Theme.tileRadius; height: wide ? 48 : 62
       color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
       readonly property color fill: on ? Theme.accentFill : Theme.surface
       Behavior on color { ColorAnimation { duration: 140 } }
@@ -99,7 +100,11 @@ Item {
         visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 34; height: 34; radius: 17
         color: qt.on ? Qt.rgba(1, 1, 1, 0.16) : Theme.mix(Theme.surface, Theme.text, 0.10)
         Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconMd; color: qt.fg } }
-      Icon { visible: !qt.wide; anchors.centerIn: parent; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
+      Icon { visible: !qt.wide; anchors.horizontalCenter: parent.horizontalCenter
+        y: qt.label !== "" ? 10 : (qt.height - height) / 2; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
+      Text { visible: !qt.wide && qt.label !== ""; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
+        anchors.bottomMargin: 7; textFormat: Text.PlainText; text: qt.label; color: qt.fg
+        font.pixelSize: 10; font.weight: Theme.weightLabel }
       Column {
         visible: qt.wide
         anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 34 + Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s12
@@ -142,18 +147,18 @@ Item {
       }
       Grid {
         columns: 3; spacing: Theme.s8; width: toggles.gridW
-        QuickTile { width: 48; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
+        QuickTile { width: 48; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
           onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
-        QuickTile { width: 48; icon: "moon"; on: Indicators.nightLight
+        QuickTile { width: 48; label: "Night"; icon: "moon"; on: Indicators.nightLight
           onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
-        QuickTile { width: 48; icon: "coffee"; on: Indicators.stayAwake
+        QuickTile { width: 48; label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
           onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
-        QuickTile { width: 48; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
+        QuickTile { width: 48; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
           onToggled: Indicators.toggleDictation() }
         // Trigger > Toggle in the menu had these two as well (the menu section is hidden in favour of this form).
-        QuickTile { width: 48; icon: "eye"; on: Indicators.screensaver
+        QuickTile { width: 48; label: "Saver"; icon: "eye"; on: Indicators.screensaver
           onToggled: Indicators.toggleScreensaver() }
-        QuickTile { width: 48; icon: "alert"; on: Indicators.crashCapture
+        QuickTile { width: 48; label: "Crash"; icon: "alert"; on: Indicators.crashCapture
           onToggled: Indicators.toggleCrashCapture() }
       }
     }
