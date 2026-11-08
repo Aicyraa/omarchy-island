@@ -13,11 +13,12 @@ import "../menu-core/MenuModel.js" as MenuModel
 // Running an action closes the widget first (as Power does).
 WidgetPanel {
   id: root
-  preferredWidth: 720
+  preferredWidth: 520
   hint: "type to search · ↑/↓ move · Enter open or run · ←/Backspace up · Tab rail · Esc up or close"
 
-  // The fixed body: search (30) + gap (8) + body (350) + padding keeps the widget within the 420 px panel limit.
-  readonly property int bodyH: 350
+  // The fixed body. Search (30) + section gap (12) + body (340) + padding (2 x 16) is 398, within the 420 px panel
+  // limit, so the panel itself never scrolls: only the list does, and only when its rows overflow.
+  readonly property int bodyH: 340
   readonly property int railW: 48
   readonly property string glyphFamily: "JetBrainsMono Nerd Font"
   readonly property string homeGlyph: "󰋜"
@@ -271,13 +272,21 @@ WidgetPanel {
       clip: true
       model: root.rows
       currentIndex: root.sel
-      interactive: false
+      interactive: contentHeight > height
       boundsBehavior: Flickable.StopAtBounds
       // One highlight, moved quickly to the selected row (no delay, no panel-wide scroll).
       highlightFollowsCurrentItem: true
       highlightMoveDuration: IslandState.reducedMotion ? 0 : 110
       highlight: Rectangle { radius: 12; color: root.railFocus ? "transparent" : Theme.surfaceRaised }
       onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+      // A thin indicator, shown only while the rows run past the body.
+      Rectangle {
+        visible: list.contentHeight > list.height + 1
+        anchors.right: parent.right; anchors.rightMargin: 2
+        width: 3; radius: 2; color: Theme.mix(Theme.surface, Theme.text, 0.35)
+        height: Math.max(24, list.height * list.height / list.contentHeight)
+        y: (list.height - height) * (list.contentY / Math.max(1, list.contentHeight - list.height))
+      }
       section.property: "section"
       section.criteria: ViewSection.FullString
       section.delegate: Item {
