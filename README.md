@@ -303,7 +303,7 @@ The hover form works the same way: when the pointer is reported gone, `closeTime
 
 ## Bar layout: three parts
 - **Centre pill** (attached to the top edge, the one that morphs into widgets, the hover form and the HUD): the clock only.
-- **Left capsule**: workspaces 1-5 are always shown as dots; workspaces beyond 5 that exist (or you are on) are appended, with a small "..." marker where the numbering skips (1 2 3 4 5 ... 8). The focused workspace is one short pill that glides between dots (its leading edge on a fast spring, the trailing edge on a slower one, so it stretches while travelling); new slots scale in. Test data: `ISLAND_FAKE_WS=1,2,3,8 ISLAND_FAKE_FOCUS=8`.
+- **Left capsule**: workspaces 1-5 are always shown as dots; workspaces beyond 5 that exist (or you are on) are appended, with a small "..." marker where the numbering skips (1 2 3 4 5 ... 8). The focused workspace is one short pill that glides between dots (its leading edge on a fast spring, the trailing edge on a slower one, so it stretches while travelling); new slots scale in. Clicking a dot switches to that workspace; clicking the capsule's padding around the dots opens the workspace overview (`omarchy-shell -q io.github.aicyraa.workspace-gallery.perspective toggle`). Test data: `ISLAND_FAKE_WS=1,2,3,8 ISLAND_FAKE_FOCUS=8`.
 - **Right capsule**: the battery icon only (click opens the battery widget). No Wi-Fi icon and no status icons (Focus, Night light, Awake, dictation, update, **screen recording**) in the bar; they are in the hover form. The exception is a pulsing red dot in the right capsule while screen recording (click it to stop).
 - The capsules (20 px tall) tuck 6 px under the pill's concave ears (the ears are drawn above them) and follow its springing edges, so they are pushed outward when the pill grows into a widget and slide back with it. The fixed window is `Theme.windowWidth` (1000) wide; clicks pass through everywhere except the pill zone and the two capsules.
 - **Audio visualizer** (ported from the previous bar's clock widget): while a player is playing, five 2 px bars (cava, `assets/viz-bar.conf`, same 12 px / sqrt scaling and 320 ms slide-scale-fade entrance as before) appear on the left of the time and the pill makes room. cava runs only while a track plays and the idle form is showing. `ISLAND_FORCE_VIZ=1` forces it on for testing.
@@ -452,3 +452,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Taller menu, sidebar spacing
 - The menu body is 396 px (the panel cap is 470 px and the layer window 570 px), so the sidebar has room for 32 px boxes with 8 px between them, vertically. The list shows more rows.
+
+## Smaller sidebar icons
+- Sidebar glyphs are 17 px (were 20) and app icons 18 px (were 22), in the same 32 px boxes.
