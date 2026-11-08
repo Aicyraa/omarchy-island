@@ -261,10 +261,13 @@ WidgetPanel {
             Image { visible: railItem.modelData.kind === "app"; anchors.fill: parent; sourceSize: Qt.size(36, 36)
               asynchronous: true; smooth: true; mipmap: true
               source: railItem.modelData.kind === "app" && railItem.modelData.icon ? (Quickshell.iconPath(railItem.modelData.icon, true) || "") : "" }
-            Text { visible: railItem.modelData.kind !== "app"; anchors.fill: parent; horizontalAlignment: Text.AlignHCenter
-              verticalAlignment: Text.AlignVCenter; textFormat: Text.PlainText
-              text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
-              font.family: root.glyphFamily; font.pixelSize: 15 }
+            // Centred by its ink, not its advance: nerd-font glyphs have uneven side bearings, so a centred advance sits off-centre.
+            Text { id: railGlyph; visible: railItem.modelData.kind !== "app"
+              textFormat: Text.PlainText; text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
+              font.family: root.glyphFamily; font.pixelSize: 15
+              x: (parent.width - railInk.boundingRect.width) / 2 - railInk.boundingRect.x
+              y: (parent.height - railInk.boundingRect.height) / 2 - railInk.boundingRect.y
+              TextMetrics { id: railInk; font: railGlyph.font; text: railGlyph.text } }
           }
           MouseArea { id: railArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
             onClicked: { root.railFocus = false; root.selectRail(modelData.id) } }
