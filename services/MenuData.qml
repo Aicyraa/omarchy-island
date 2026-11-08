@@ -119,7 +119,85 @@ Singleton {
   }
 
   // Re-check everything (called when the menu opens). Cheap enough: one batch of read-only checks.
-  function refresh() { rebuild() }
+  function refresh() { rebuild(); bindsReader.running = true }
+
+  // ---- shortcuts: Hyprland's binds, matched by their description ("Background switcher", "Screenshot") ----
+  property var shortcuts: ({})          // lower-case description -> "Super Ctrl Space"
+  Process {
+    id: bindsReader
+    command: ["hyprctl", "binds", "-j"]
+    stdout: StdioCollector { onStreamFinished: {
+      try {
+        var binds = JSON.parse(String(text || "[]")), out = ({})
+        for (var i = 0; i < binds.length; i++) {
+          var d = String(binds[i].description || "").toLowerCase()
+          if (d === "" || out[d] !== undefined) continue
+          out[d] = root.shortcutText(binds[i].modmask, binds[i].key)
+        }
+        root.shortcuts = out
+      } catch (e) {}
+    } }
+  }
+  function shortcutText(mask, key) {
+    var m = Number(mask) || 0, parts = []
+    if (m & 64) parts.push("Super")
+    if (m & 4) parts.push("Ctrl")
+    if (m & 8) parts.push("Alt")
+    if (m & 1) parts.push("Shift")
+    var names = { SPACE: "Space", ESCAPE: "Esc", PRINT: "Print", RETURN: "Enter", TAB: "Tab" }
+    var k = String(key || "").toUpperCase()
+    parts.push(names[k] || (k.length === 1 ? k : k.charAt(0) + k.slice(1).toLowerCase()))
+    return parts.join(" ")
+  }
+  function shortcutFor(entry) {
+    if (!entry || entry.kind !== "action") return ""
+    var label = String(entry.label || "").toLowerCase()
+    if (label === "") return ""
+    if (shortcuts[label] !== undefined) return shortcuts[label]
+    for (var k in shortcuts) if (k.indexOf(label) === 0) return shortcuts[k]
+    return ""
+  }
+
+  // ---- pins, the last category, and what the install check hid ----
+  property var pins: []
+  property string lastRail: "home"
+  function togglePin(id) {
+    pins = pins.indexOf(id) >= 0 ? pins.filter(function (p) { return p !== id }) : pins.concat([id])
+    Cache.put("menu-pins", pins)
+    revision += 1
+  }
+  function pinnedRows() {
+    var out = []
+    for (var i = 0; i < pins.length; i++) { var e = items[pins[i]]; if (e && visible(e)) out.push(e) }
+    return out
+  }
+  function setLastRail(id) { lastRail = id; Cache.put("menu-last-rail", id) }
+  function hiddenInstallCount() {
+    var n = 0
+    for (var k in disabledResults) if (disabledResults[k] && String(k).indexOf("install.") === 0) n++
+    return n
+  }
+  // The rows under a category (any depth), ranked like the search.
+  function underScope(entry, scope) {
+    var p = entry.parent, guard = 0
+    while (p && guard++ < 20) {
+      if (p === scope) return true
+      var pe = items[p]
+      p = pe ? pe.parent : null
+    }
+    return false
+  }
+  function searchWithin(scope, query, limit) {
+    var hits = []
+    for (var i = 0; i < itemOrder.length; i++) {
+      var e = items[itemOrder[i]]
+      if (!e || !visible(e) || !underScope(e, scope)) continue
+      if (!MenuModel.matchesQuery(e, query, true)) continue
+      hits.push({ entry: e, score: MenuModel.searchScore(items, e, query) })
+    }
+    hits.sort(function (a, b) { return a.score - b.score })
+    return hits.slice(0, limit || 60).map(function (h) { return h.entry })
+  }
   Component.onCompleted: { rebuild(); loadUsage() }
 
   // ---- queries used by the widget ----
@@ -176,6 +254,10 @@ Singleton {
     var c = Cache.get("menu-usage")
     if (c && typeof c === "object" && Object.keys(c).length > 0) setUsage(c)
     else compassUsage.reload()
+    var p = Cache.get("menu-pins"), l = Cache.get("menu-last-rail")
+    if (Array.isArray(p)) pins = p
+    if (typeof l === "string" && l !== "") lastRail = l
+    bindsReader.running = true
   }
   FileView {
     id: compassUsage

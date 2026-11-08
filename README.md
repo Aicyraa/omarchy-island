@@ -390,3 +390,16 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - `deploy.py` copies the shim too (`--no-menu` skips it).
 - Compass (`io.github.aicyraa.compass-menu`) is disabled and still installed (milestone 8 removes it after a few days of use). The config was backed up to `~/.config/omarchy/shell.json.pre-island-menu.bak`. Rollback: `omarchy plugin disable io.github.aicyraa.island-menu && omarchy plugin enable io.github.aicyraa.compass-menu`, or put the backup back.
 - Checked live: ping; toggle opens and closes; `system` redirects to Power; the island closing the menu clears the shim's state; a dmenu select cancelled by closing writes only the done file (no selection file); `omarchy-menu summon system`. Not checked: choosing an item in a dmenu list (Enter) and a real Esc press, since they need keyboard focus in the island.
+
+## Menu improvements (after the Compass-style layout)
+- Shortcut hints: an action row shows its Hyprland binding (read with `hyprctl binds -j`, matched by the binding's description, e.g. "Screenshot" shows Print).
+- Pins: Ctrl+P pins or unpins the selected row; pinned rows head Home. Stored in the Cache.
+- `/` scopes the search to the open category (`/ghost` searches only inside Apps when Apps is open).
+- The last category is remembered for a menu opened without a route.
+- Toggle states refresh every 3 s while the menu is open.
+- The Install page's footer says how many installed apps the check hid.
+- Hovering a rail item names it in the search row's right side.
+- The active rail item has an accent bar; the footer lists the keys.
+- Typed letters are bold in the matching rows (in order, fuzzy).
+- Section labels (Recent, Toggles, Pinned) stick to the top while the list scrolls.
+- Reduced motion turns off the rail colour fade and the highlight move.

@@ -17,12 +17,14 @@ WidgetPanel {
   pad: 8                                  // a tighter edge: the rail and the list sit close to the panel edges
   hint: "type to search · ↑/↓ move · Enter open or run · ←/Backspace up · Tab rail · Esc up or close"
 
-  // The fixed body. Search (30) + section gap (12) + body (340) + padding (2 x 16) is 398, within the 420 px panel
-  // limit, so the panel itself never scrolls: only the list does, and only when its rows overflow.
-  readonly property int bodyH: 340
+  // The fixed body. Search (30) + gap (12) + body (326) + footer (6 + 14) + padding (2 x 8) is 404, within the 420 px
+  // panel limit, so the panel itself never scrolls: only the list does, and only when its rows overflow.
+  readonly property int bodyH: 326
   readonly property int railW: 44
   readonly property string glyphFamily: "JetBrainsMono Nerd Font"
   readonly property string homeGlyph: "󰋜"
+  readonly property string railLabel: railHover !== "" ? railHover : ""
+  property string railHover: ""           // the rail item under the pointer (its name shows in the search row)
 
   property string route: "root"           // the menu being shown; "root" = a rail category (or Home)
   property string railId: "home"          // with route "root": the rail item whose rows are shown
@@ -52,6 +54,7 @@ WidgetPanel {
     MenuData.revision
     Indicators.nightLight; Indicators.stayAwake; Indicators.dnd
     if (dmenu) return dmenuRows()
+    if (query.charAt(0) === "/") return MenuData.searchWithin(route === "root" ? railId : route, qText(), 60)
     if (query !== "") return MenuData.search(query, 60)
     if (route === "root" && railId === "home") return homeRows()
     return MenuData.childrenOf(route === "root" ? railId : route)
@@ -59,8 +62,10 @@ WidgetPanel {
 
   function homeRows() {
     var out = []
+    var pinned = MenuData.pinnedRows()
+    for (var p = 0; p < pinned.length; p++) out.push(withSection(pinned[p], "Pinned"))
     var recent = MenuData.recentRows()
-    for (var i = 0; i < recent.length; i++) out.push(withSection(recent[i], "Recent"))
+    for (var i = 0; i < recent.length; i++) if (pinned.indexOf(recent[i]) < 0) out.push(withSection(recent[i], "Recent"))
     out.push(toggleRow("toggle.nightlight", "Night light", "moon", Indicators.nightLight, "Toggles"))
     out.push(toggleRow("toggle.stayawake", "Stay awake", "coffee", Indicators.stayAwake, ""))
     out.push(toggleRow("toggle.notifications", "Notifications", Indicators.dnd ? "bell-off" : "bell", !Indicators.dnd, ""))
@@ -73,6 +78,21 @@ WidgetPanel {
     for (var k in entry) o[k] = entry[k]
     o.section = section
     return o
+  }
+  // The query without the "/" that scopes a search to the open category.
+  function qText() { return query.charAt(0) === "/" ? query.slice(1).trim() : query.trim() }
+  // The label with the typed letters in bold (fuzzy: in order), HTML-escaped.
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") }
+  function markedLabel(label, q) {
+    var s = String(label || ""), needle = String(q || "").toLowerCase().replace(/\s+/g, "")
+    if (needle === "") return esc(s)
+    var lower = s.toLowerCase(), out = "", j = 0
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i)
+      if (j < needle.length && lower.charAt(i) === needle.charAt(j)) { out += "<b>" + esc(ch) + "</b>"; j++ }
+      else out += esc(ch)
+    }
+    return out
   }
   function toggleRow(id, label, icon, on, section) {
     return { id: id, kind: "toggle", label: label, icon: icon, checked: on, section: section, description: on ? "On" : "Off" }
@@ -107,7 +127,7 @@ WidgetPanel {
     root.forceActiveFocus()
     if (dmenu) { route = "root"; return }
     route = MenuData.pendingRoute || "root"
-    if (route === "root") railId = "home"
+    if (route === "root") railId = MenuData.lastRail || "home"
     else railId = MenuModel.topLevelFor(MenuData.items, route)
   }
   Connections { target: MenuData; function onOpenSerialChanged() { root.applyOpen() } }
@@ -127,6 +147,7 @@ WidgetPanel {
   function selectRail(id) {
     query = ""; sel = 0
     route = "root"; railId = id
+    MenuData.setLastRail(id)
   }
   function moveRail(delta) {
     var ids = railRows
@@ -159,8 +180,11 @@ WidgetPanel {
     if (e.kind === "toggle") return ""
     var tag = MenuModel.tagFor(e.id)
     if (tag !== "") return tag
+    var key = MenuData.shortcutFor(e)
+    if (key !== "") return key
     return navigable(e) ? "›" : ""
   }
+  function pinnedOn(e) { return !!e && MenuData.pins.indexOf(e.id) >= 0 }
 
   Keys.onPressed: function (e) {
     var n = rows.length
@@ -186,6 +210,11 @@ WidgetPanel {
     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (rows[sel]) open(rows[sel]); e.accepted = true }
     else if (e.key === Qt.Key_Right) { if (rows[sel] && (navigable(rows[sel]) || rows[sel].kind === "toggle")) open(rows[sel]); e.accepted = true }
     else if (e.key === Qt.Key_Tab) { railFocus = true; e.accepted = true }
+    else if (e.key === Qt.Key_P && (e.modifiers & Qt.ControlModifier)) {
+      var pr = rows[sel]
+      if (pr && pr.kind !== "toggle" && pr.kind !== "dmenu") MenuData.togglePin(pr.id)
+      e.accepted = true
+    }
     else if (e.key === Qt.Key_Delete) {
       var r = rows[sel]
       if (r && r.section === "Recent" && query === "") { MenuData.forgetRecent(r.id); sel = Math.max(0, Math.min(sel, rows.length - 2)) }
@@ -225,9 +254,12 @@ WidgetPanel {
         color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: 12; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
     }
     Text { id: count; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: root.dmenu ? "" : (root.rows.length + (root.rows.length === 1 ? " item" : " items"))
+      text: root.dmenu ? "" : (root.railHover !== "" ? root.railHover : (root.rows.length + (root.rows.length === 1 ? " item" : " items")))
       color: Theme.textMuted; font.pixelSize: 11 }
   }
+
+  // Toggle states can change outside the menu: re-read them while it is open.
+  Timer { interval: 3000; repeat: true; running: true; onTriggered: Indicators.refresh() }
 
   // ---- body: rail (fixed) + list (scrolls on its own) ----
   Item {
@@ -247,13 +279,15 @@ WidgetPanel {
           required property int index
           readonly property bool active: modelData.id === root.highlightedRail
           width: rail.width; height: root.railItemH
+          // The active category: an accent bar on the rail's inner edge, and its box.
+          Rectangle { visible: railItem.active; x: 3; anchors.verticalCenter: parent.verticalCenter; width: 3; height: 14; radius: 2; color: Theme.accentFill }
           // A square, rounded icon box, centred in its row of the rail.
           Rectangle {
             width: Math.min(root.railItemH, root.railW - 8); height: width
             anchors.centerIn: parent
             radius: 10
             color: railItem.active ? Theme.surfaceRaised : (railArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.06) : "transparent")
-            Behavior on color { ColorAnimation { duration: 90 } }
+            Behavior on color { ColorAnimation { duration: IslandState.reducedMotion ? 0 : 90 } }
             FocusRing { on: root.railFocus && railItem.active; radius: 10 }
           }
           Item {
@@ -270,6 +304,8 @@ WidgetPanel {
               TextMetrics { id: railInk; font: railGlyph.font; text: railGlyph.text } }
           }
           MouseArea { id: railArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onEntered: root.railHover = String(modelData.label || "")
+            onExited: root.railHover = ""
             onClicked: { root.railFocus = false; root.selectRail(modelData.id) } }
         }
       }
@@ -302,6 +338,7 @@ WidgetPanel {
       }
       section.property: "section"
       section.criteria: ViewSection.FullString
+      section.labelPositioning: ViewSection.CurrentLabelAtStart
       section.delegate: Item {
         required property string section
         width: list.width
@@ -335,8 +372,10 @@ WidgetPanel {
         Column {
           x: lead.x + 20 + Theme.s12; anchors.verticalCenter: parent.verticalCenter
           width: parent.width - x - 96
-          Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: rowItem.modelData.label || ""; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
+          Text { width: parent.width; elide: Text.ElideRight
+            textFormat: root.qText() !== "" ? Text.StyledText : Text.PlainText
+            text: root.qText() !== "" ? root.markedLabel(rowItem.modelData.label, root.qText()) : (rowItem.modelData.label || "")
+            color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel }
           Text { visible: text !== ""; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
             text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: 11 }
         }
@@ -346,10 +385,20 @@ WidgetPanel {
             name: "check"; color: Theme.text; strokeWidth: 2 }
           Text { visible: text !== ""; textFormat: Text.PlainText; text: root.trailingFor(rowItem.modelData)
             color: Theme.textMuted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+          Text { visible: root.pinnedOn(rowItem.modelData); textFormat: Text.PlainText; text: "pinned"
+            color: Theme.textMuted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
         }
       }
       Text { anchors.centerIn: parent; visible: list.count === 0; textFormat: Text.PlainText
         text: root.query !== "" ? "No match" : "Nothing here"; color: Theme.textMuted; font.pixelSize: 13 }
     }
   }
+
+  // Footer: the keys, or on the Install page, how many installed apps the check hid.
+  readonly property int hiddenInstallCount: { MenuData.revision; return MenuData.hiddenInstallCount() }
+  Text { y: root.bodyH + 6; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+    text: root.dmenu ? "↑↓ move · ⏎ choose · esc cancel"
+          : ((root.route.indexOf("install") === 0 || root.railId === "install") && root.hiddenInstallCount > 0)
+            ? root.hiddenInstallCount + " already installed, hidden" : "↑↓ move · ⏎ open · ⇥ rail · ctrl+p pin · esc back"
+    color: Theme.textMuted; font.pixelSize: 11 }
 }
