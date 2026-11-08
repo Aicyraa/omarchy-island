@@ -433,3 +433,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 - Home's icon-only quick tiles have names under the icons: Focus, Night, Awake, Dictate, Saver, Crash.
 - The menu rail has 4 px between its icons (the boxes shrink to fit the same height).
 - The pill is 0.70 opacity again, like Alacritty, for more glass. With the blur on, the stepped edge from the previous change comes back at this opacity; raise `Theme.pill` alpha (0.90 hid most of it) if that bothers you.
+
+## Home cards line up; Audio has no restart button
+- Home's quick tiles are all 62 px tall, so the Wi-Fi and Bluetooth cards line up with the grid of icon tiles beside them.
+- The Audio widget no longer has its restart button (the stock restart action is still in the menu's Update > Hardware).

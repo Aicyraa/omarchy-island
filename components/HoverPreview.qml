@@ -90,7 +90,7 @@ Item {
       property string line1; property string line2
       property string label: ""        // a name under an icon-only tile
       signal toggled(); signal opened()
-      radius: Theme.tileRadius; height: wide ? 48 : 62
+      radius: Theme.tileRadius; height: 62      // the same height for the wide and the icon tiles, so the two columns line up
       color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
       readonly property color fill: on ? Theme.accentFill : Theme.surface
       Behavior on color { ColorAnimation { duration: 140 } }

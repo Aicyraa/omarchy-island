@@ -116,10 +116,4 @@ WidgetPanel {
     Side { isInput: false }
     Side { isInput: true }
   }
-
-  // Restarts the PipeWire services and recovers stuck USB audio (the stock Update > Hardware > Audio action).
-  Item {
-    width: parent.width; height: 36
-    IconButton { anchors.right: parent.right; icon: "restart"; onClicked: Cmd.run(["omarchy-restart-audio"]) }
-  }
 }
