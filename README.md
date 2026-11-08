@@ -440,3 +440,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Home tiles are square
 - The six icon tiles are 62 x 62, so the grid is 202 px wide. The Wi-Fi and Bluetooth cards are narrower as a result; long Bluetooth names truncate.
+
+## Sidebar gaps
+- The menu sidebar has 8 px between its icons (`railGap`); the icon boxes shrink to keep the rail's height.

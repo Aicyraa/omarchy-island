@@ -45,7 +45,8 @@ WidgetPanel {
     MenuData.revision
     return [{ id: "home", label: "Home", icon: homeGlyph, kind: "home" }].concat(MenuData.childrenOf("root"))
   }
-  readonly property int railItemH: Math.max(24, Math.min(40, Math.floor((bodyH - (railRows.length - 1) * 4) / Math.max(1, railRows.length))))
+  readonly property int railGap: 8
+  readonly property int railItemH: Math.max(24, Math.min(40, Math.floor((bodyH - (railRows.length - 1) * railGap) / Math.max(1, railRows.length))))
   readonly property string highlightedRail: route === "root" ? railId : MenuModel.topLevelFor(MenuData.items, route)
 
   // The rows. Toggles are re-read when their state changes, so the checks follow the switch.
@@ -286,7 +287,7 @@ WidgetPanel {
       visible: !root.dmenu
       width: root.railW; height: root.bodyH; color: Theme.surface; radius: 16
       Column {
-      anchors.fill: parent; spacing: 4
+      anchors.fill: parent; spacing: root.railGap
       Repeater {
         model: root.railRows
         delegate: Item {
