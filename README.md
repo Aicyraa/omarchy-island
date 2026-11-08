@@ -458,3 +458,7 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Sidebar top and bottom padding
 - The sidebar has 8 px above its first icon and below its last one (`railPad`). Its boxes are 30 px to fit.
+
+## Menu focus animation matches the lists
+- The menu's list uses the shared sliding highlight (`ListHighlight`, the same as Notifications, Wi-Fi, Bluetooth, Audio and Look), not its own fast highlight. Rows register with `FocusTarget`.
+- Tile-based widgets (Power, Display, the Home tiles) keep their ring focus (`FocusRing`, 200 ms ease-out), since their items are a grid, not a list.

@@ -339,11 +339,9 @@ WidgetPanel {
       currentIndex: root.sel
       interactive: contentHeight > height
       boundsBehavior: Flickable.StopAtBounds
-      // One highlight, moved quickly to the selected row (no delay, no panel-wide scroll).
-      highlightFollowsCurrentItem: true
-      highlightMoveDuration: IslandState.reducedMotion ? 0 : 110
-      // The highlight stops short of the scroll indicator's lane, so the indicator never sits on a row.
-      highlight: Rectangle { x: 0; width: list.width; radius: 12; color: root.railFocus ? "transparent" : Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.18) }
+      // The shared sliding focus highlight (the same as the other widgets' lists): rows register with the panel,
+      // and ListHighlight moves it. It lives in the scrolled content, so it scrolls with the rows.
+      ListHighlight { host: root; container: list.contentItem; content: list.contentItem }
       onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
       section.property: "section"
       section.criteria: ViewSection.FullString
@@ -369,6 +367,7 @@ WidgetPanel {
         required property int index
         width: list.width; height: Theme.rowHeight
         opacity: 0
+        FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: rowItem }
         // The rows fade in one after another when the list is built (the first eight), and at once with reduced motion.
         SequentialAnimation on opacity {
           running: true
