@@ -443,3 +443,6 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Sidebar gaps
 - The menu sidebar has 8 px between its icons (`railGap`); the icon boxes shrink to keep the rail's height.
+
+## Sidebar gaps, wider
+- The sidebar icon boxes are a fixed 24 px, and the gap between them takes the rest of the rail's height (about 9 px for ten items, never under 4 px).
