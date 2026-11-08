@@ -33,17 +33,20 @@ WidgetPanel {
     id: card
     property string icon; property string label; property string value; property string unit
     property var hist: []; property color tint: Theme.accentInk
-    width: (parent.width - 2 * Theme.s12) / 3; height: 100; radius: Theme.tileRadius + 4; color: Theme.surface
-    Icon { x: Theme.s16; y: Theme.s16; name: card.icon; size: Theme.iconMd; color: card.tint }
-    Text { x: Theme.s16 + Theme.iconMd + Theme.s8; y: Theme.s16; height: Theme.iconMd; verticalAlignment: Text.AlignVCenter
-      textFormat: Text.PlainText; text: card.label; color: Theme.textMuted; font.pixelSize: 12 }
+    width: (parent.width - 2 * Theme.s12) / 3; height: 104; radius: Theme.tileRadius; color: Theme.surface
+    // An icon chip (the same as the list rows) and the label beside it.
+    Rectangle { x: Theme.s16; y: Theme.s16; width: 30; height: 30; radius: Theme.radiusChip
+      color: Qt.rgba(card.tint.r, card.tint.g, card.tint.b, 0.16)
+      Icon { anchors.centerIn: parent; name: card.icon; size: Theme.iconSm + 2; color: card.tint } }
+    Text { x: Theme.s16 + 30 + Theme.s8; y: Theme.s16; height: 30; verticalAlignment: Text.AlignVCenter
+      textFormat: Text.PlainText; text: card.label; color: Theme.textMuted; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
     // value and unit share a baseline
-    Item { x: Theme.s16; y: 42; width: parent.width - 2 * Theme.s16; height: 34
-      Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text; font.pixelSize: 26; font.weight: Theme.weightStrong }
+    Item { x: Theme.s16; y: 54; width: parent.width - 2 * Theme.s16; height: 34
+      Text { id: val; textFormat: Text.PlainText; text: card.value; color: Theme.text; font.pixelSize: Theme.typeValue; font.weight: Theme.weightStrong }
       Text { anchors.left: val.right; anchors.leftMargin: 4; anchors.baseline: val.baseline; textFormat: Text.PlainText
-        text: card.unit; color: Theme.textMuted; font.pixelSize: 12 } }
+        text: card.unit; color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
     Sparkline { x: Theme.s16; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
-      width: parent.width - 2 * Theme.s16; height: 26; samples: card.hist; color: card.tint }
+      width: parent.width - 2 * Theme.s16; height: 22; samples: card.hist; color: card.tint }
   }
 
   Row {
@@ -67,10 +70,10 @@ WidgetPanel {
   // ---- busiest processes (share of the whole CPU): a letter badge, the name, a bar and the numbers ----
   Column {
     width: parent.width; spacing: Theme.s8; visible: root.procs.length > 0
-    Text { textFormat: Text.PlainText; text: "Busiest processes"; color: Theme.textMuted; font.pixelSize: 11 }
+    Text { textFormat: Text.PlainText; text: "Busiest processes"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
     Repeater { model: root.procs
       delegate: Rectangle { required property var modelData; required property int index
-        width: parent.width; height: 38; radius: Theme.tileRadius - 4; color: Theme.surface; antialiasing: true
+        width: parent.width; height: 40; radius: Theme.radiusChip; color: Theme.surface; antialiasing: true
         readonly property color tint: modelData.cpu >= 50 ? Theme.dangerInk : (modelData.cpu >= 25 ? Theme.warningInk : Theme.accentInk)
         Rectangle { id: badge; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; antialiasing: true
           color: Theme.mix(Theme.surface, parent.tint, 0.22)

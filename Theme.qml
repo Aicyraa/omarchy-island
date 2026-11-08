@@ -96,6 +96,14 @@ Singleton {
   readonly property int sliderHeight: 44
   readonly property int tileHeight: 56
   readonly property int tileRadius: 18
+  // The shared type scale (use these instead of raw pixel sizes): caption 10, label 11, body 12, title 14, value 26.
+  readonly property int typeCaption: 10
+  readonly property int typeLabel: 11
+  readonly property int typeBody: 12
+  readonly property int typeTitle: 14
+  readonly property int typeValue: 26
+  // Shared corner radii: cards use tileRadius, chips and small rows use radiusChip.
+  readonly property int radiusChip: 10
   readonly property int pillRadius: IslandState.cornerRadius + 4   // matches the Compass menu
   readonly property int windowWidth: 1000       // wide enough for the widest pill (720) plus a capsule on each side
   readonly property int windowHeight: 570       // the fixed layer window: taller than any pill (widgets <= panelMaxHeight, hover form with a player ~435)

@@ -476,3 +476,9 @@ The sliding highlight behind the rows moved out of `WidgetPanel` into `component
 
 ## Focus highlight clear of the sidebar
 - The focus highlight follows an inset box in each row, so it starts 12 px from the sidebar (it reached it before).
+
+## Consistency: tokens, and the System widget
+- Removed the line under the menu's Recent heading.
+- Shared tokens in `Theme`: a type scale (`typeCaption` 10, `typeLabel` 11, `typeBody` 12, `typeTitle` 14, `typeValue` 26) and `radiusChip` 10 next to `tileRadius` 18. New and reworked widgets should use these instead of raw numbers.
+- The System widget uses them: cards get an accent icon chip like the list rows, value and unit have clearer hierarchy, the process rows use the chip radius.
+- Not yet swept: about 11 font sizes (9 to 46 px) and about 20 hard-coded radii are still used across the other widgets.

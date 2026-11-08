@@ -352,11 +352,6 @@ WidgetPanel {
         height: section === "" ? 0 : (section === "divider" ? 12 : 26)
         Rectangle { visible: section === "divider"; x: Theme.s8; width: parent.width - 2 * Theme.s8; height: 1
           anchors.verticalCenter: parent.verticalCenter; color: Theme.mix(Theme.surface, Theme.text, 0.14) }
-        // A hairline that fades out to the right, under the label.
-        Rectangle { visible: section !== "" && section !== "divider"; x: Theme.s8; y: parent.height - 3; width: parent.width - 2 * Theme.s8; height: 1
-          gradient: Gradient { orientation: Gradient.Horizontal
-            GradientStop { position: 0; color: Theme.mix(Theme.surface, Theme.text, 0.18) }
-            GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0) } } }
         Text { visible: section !== "" && section !== "divider"; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText; text: section.toUpperCase(); color: Theme.textMuted
           font.pixelSize: 10; font.weight: Theme.weightStrong; font.letterSpacing: 1.2 }
