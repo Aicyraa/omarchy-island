@@ -106,7 +106,8 @@ PanelWindow {
   // widget it is EXACTLY the pill (plus the ears), so clicks just outside pass through.
   // Clickable: the centre zone and the two side capsules; everything else passes clicks through.
   // Published for the click catcher (see ClickCatcher.qml): the zone in this screen's coordinates.
-  readonly property rect zoneRect: Qt.rect(zone.x, zone.y, zone.width, zone.height)
+  // The window is centred on the screen (it anchors to the top edge only), so add its offset to get screen coordinates.
+  readonly property rect zoneRect: Qt.rect(Math.round((win.screen.width - win.width) / 2) + zone.x, zone.y, zone.width, zone.height)
   onZoneRectChanged: IslandState.setZone(screenName, zoneRect)
   mask: Region { item: zone; Region { item: leftSat } Region { item: rightSat } }
   Item {
