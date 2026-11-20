@@ -3,26 +3,30 @@ import Quickshell.Io
 import ".."
 import "../services"
 
-// Battery: charge, state, time remaining, and the power profile. Metrics with no
-// data are hidden (never a dash). Keys: ←/→ or 1-3 pick a profile.
+// Battery: asymmetrical Apple-style dashboard — dominant charge hero card on the left,
+// stacked Wattage + Health cards on the right, and a unified segmented power-profile dock below.
+// Keys: ←/→ or 1-3 pick a profile, Esc close.
 WidgetPanel {
   id: root
-  preferredWidth: 480
+  preferredWidth: 540
   hint: "←/→ or 1-3 profile · Esc close"
 
   readonly property var profiles: [
     { id: "power-saver", label: "Saver", icon: "moon" },
     { id: "balanced", label: "Balanced", icon: "battery" },
-    { id: "performance", label: "Perf", icon: "bolt" }
+    { id: "performance", label: "Performance", icon: "bolt" }
   ]
   property string active: "balanced"
-  property real healthUpower: 0                // read once from `upower -i` when Quickshell has no value
+  property real healthUpower: 0
   readonly property real healthPct: Power.health > 0 ? Power.health : healthUpower
-  readonly property int activeIndex: { for (var i = 0; i < profiles.length; i++) if (profiles[i].id === active) return i; return 1 }
+  readonly property int activeIndex: {
+    for (var i = 0; i < profiles.length; i++) if (profiles[i].id === active) return i
+    return 1
+  }
+  readonly property color chargeColor: Power.low ? Theme.dangerInk : (Power.charging || Power.full ? Theme.successInk : Theme.accentFill)
 
   function setProfile(i) {
     active = profiles[i].id
-    // Omarchy remembers one profile for AC and one for battery.
     Cmd.run(["omarchy-powerprofiles-set", Power.charging || Power.full ? "ac" : "battery", active])
   }
   Keys.onPressed: function (e) {
@@ -31,53 +35,172 @@ WidgetPanel {
     else if (e.key >= Qt.Key_1 && e.key <= Qt.Key_3) { setProfile(e.key - Qt.Key_1); e.accepted = true }
   }
 
-  Text { visible: !Power.present; textFormat: Text.PlainText
-    text: "No battery in this machine"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Text {
+    visible: !Power.present; textFormat: Text.PlainText
+    text: "No battery in this machine"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle
+  }
 
-  // Header line: the big percentage and its state on the left; "Charging at"/"Draw" and "Health" on the same line, on the right,
-  // as two little cards. Metrics with no data are not drawn.
-  Item {
-    visible: Power.present; width: parent.width; height: 56
-    property real shown: Power.level * 100
-    Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
-    Column { anchors.verticalCenter: parent.verticalCenter; spacing: 1
-      Text { textFormat: Text.PlainText; text: Math.round(parent.parent.shown) + "%"; color: Theme.text; font.pixelSize: 34; font.weight: Theme.weightStrong }
-      Text { textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeBody
-        text: Power.stateText + (Power.timeText(Power.secondsLeft) !== ""
-              ? " · " + Power.timeText(Power.secondsLeft) + (Power.charging ? " to full" : " left") : "") } }
-    Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Repeater {
-        model: {
-          var m = []
-          if (Power.watts > 0.05) m.push({ k: Power.charging ? "Charging at" : "Draw", v: Power.watts.toFixed(1) + " W", ic: "bolt" })
-          if (root.healthPct > 0) m.push({ k: "Health", v: Math.round(root.healthPct) + "%", ic: "heart" })
-          return m
+  // ---- top asymmetrical split: hero charge card (~60%) + offset metrics (~40%) ----
+  readonly property real heroW: Math.round((width - 2 * pad - Theme.s12) * 0.60)
+  readonly property real sideW: (width - 2 * pad - Theme.s12) - heroW
+
+  Row {
+    visible: Power.present
+    width: parent.width; spacing: Theme.s12
+
+    // Left hero card: big percentage, state pill, time remaining, animated charge gauge.
+    Rectangle {
+      width: root.heroW; height: 118; radius: Theme.tileRadius + 2; color: Theme.surface; antialiasing: true
+      property real shown: Power.level * 100
+      Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
+
+      Column {
+        anchors.fill: parent; anchors.margins: Theme.s16; spacing: Theme.s8
+        Item {
+          width: parent.width; height: 48
+          Text {
+            id: pctText; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
+            textFormat: Text.PlainText; text: Math.round(parent.parent.parent.shown) + "%"
+            color: Theme.text; font.pixelSize: 40; font.weight: Theme.weightStrong
+          }
+          Rectangle {
+            anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+            height: 24; width: stateRow.implicitWidth + 16; radius: 12; antialiasing: true
+            color: Power.charging || Power.full
+              ? Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.22)
+              : (Power.low ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.22) : Theme.surfaceRaised)
+            Row {
+              id: stateRow; anchors.centerIn: parent; spacing: 4
+              Icon {
+                visible: Power.charging || Power.low; name: Power.charging ? "bolt" : "alert"; size: 12
+                color: Power.charging ? Theme.successInk : Theme.dangerInk; anchors.verticalCenter: parent.verticalCenter
+              }
+              Text {
+                textFormat: Text.PlainText; text: Power.stateText
+                color: Power.charging || Power.full ? Theme.successInk : (Power.low ? Theme.dangerInk : Theme.textMuted)
+                font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter
+              }
+            }
+          }
         }
-        delegate: Rectangle { required property var modelData
-          antialiasing: true; height: 48; width: Math.max(88, cardCol.implicitWidth + 2 * Theme.s12); radius: Theme.tileRadius - 4; color: Theme.surface
-          Column { id: cardCol; anchors.centerIn: parent; spacing: 1
-            Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.k; color: Theme.textMuted; font.pixelSize: Theme.typeLabel }
-            Text { anchors.horizontalCenter: parent.horizontalCenter; textFormat: Text.PlainText; text: modelData.v; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel } } } }
+
+        // Animated charge bar inside the hero card.
+        Rectangle {
+          antialiasing: true; width: parent.width; height: 10; radius: 5
+          color: Theme.mix(Theme.surface, Theme.text, 0.12)
+          Rectangle {
+            antialiasing: true; height: parent.height; radius: 5
+            width: Math.max(10, parent.width * Math.max(0, Math.min(1, Power.level)))
+            color: root.chargeColor
+            Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
+          }
+        }
+
+        Text {
+          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+          color: Theme.textMuted; font.pixelSize: Theme.typeLabel
+          text: Power.timeText(Power.secondsLeft) !== ""
+            ? (Power.timeText(Power.secondsLeft) + (Power.charging ? " until full" : " remaining"))
+            : (Power.full ? "Fully charged · AC power" : (Power.charging ? "Connected to AC power" : "Running on battery"))
+        }
+      }
+    }
+
+    // Right offset column: stacked Wattage and Health cards.
+    Column {
+      width: root.sideW; spacing: Theme.s8
+      Rectangle {
+        width: parent.width; height: 55; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+        Row {
+          anchors.fill: parent; anchors.leftMargin: Theme.s12; anchors.rightMargin: Theme.s12; spacing: Theme.s12
+          Rectangle {
+            width: 32; height: 32; radius: Theme.radiusChip; anchors.verticalCenter: parent.verticalCenter
+            color: Theme.mix(Theme.surface, Theme.accentFill, 0.16)
+            Icon { anchors.centerIn: parent; name: "bolt"; size: Theme.iconSm; color: Power.charging ? Theme.successInk : Theme.accentInk }
+          }
+          Column {
+            anchors.verticalCenter: parent.verticalCenter; spacing: 1
+            Text {
+              textFormat: Text.PlainText; text: Power.charging ? "Charging at" : "Power draw"
+              color: Theme.textMuted; font.pixelSize: Theme.typeCaption
+            }
+            Text {
+              textFormat: Text.PlainText
+              text: Power.watts > 0.05 ? (Power.watts.toFixed(1) + " W") : (Power.full ? "Idle" : "—")
+              color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
+            }
+          }
+        }
+      }
+      Rectangle {
+        width: parent.width; height: 55; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+        Row {
+          anchors.fill: parent; anchors.leftMargin: Theme.s12; anchors.rightMargin: Theme.s12; spacing: Theme.s12
+          Rectangle {
+            width: 32; height: 32; radius: Theme.radiusChip; anchors.verticalCenter: parent.verticalCenter
+            color: Theme.mix(Theme.surface, Theme.successInk, 0.16)
+            Icon { anchors.centerIn: parent; name: "battery"; size: Theme.iconSm; color: Theme.successInk }
+          }
+          Column {
+            anchors.verticalCenter: parent.verticalCenter; spacing: 1
+            Text { textFormat: Text.PlainText; text: "Battery health"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption }
+            Text {
+              textFormat: Text.PlainText
+              text: root.healthPct > 0 ? (Math.round(root.healthPct) + "%") : "Good"
+              color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
+            }
+          }
+        }
+      }
     }
   }
-  Rectangle { antialiasing: true; visible: Power.present; width: parent.width; height: 12; radius: 6; color: Theme.surface
-    Rectangle { antialiasing: true; height: parent.height; radius: 6; width: Math.max(12, parent.width * Power.level)
-      color: Power.low ? Theme.dangerInk : (Power.charging ? Theme.successInk : Theme.accentFill)
-      Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } } } }
 
-  // Three equal pills; short labels that never truncate.
-  Row {
-    visible: Power.present; width: parent.width; spacing: Theme.s8
-    Repeater {
-      model: root.profiles
-      delegate: Tile {
-        required property var modelData
-        required property int index
-        width: (parent.width - 2 * Theme.s8) / 3; height: 48
-        iconCircle: false
-        icon: modelData.icon; title: modelData.label
-        on: root.active === modelData.id
-        onClicked: root.setProfile(index)
+  // ---- unified segmented power-profile dock with sliding accent pill ----
+  Rectangle {
+    id: segTrack
+    visible: Power.present
+    width: parent.width; height: 48; radius: 24; color: Theme.surface; antialiasing: true
+    readonly property int padIn: 4
+    readonly property real segW: (width - 2 * padIn) / root.profiles.length
+
+    Rectangle {
+      id: sliderPill
+      y: segTrack.padIn; height: segTrack.height - 2 * segTrack.padIn
+      width: segTrack.segW; radius: height / 2; antialiasing: true
+      x: segTrack.padIn + root.activeIndex * segTrack.segW
+      color: Theme.accentFill
+      Behavior on x { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 5.0; damping: 0.48; epsilon: 0.25 } }
+    }
+
+    Row {
+      x: segTrack.padIn; y: segTrack.padIn
+      width: segTrack.width - 2 * segTrack.padIn; height: segTrack.height - 2 * segTrack.padIn
+      Repeater {
+        model: root.profiles
+        delegate: Item {
+          required property var modelData
+          required property int index
+          readonly property bool isOn: root.active === modelData.id
+          width: segTrack.segW; height: parent.height
+          Row {
+            anchors.centerIn: parent; spacing: 6
+            Icon {
+              name: modelData.icon; size: Theme.iconSm
+              color: parent.parent.isOn ? Theme.accentText : Theme.textMuted
+              anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+              textFormat: Text.PlainText; text: modelData.label
+              color: parent.parent.isOn ? Theme.accentText : Theme.text
+              font.pixelSize: Theme.typeBody; font.weight: parent.parent.isOn ? Theme.weightStrong : Theme.weightLabel
+              anchors.verticalCenter: parent.verticalCenter
+            }
+          }
+          MouseArea {
+            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: root.setProfile(index)
+          }
+        }
       }
     }
   }

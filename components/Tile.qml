@@ -57,33 +57,39 @@ Item {
     color: root.badgeColor; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
   }
 
-  // Compact: big icon with hold ring, label underneath.
+  // Compact: big icon with hold ring, label underneath. When subtitle is empty,
+  // centre the icon + label vertically so compact square tiles stay balanced.
   Item {
     visible: root.compact
     anchors.fill: parent
-    Item {
-      id: iconBox
-      width: 48; height: 48
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: parent.top; anchors.topMargin: Theme.s16
-      Icon { anchors.centerIn: parent; name: root.icon; size: Theme.iconLg + 4; color: root.danger && root.selected ? Theme.dangerInk : root.fg }
-      Shape {
-        anchors.fill: parent; preferredRendererType: Shape.CurveRenderer
-        ShapePath {
-          strokeColor: Theme.dangerInk; strokeWidth: 3; fillColor: "transparent"; capStyle: ShapePath.RoundCap
-          PathAngleArc { centerX: 24; centerY: 24; radiusX: 22; radiusY: 22; startAngle: -90; sweepAngle: root.holdProgress * 359.9 }
+    Column {
+      anchors.centerIn: parent
+      spacing: root.subtitle !== "" ? Theme.s4 : Theme.s8
+      Item {
+        id: iconBox
+        width: 44; height: 44
+        anchors.horizontalCenter: parent.horizontalCenter
+        Icon { anchors.centerIn: parent; name: root.icon; size: Theme.iconLg + 2; color: root.danger && root.selected ? Theme.dangerInk : root.fg }
+        Shape {
+          anchors.fill: parent; preferredRendererType: Shape.CurveRenderer
+          ShapePath {
+            strokeColor: Theme.dangerInk; strokeWidth: 3; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+            PathAngleArc { centerX: 22; centerY: 22; radiusX: 20; radiusY: 20; startAngle: -90; sweepAngle: root.holdProgress * 359.9 }
+          }
         }
       }
-    }
-    Text {
-      anchors.horizontalCenter: parent.horizontalCenter; anchors.top: iconBox.bottom; anchors.topMargin: Theme.s4
-      textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel
-    }
-    Text {
-      anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: Theme.s12
-      width: parent.width - Theme.s16; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
-      textFormat: Text.PlainText; text: root.subtitle
-      color: root.selected && root.danger ? Theme.dangerInk : root.fgMuted; font.pixelSize: Theme.rowSub
+      Text {
+        visible: root.showTitle && root.title !== ""
+        anchors.horizontalCenter: parent.horizontalCenter
+        textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
+      }
+      Text {
+        visible: root.subtitle !== ""
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: root.width - Theme.s16; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+        textFormat: Text.PlainText; text: root.subtitle
+        color: root.selected && root.danger ? Theme.dangerInk : root.fgMuted; font.pixelSize: Theme.rowSub
+      }
     }
   }
 

@@ -3,22 +3,20 @@ import Quickshell.Io
 import ".."
 import "../services"
 
-// Display: brightness, night light, text size, and the hardware switches that Trigger > Hardware had in the menu:
-// laptop display on/off and mirroring (laptops only), touchpad and touchscreen (when the machine has one).
-// Rows the machine does not have are skipped. Keys: ↑/↓ move, ←/→ adjust, Enter toggle.
+// Display: asymmetrical Apple-inspired layout — dominant Brightness hero card (~64%) paired
+// with an offset Night Light card (~36%), followed by the Text Size stepper and a compact
+// 2-column grid of hardware switches (shown only when the machine has those devices).
+// Keys: ↑/↓ move, ←/→ adjust brightness or text size, Enter toggle.
 WidgetPanel {
   id: root
-  preferredWidth: 460
+  preferredWidth: 540
   hint: "↑/↓ move · ←/→ adjust · Enter toggle · Esc close"
 
-  // Rows: 0 brightness, 1 night light, 2 text size, 3 laptop display, 4 mirroring, 5 touchpad, 6 touchscreen.
+  // Visual order: 0 brightness, 1 night light, 2 text size, 3 laptop display, 4 mirror, 5 touchpad, 6 touchscreen.
   property int row: 0
   property int textSize: 12
   readonly property int lastRow: 6
 
-  // Hardware and the state of its switches, read from the same things Omarchy's menu checked: the hardware helpers and
-  // the Hyprland toggle flags (a flag file present means the switch is on, which for the display and the input devices
-  // means disabled or mirrored).
   property bool hwLaptop: false
   property bool hwTouchpad: false
   property bool hwTouchscreen: false
@@ -26,6 +24,7 @@ WidgetPanel {
   property bool mirrorOn: false
   property bool touchpadOff: false
   property bool touchscreenOff: false
+  readonly property bool anyHw: hwLaptop || hwTouchpad || hwTouchscreen
 
   Component.onCompleted: { Brightness.refresh(); Indicators.refresh() }
   function setText(n) { textSize = Math.max(8, Math.min(24, n)); Cmd.run(["omarchy-display-text-size", String(textSize)]) }
@@ -41,7 +40,6 @@ WidgetPanel {
     while (r >= 0 && r <= lastRow && !rowVisible(r)) r += d
     if (r >= 0 && r <= lastRow) row = r
   }
-  // Switch a hardware row, then read the state again once the helper has applied it.
   function toggleHw(r) {
     if (r === 3) Cmd.run(["omarchy-hyprland-monitor-internal", "toggle"])
     else if (r === 4) Cmd.run(["omarchy-hyprland-monitor-internal-mirror", "toggle"])
@@ -59,8 +57,7 @@ WidgetPanel {
       if (row === 0) Brightness.set(Brightness.level + d * 0.05)
       else if (row === 2) setText(textSize + d)
       e.accepted = true
-    }
-    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+    } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
       if (row === 1) Indicators.toggleNightLight()
       else if (row >= 3) toggleHw(row)
       e.accepted = true
@@ -88,61 +85,148 @@ WidgetPanel {
     } }
   }
 
-  PillSlider {
-    width: parent.width; icon: "sun"; value: Brightness.level; visible: Brightness.available
-    selected: root.row === 0; showValue: true
-    onMoved: function (v) { root.row = 0; Brightness.set(v) }
+  // ---- top asymmetrical row: dominant Brightness hero (~64%) + offset Night Light card (~36%) ----
+  readonly property real leftW: Math.round((width - 2 * pad - Theme.s12) * 0.64)
+  readonly property real rightW: (width - 2 * pad - Theme.s12) - leftW
+
+  Row {
+    width: parent.width; spacing: Theme.s12
+
+    // Brightness hero card
+    Rectangle {
+      width: root.leftW; height: 108; radius: Theme.tileRadius + 2; color: Theme.surface; antialiasing: true
+      FocusRing { on: root.row === 0; radius: parent.radius }
+      Column {
+        anchors.fill: parent; anchors.margins: Theme.s16; spacing: Theme.s12
+        Item {
+          width: parent.width; height: 24
+          Row {
+            anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+            Icon { name: "sun"; size: Theme.iconMd; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
+            Text { textFormat: Text.PlainText; text: "Brightness"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
+          }
+          Text {
+            anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+            text: Brightness.available ? (Math.round(Brightness.level * 100) + "%") : "N/A"
+            color: Brightness.available ? Theme.text : Theme.textMuted; font.pixelSize: 16; font.weight: Theme.weightStrong
+          }
+        }
+        PillSlider {
+          visible: Brightness.available
+          width: parent.width; icon: "sun"; value: Brightness.level
+          selected: root.row === 0
+          onMoved: function (v) { root.row = 0; Brightness.set(v) }
+        }
+        Text {
+          visible: !Brightness.available; textFormat: Text.PlainText
+          text: "No controllable backlight"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
+        }
+      }
+    }
+
+    // Offset Night Light card
+    Rectangle {
+      id: nightCard
+      width: root.rightW; height: 108; radius: Theme.tileRadius + 2; antialiasing: true
+      readonly property color baseFill: Indicators.nightLight ? Theme.accentFill : Theme.surface
+      color: nightArea.pressed ? Qt.lighter(baseFill, 1.16) : (nightArea.containsMouse ? Qt.lighter(baseFill, 1.08) : baseFill)
+      Behavior on color { ColorAnimation { duration: 150 } }
+      FocusRing { on: root.row === 1; radius: parent.radius }
+      Column {
+        anchors.fill: parent; anchors.margins: Theme.s16; spacing: Theme.s8
+        Rectangle {
+          width: 34; height: 34; radius: 17; antialiasing: true
+          color: Indicators.nightLight ? Qt.rgba(1, 1, 1, 0.16) : Theme.surfaceRaised
+          Icon { anchors.centerIn: parent; name: "moon"; size: Theme.iconMd - 2; color: Indicators.nightLight ? Theme.accentText : Theme.text }
+        }
+        Column {
+          width: parent.width; spacing: 1
+          Text {
+            width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: "Night light"
+            color: Indicators.nightLight ? Theme.accentText : Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
+          }
+          Text {
+            textFormat: Text.PlainText; text: Indicators.nightLight ? "Warm · On" : "Off"
+            color: Indicators.nightLight ? Theme.textOnAccentMuted : Theme.textMuted; font.pixelSize: Theme.typeLabel
+          }
+        }
+      }
+      MouseArea {
+        id: nightArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+        onClicked: { root.row = 1; Indicators.toggleNightLight() }
+      }
+    }
   }
-  Text { visible: !Brightness.available; textFormat: Text.PlainText
-    text: "No controllable backlight"; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
-  Tile {
-    width: parent.width
-    icon: "moon"; title: "Night light"; subtitle: Indicators.nightLight ? "On" : "Off"
-    on: Indicators.nightLight; selected: root.row === 1
-    onClicked: { root.row = 1; Indicators.toggleNightLight() }
-  }
-  // Hardware switches (each row shows only when the machine has the device)
-  Tile {
-    visible: root.hwLaptop; width: parent.width
-    icon: "monitor"; title: "Laptop display"; subtitle: root.laptopOff ? "Off" : "On"
-    on: !root.laptopOff; selected: root.row === 3
-    onClicked: { root.row = 3; root.toggleHw(3) }
-  }
-  Tile {
-    visible: root.hwLaptop; width: parent.width
-    icon: "mirror"; title: "Mirror to external"; subtitle: root.mirrorOn ? "On" : "Off"
-    on: root.mirrorOn; selected: root.row === 4
-    onClicked: { root.row = 4; root.toggleHw(4) }
-  }
-  Tile {
-    visible: root.hwTouchpad; width: parent.width
-    icon: "mouse"; title: "Touchpad"; subtitle: root.touchpadOff ? "Off" : "On"
-    on: !root.touchpadOff; selected: root.row === 5
-    onClicked: { root.row = 5; root.toggleHw(5) }
-  }
-  Tile {
-    visible: root.hwTouchscreen; width: parent.width
-    icon: "phone"; title: "Touchscreen"; subtitle: root.touchscreenOff ? "Off" : "On"
-    on: !root.touchscreenOff; selected: root.row === 6
-    onClicked: { root.row = 6; root.toggleHw(6) }
-  }
-  // Text size stepper: − 12 px +
+
+  // ---- Text size stepper bar ----
   Rectangle {
-    width: parent.width; height: Theme.tileHeight; radius: height / 2; color: Theme.surface
-    border.width: root.row === 2 ? 2 : 0; border.color: Theme.text
-    Icon { x: Theme.s16 + 2; anchors.verticalCenter: parent.verticalCenter; name: "type"; size: Theme.iconMd }
-    Text { x: Theme.s16 + 2 + Theme.iconMd + Theme.s12; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: "Text size"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+    width: parent.width; height: 56; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+    FocusRing { on: root.row === 2; radius: parent.radius }
+    Row {
+      anchors.left: parent.left; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s12
+      Rectangle {
+        width: 34; height: 34; radius: Theme.radiusChip; color: Theme.surfaceRaised; anchors.verticalCenter: parent.verticalCenter
+        Icon { anchors.centerIn: parent; name: "type"; size: Theme.iconSm; color: Theme.text }
+      }
+      Column {
+        anchors.verticalCenter: parent.verticalCenter; spacing: 0
+        Text { textFormat: Text.PlainText; text: "Text size"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+        Text { textFormat: Text.PlainText; text: "System & terminal UI scale"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption }
+      }
+    }
     Row {
       anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Rectangle { antialiasing: true; width: 34; height: 34; radius: 17; color: Theme.surfaceRaised
-        Icon { anchors.centerIn: parent; name: "chevron-left"; size: Theme.iconSm }
-        MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize - 1) } } }
-      Text { width: 44; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter
-        textFormat: Text.PlainText; text: root.textSize + " px"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
-      Rectangle { antialiasing: true; width: 34; height: 34; radius: 17; color: Theme.surfaceRaised
-        Icon { anchors.centerIn: parent; name: "chevron-right"; size: Theme.iconSm }
-        MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize + 1) } } }
+      Rectangle {
+        antialiasing: true; width: 34; height: 34; radius: 17
+        color: decArea.pressed ? Theme.accentFill : (decArea.containsMouse ? Theme.mix(Theme.surfaceRaised, Theme.text, 0.14) : Theme.surfaceRaised)
+        Icon { anchors.centerIn: parent; name: "chevron-left"; size: Theme.iconSm; color: decArea.pressed ? Theme.accentText : Theme.text }
+        MouseArea { id: decArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize - 1) } }
+      }
+      Text {
+        width: 48; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter
+        textFormat: Text.PlainText; text: root.textSize + " px"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
+      }
+      Rectangle {
+        antialiasing: true; width: 34; height: 34; radius: 17
+        color: incArea.pressed ? Theme.accentFill : (incArea.containsMouse ? Theme.mix(Theme.surfaceRaised, Theme.text, 0.14) : Theme.surfaceRaised)
+        Icon { anchors.centerIn: parent; name: "chevron-right"; size: Theme.iconSm; color: incArea.pressed ? Theme.accentText : Theme.text }
+        MouseArea { id: incArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize + 1) } }
+      }
+    }
+  }
+
+  // ---- Hardware switches (compact 2-column grid, shown only when hardware exists) ----
+  Column {
+    visible: root.anyHw
+    width: parent.width; spacing: Theme.s8
+    Text { textFormat: Text.PlainText; text: "Hardware"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
+    Grid {
+      width: parent.width; columns: 2; spacing: Theme.s8
+      readonly property real cellW: (width - Theme.s8) / 2
+      Tile {
+        visible: root.hwLaptop; width: parent.cellW; height: 52
+        icon: "monitor"; title: "Laptop display"; subtitle: root.laptopOff ? "Off" : "On"
+        on: !root.laptopOff; selected: root.row === 3
+        onClicked: { root.row = 3; root.toggleHw(3) }
+      }
+      Tile {
+        visible: root.hwLaptop; width: parent.cellW; height: 52
+        icon: "mirror"; title: "Mirror display"; subtitle: root.mirrorOn ? "On" : "Off"
+        on: root.mirrorOn; selected: root.row === 4
+        onClicked: { root.row = 4; root.toggleHw(4) }
+      }
+      Tile {
+        visible: root.hwTouchpad; width: parent.cellW; height: 52
+        icon: "mouse"; title: "Touchpad"; subtitle: root.touchpadOff ? "Off" : "On"
+        on: !root.touchpadOff; selected: root.row === 5
+        onClicked: { root.row = 5; root.toggleHw(5) }
+      }
+      Tile {
+        visible: root.hwTouchscreen; width: parent.cellW; height: 52
+        icon: "phone"; title: "Touchscreen"; subtitle: root.touchscreenOff ? "Off" : "On"
+        on: !root.touchscreenOff; selected: root.row === 6
+        onClicked: { root.row = 6; root.toggleHw(6) }
+      }
     }
   }
 
