@@ -4,24 +4,20 @@ import Quickshell.Widgets
 import ".."
 import "../services"
 
-// Theme picker: ONE horizontal strip of theme cards (it scrolls sideways), about 190 px tall.
-//
-// Each card shows the theme's wallpaper, its name over a scrim in the theme's OWN background and
-// foreground colours (so the label is always legible, whatever the island's current theme), five colour
-// swatches, a sun/moon chip for light/dark, and a check on the current theme. The selected card grows. Cards come from the theme folders (user themes in ~/.config/omarchy/themes, built-ins
-// in OMARCHY_PATH) and apply with Omarchy's own `omarchy-theme-set`.
-// Keys: ←/→ move · Home/End jump · Enter apply · Esc clears the search, then closes. Type to search by name.
-// The mouse wheel scrolls the strip sideways. The selected card springs up in scale as it is picked.
+// Theme picker: horizontal strip of theme cards with immediate keyboard search
+// (`wantsKeyboard: true` + `initialFocus: searchInput`), clear Current theme badge + accent ring,
+// and silky-smooth GPU-scaled selection animation that never jitters or clips on the last theme.
+// Keys: type to search · ←/→ move · Home/End jump · Enter apply · Esc clear search / close.
 WidgetPanel {
   id: root
   preferredWidth: 720
+  readonly property bool wantsKeyboard: true
+  readonly property Item initialFocus: searchInput
+  readonly property bool capturesEscape: query !== ""
   hint: "type to search · ←/→ move · Enter apply · Esc close"
-  // Data comes from the Themes service (cached, preloaded): the strip is populated on the first frame.
+
   readonly property var all: Themes.list
   property string query: ""
-  // Esc clears a non-empty search before it closes the widget (Island checks this flag).
-  readonly property bool capturesEscape: query !== ""
-  // The themes whose name matches the search: every character in order (case-insensitive), so "gru" finds Gruvbox.
   readonly property var themes: {
     var q = query.toLowerCase().replace(/\s+/g, "")
     if (q === "") return all
@@ -32,115 +28,187 @@ WidgetPanel {
     })
   }
   readonly property string current: Themes.current
-  property bool moved: false              // the user has moved the selection: stop re-syncing it to the current theme
-  property string applying: ""            // name being applied (clears itself after a few seconds)
+  property bool moved: false
+  property string applying: ""
   property int sel: 0
   readonly property bool loading: !Themes.loaded
   dataLoading: !Themes.loaded
   readonly property var debugState: ({ sel: sel, count: themes.length, total: all.length, query: query, contentX: Math.round(strip.contentX) })
-  onQueryChanged: { moved = true; sel = 0; Qt.callLater(function () { snapTo() }) }
 
+  // Constant slot width keeps strip.contentWidth 100% stable so SpringAnimation on contentX
+  // never fights delegate resizing (especially at the last visible / final theme card).
   readonly property int cardW: 156
   readonly property int cardH: 108
-  readonly property real growK: 0.12          // the selected card is this much wider and larger (fraction)
-  readonly property int gap: Theme.s8
-  property real selGrow: 0                    // the selected card\'s current growth 0..1, driven by its spring
-
-  // Keep the selected card centred. The strip's contentX glides after it (a spring), so the card, the neighbours and
-  // the strip all move together instead of the view jumping.
+  readonly property int slotW: 174
+  readonly property int stripPad: 10
+  readonly property real growScale: 1.09
   property bool snapping: false
+
   function follow() {
-    if (sel < 0) return
-    var w = cardW * (1 + growK * selGrow)
-    var target = sel * (cardW + gap) + w / 2 - strip.width / 2
-    strip.contentX = Math.max(0, Math.min(Math.max(0, strip.contentWidth - strip.width), target))
+    if (sel < 0 || themes.length === 0) return
+    var step = slotW + strip.spacing
+    var center = stripPad + sel * step + slotW / 2
+    var target = center - strip.width / 2
+    var maxX = Math.max(0, strip.contentWidth - strip.width)
+    strip.contentX = Math.max(0, Math.min(maxX, target))
   }
   function snapTo() { snapping = true; follow(); snapping = false }
+  onSelChanged: follow()
+  onQueryChanged: {
+    moved = true
+    sel = 0
+    Qt.callLater(function () { snapTo() })
+  }
 
+  function clearSearch() {
+    searchInput.text = ""
+    query = ""
+  }
   function apply(t) {
     Cmd.run(["omarchy-theme-set", t.name]); Themes.setCurrent(t.name); applying = t.name; applyTimer.restart()
   }
   Timer { id: applyTimer; interval: 4000; onTriggered: root.applying = "" }
 
-  // On open, centre the current theme in the strip without animating.
   function centerSelected() { Qt.callLater(function () { snapTo() }) }
-  Keys.onPressed: function (e) {
-    var n = themes.length
-    moved = true
-    if (e.key === Qt.Key_Escape && query !== "") query = ""
-    else if (e.key === Qt.Key_Backspace && query !== "") query = query.slice(0, -1)
-    else if (n === 0 && e.text.length === 1 && e.text >= " " && e.text !== " ") query += e.text
-    else if (n === 0) return
-    else if (e.text.length === 1 && e.text >= " " && e.text !== " " && !(e.key === Qt.Key_Return || e.key === Qt.Key_Enter)) query += e.text
-    else if (e.key === Qt.Key_Right) sel = Math.min(sel + 1, n - 1)
-    else if (e.key === Qt.Key_Left) sel = Math.max(sel - 1, 0)
-    else if (e.key === Qt.Key_Home) sel = 0
-    else if (e.key === Qt.Key_End) sel = n - 1
-    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (themes[sel]) apply(themes[sel]) }
-    else return
-    e.accepted = true
-  }
-
-  // Start on the current theme, centred. A background refresh that finds a different current theme (changed outside
-  // the picker) re-syncs, unless the user has already started moving.
   function syncToCurrent() {
     if (moved) return
     for (var i = 0; i < themes.length; i++) if (themes[i].name === current) { sel = i; break }
     centerSelected()
   }
-  Component.onCompleted: { syncToCurrent(); Themes.refreshCurrent(); Themes.refresh() }
+  Component.onCompleted: {
+    syncToCurrent()
+    Themes.refreshCurrent()
+    Themes.refresh()
+    Qt.callLater(function () { searchInput.forceActiveFocus() })
+  }
   onCurrentChanged: syncToCurrent()
   onThemesChanged: syncToCurrent()
 
-  // ---- header: the search box on the left; the position (or "Applying …") on the right ----
-  Item { width: parent.width; height: 26
+  Keys.onPressed: function (e) {
+    var n = themes.length
+    if (e.key === Qt.Key_Escape && query !== "") { clearSearch(); e.accepted = true; return }
+    if (n === 0) return
+    if (e.key === Qt.Key_Right) { moved = true; sel = Math.min(sel + 1, n - 1); e.accepted = true }
+    else if (e.key === Qt.Key_Left) { moved = true; sel = Math.max(sel - 1, 0); e.accepted = true }
+    else if (e.key === Qt.Key_Home) { moved = true; sel = 0; e.accepted = true }
+    else if (e.key === Qt.Key_End) { moved = true; sel = n - 1; e.accepted = true }
+    else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (themes[sel]) apply(themes[sel]); e.accepted = true }
+  }
+
+  // ---- header: real focusable search pill on left, status + counter on right ----
+  Item {
+    width: parent.width; height: 32
     Rectangle {
       id: searchBox
       antialiasing: true
       anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-      height: 26; width: 230; radius: 13
-      color: root.query !== "" ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface
+      height: 32; width: 260; radius: 16
+      color: searchInput.activeFocus || root.query !== "" ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface
+      border.width: searchInput.activeFocus ? 1 : 0
+      border.color: Qt.rgba(Theme.accentInk.r, Theme.accentInk.g, Theme.accentInk.b, 0.7)
       Behavior on color { ColorAnimation { duration: 120 } }
-      Icon { id: searchIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: Theme.textMuted }
-      Text { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
-        elide: Text.ElideRight; textFormat: Text.PlainText
-        text: root.query === "" ? "Search themes…" : root.query
-        color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: Theme.typeBody; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
-      Rectangle {                                    // a caret after the typed text
-        visible: root.query !== "" && root.activeFocus; antialiasing: true
-        x: Math.min(parent.width - 10, Theme.s12 + Theme.iconSm + Theme.s8 + queryM.advanceWidth + 2); anchors.verticalCenter: parent.verticalCenter
-        width: 1.5; height: 13; color: Theme.text
-        SequentialAnimation on opacity { running: parent.visible; loops: Animation.Infinite
-          NumberAnimation { to: 0; duration: 500 } NumberAnimation { to: 1; duration: 500 } } }
-      TextMetrics { id: queryM; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; text: root.query }
+
+      Icon { id: searchIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: searchInput.activeFocus ? Theme.accentInk : Theme.textMuted }
+
+      TextInput {
+        id: searchInput
+        anchors.left: searchIcon.right; anchors.leftMargin: Theme.s8
+        anchors.right: clearBtn.visible ? clearBtn.left : parent.right; anchors.rightMargin: Theme.s8
+        anchors.verticalCenter: parent.verticalCenter
+        selectByMouse: true
+        clip: true
+        color: Theme.text; selectionColor: Theme.accentFill; selectedTextColor: Theme.accentText
+        font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
+        onTextChanged: if (root.query !== text) root.query = text
+        onAccepted: if (root.themes[root.sel]) root.apply(root.themes[root.sel])
+        Keys.onPressed: function (e) {
+          var n = root.themes.length
+          if (e.key === Qt.Key_Escape && root.query !== "") { root.clearSearch(); e.accepted = true }
+          else if (e.key === Qt.Key_Right && (text.length === 0 || cursorPosition === text.length)) {
+            if (n > 0) { root.moved = true; root.sel = Math.min(root.sel + 1, n - 1) }
+            e.accepted = true
+          } else if (e.key === Qt.Key_Left && (text.length === 0 || cursorPosition === 0)) {
+            if (n > 0) { root.moved = true; root.sel = Math.max(root.sel - 1, 0) }
+            e.accepted = true
+          } else if (e.key === Qt.Key_Down && n > 0) {
+            root.moved = true; root.sel = Math.min(root.sel + 1, n - 1); e.accepted = true
+          } else if (e.key === Qt.Key_Up && n > 0) {
+            root.moved = true; root.sel = Math.max(root.sel - 1, 0); e.accepted = true
+          } else if (e.key === Qt.Key_Home && text.length === 0 && n > 0) {
+            root.moved = true; root.sel = 0; e.accepted = true
+          } else if (e.key === Qt.Key_End && text.length === 0 && n > 0) {
+            root.moved = true; root.sel = n - 1; e.accepted = true
+          }
+        }
+      }
+
+      Text {
+        visible: searchInput.text === ""
+        anchors.left: searchInput.left; anchors.right: parent.right; anchors.rightMargin: Theme.s12
+        anchors.verticalCenter: parent.verticalCenter
+        textFormat: Text.PlainText; text: "Search themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
+      }
+
+      Rectangle {
+        id: clearBtn
+        visible: root.query !== ""
+        anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
+        width: 20; height: 20; radius: 10; antialiasing: true
+        color: clrSearchArea.containsMouse ? Theme.surfaceRaised : "transparent"
+        Icon { anchors.centerIn: parent; name: "x"; size: 11; color: Theme.textMuted }
+        MouseArea { id: clrSearchArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.clearSearch() }
+      }
+
+      MouseArea { anchors.fill: parent; z: -1; cursorShape: Qt.IBeamCursor; onClicked: searchInput.forceActiveFocus() }
     }
-    Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
-      text: root.applying !== "" ? "Applying " + root.applying + "…"
-            : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length
-               : (root.query !== "" ? "0 / " + root.all.length : ""))
-      color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: Theme.typeBody }
+
+    Row {
+      anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+      Rectangle {
+        visible: root.current !== "" && root.applying === ""
+        height: 24; width: curChipRow.implicitWidth + 16; radius: 12; color: Theme.surface; antialiasing: true
+        Row {
+          id: curChipRow; anchors.centerIn: parent; spacing: 5
+          Rectangle { width: 6; height: 6; radius: 3; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
+          Text { textFormat: Text.PlainText; text: root.current; color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
+        }
+      }
+      Text {
+        anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+        text: root.applying !== "" ? ("Applying " + root.applying + "…")
+            : (root.themes.length > 0 ? ((root.sel + 1) + " / " + root.themes.length)
+               : (root.query !== "" ? ("0 / " + root.all.length) : ""))
+        color: root.applying !== "" ? Theme.accentInk : Theme.textMuted; font.pixelSize: Theme.typeBody
+      }
+    }
   }
-  Text { visible: !root.loading && root.all.length > 0 && root.themes.length === 0; textFormat: Text.PlainText
-    text: "No theme matches \"" + root.query + "\""; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+
+  Text {
+    visible: !root.loading && root.all.length > 0 && root.themes.length === 0; textFormat: Text.PlainText
+    text: "No theme matches \"" + root.query + "\""; color: Theme.textMuted; font.pixelSize: Theme.typeTitle
+  }
   Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
-  // ---- the strip ----
-  // Taller than a card by the selected card's growth, so its scale is never clipped.
+  // ---- horizontal theme strip (GPU scale, fixed slot widths, zero last-card jitter) ----
   Item {
-    visible: !root.loading
-    width: parent.width; height: Math.round(root.cardH * (1 + root.growK)) + 12
+    visible: !root.loading && root.themes.length > 0
+    width: parent.width; height: Math.round(root.cardH * root.growScale) + 18
     ListView {
       id: strip
       anchors.fill: parent
       orientation: ListView.Horizontal
-      spacing: Theme.s8
+      spacing: Theme.s4
+      leftMargin: root.stripPad
+      rightMargin: root.stripPad
       clip: true
       model: root.themes
       boundsBehavior: Flickable.StopAtBounds
       highlightMoveDuration: 0
-      // The strip glides (a spring) toward the selection; not while the user drags it.
-      Behavior on contentX { enabled: !IslandState.reducedMotion && !root.snapping && !strip.dragging && !strip.flicking
-        SpringAnimation { spring: 5.0; damping: 0.5; epsilon: 0.5 } }
+      Behavior on contentX {
+        enabled: !IslandState.reducedMotion && !root.snapping && !strip.dragging && !strip.flicking
+        SpringAnimation { spring: 4.8; damping: 0.52; epsilon: 0.5 }
+      }
+
       delegate: Item {
         id: card
         required property var modelData
@@ -150,59 +218,102 @@ WidgetPanel {
         readonly property bool hasImage: /\.(png|jpe?g|webp)$/i.test(modelData.preview)
         readonly property color themeBg: Qt.color(modelData.bg)
         readonly property color themeFg: Qt.color(modelData.fg)
-        // Growth: 0 for every card, springing to 1 for the selected one. The card gets wider by that much, which
-        // pushes the neighbours beside it apart; the face inside is scaled by the same amount.
-        property real grow: selected ? 1 : 0
-        Behavior on grow { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 3.6; damping: 0.5; epsilon: 0.001 } }
-        onGrowChanged: if (selected) { root.selGrow = grow; root.follow() }
-        onSelectedChanged: if (selected) { root.selGrow = grow; root.follow() }
-        width: root.cardW * (1 + root.growK * grow); height: strip.height
+        width: root.slotW; height: strip.height
+        z: selected ? 2 : (cardHover.hovered ? 1 : 0)
+
+        HoverHandler { id: cardHover }
 
         ClippingRectangle {
           id: face
           width: root.cardW; height: root.cardH; anchors.centerIn: parent
           radius: Theme.tileRadius
           color: card.themeBg
-          // The same growth as the card, so the face fills the card at every frame. No outline.
-          scale: 1 + root.growK * card.grow
+          scale: card.selected ? root.growScale : (cardHover.hovered ? 1.03 : 1.0)
+          Behavior on scale {
+            enabled: !IslandState.reducedMotion
+            SpringAnimation { spring: 4.2; damping: 0.46; epsilon: 0.002 }
+          }
 
-          Image { visible: card.hasImage; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
-            sourceSize: Qt.size(320, 216); source: card.hasImage ? "file://" + modelData.preview : "" }
+          Image {
+            visible: card.hasImage; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
+            sourceSize: Qt.size(320, 216); source: card.hasImage ? "file://" + modelData.preview : ""
+          }
 
-          // Scrim in the theme's own background colour, so the name is legible over any wallpaper.
-          Rectangle { anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; height: 58
+          // Scrim in the theme's own background colour.
+          Rectangle {
+            anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; height: 58
             gradient: Gradient {
               GradientStop { position: 0; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0) }
               GradientStop { position: 0.55; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.88) }
-              GradientStop { position: 1; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.96) } } }
-          Text { x: Theme.s12; y: parent.height - 38; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: modelData.name; color: card.themeFg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel }
-          Row { x: Theme.s12; y: parent.height - 19; spacing: 4
-            Repeater { model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
-              delegate: Rectangle { antialiasing: true; required property string modelData; width: 10; height: 10; radius: 5; color: modelData
-                border.width: 1; border.color: Qt.rgba(card.themeFg.r, card.themeFg.g, card.themeFg.b, 0.35) } } }
+              GradientStop { position: 1; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.96) }
+            }
+          }
+          Text {
+            x: Theme.s12; y: parent.height - 38; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight; textFormat: Text.PlainText
+            text: modelData.name; color: card.themeFg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightStrong
+          }
+          Row {
+            x: Theme.s12; y: parent.height - 19; spacing: 4
+            Repeater {
+              model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
+              delegate: Rectangle {
+                antialiasing: true; required property string modelData; width: 10; height: 10; radius: 5; color: modelData
+                border.width: 1; border.color: Qt.rgba(card.themeFg.r, card.themeFg.g, card.themeFg.b, 0.35)
+              }
+            }
+          }
 
-          // light / dark chip, top-left
-          Rectangle { antialiasing: true; x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.45)
-            Icon { anchors.centerIn: parent; name: modelData.mode === "light" ? "sun" : "moon"; size: 13; color: Qt.rgba(1, 1, 1, 0.92) } }
-          // current-theme badge, top-right
-          Rectangle { antialiasing: true; visible: card.isCurrent; x: parent.width - 30; y: Theme.s8; width: 22; height: 22; radius: 11; color: Theme.accentFill
-            Icon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText; strokeWidth: 2.4 } }
+          // Light / dark chip, top-left
+          Rectangle {
+            antialiasing: true; x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.50)
+            Icon { anchors.centerIn: parent; name: modelData.mode === "light" ? "sun" : "moon"; size: 12; color: Qt.rgba(1, 1, 1, 0.92) }
+          }
 
-          MouseArea { id: cardArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.sel = card.index; root.apply(modelData) } }
+          // Improved auto-sized Current badge, top-right
+          Rectangle {
+            antialiasing: true; visible: card.isCurrent
+            anchors.right: parent.right; anchors.rightMargin: Theme.s8
+            anchors.top: parent.top; anchors.topMargin: Theme.s8
+            height: 22; width: currentRow.implicitWidth + 14; radius: 11; color: Theme.accentFill
+            Row {
+              id: currentRow; anchors.centerIn: parent; spacing: 4
+              Icon { name: "check"; size: 11; color: Theme.accentText; strokeWidth: 2.5; anchors.verticalCenter: parent.verticalCenter }
+              Text { textFormat: Text.PlainText; text: "Current"; color: Theme.accentText; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
+            }
+          }
+
+          // Crisp highlight ring for the current / selected card
+          Rectangle {
+            anchors.fill: parent; radius: Theme.tileRadius; color: "transparent"
+            border.width: card.isCurrent ? 2 : (card.selected ? 1 : 0)
+            border.color: card.isCurrent ? Theme.accentInk : Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.65)
+          }
+
+          MouseArea {
+            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+            onClicked: { root.moved = true; root.sel = card.index; root.apply(modelData) }
+          }
         }
       }
 
-      // Sideways fades where cards are clipped, so it reads as scrollable.
-      Rectangle { visible: strip.contentX > 2; width: 22; height: parent.height; anchors.left: parent.left
+      // Edge fades indicating horizontal scrollability
+      Rectangle {
+        visible: strip.contentX > 2; width: 22; height: parent.height; anchors.left: parent.left
         gradient: Gradient { orientation: Gradient.Horizontal
-          GradientStop { position: 0; color: Theme.pill } GradientStop { position: 1; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } } }
-      Rectangle { visible: strip.contentX < strip.contentWidth - strip.width - 2; width: 22; height: parent.height; anchors.right: parent.right
+          GradientStop { position: 0; color: Theme.pill } GradientStop { position: 1; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } }
+      }
+      Rectangle {
+        visible: strip.contentX < strip.contentWidth - strip.width - 2; width: 22; height: parent.height; anchors.right: parent.right
         gradient: Gradient { orientation: Gradient.Horizontal
-          GradientStop { position: 0; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } GradientStop { position: 1; color: Theme.pill } } }
+          GradientStop { position: 0; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } GradientStop { position: 1; color: Theme.pill } }
+      }
     }
-    // The wheel scrolls the strip sideways (clicks pass through to the cards).
-    MouseArea { anchors.fill: parent; acceptedButtons: Qt.NoButton
-      onWheel: function (w) { strip.contentX = Math.max(0, Math.min(strip.contentWidth - strip.width, strip.contentX - (w.angleDelta.y + w.angleDelta.x) * 0.8)) } }
+    MouseArea {
+      anchors.fill: parent; acceptedButtons: Qt.NoButton
+      onWheel: function (w) {
+        var maxX = Math.max(0, strip.contentWidth - strip.width)
+        strip.contentX = Math.max(0, Math.min(maxX, strip.contentX - (w.angleDelta.y + w.angleDelta.x) * 0.8))
+      }
+    }
   }
 }
