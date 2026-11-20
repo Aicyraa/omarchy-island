@@ -14,6 +14,9 @@ Item {
   readonly property string iconName: n.key !== undefined ? Notifs.iconNameOf(n) : ""
   readonly property real inset: Theme.s16
   readonly property int motion: IslandState.reducedMotion ? 0 : 1
+  // Room the drain bar takes at the bottom (its bottom margin + its height). The content is centred in what is left
+  // above it, so the text keeps an even gap from the bar and from the top.
+  readonly property int barSpace: 9 + 3
 
   // Settles in. Replays whenever a new notification takes the pill (notifSerial) and on first show.
   Component.onCompleted: enter.restart()
@@ -39,14 +42,14 @@ Item {
   Item { id: body; width: parent.width; height: parent.height; transformOrigin: Item.Top
     NotifThumb {
       id: thumb
-      x: Theme.s12; anchors.verticalCenter: parent.verticalCenter
+      x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -toast.barSpace / 2
       size: 40; badge: true; preview: toast.preview; iconName: toast.iconName
       transformOrigin: Item.Center
     }
     Column {
       anchors.left: thumb.right; anchors.leftMargin: Theme.s12
       anchors.right: parent.right; anchors.rightMargin: toast.inset
-      anchors.verticalCenter: parent.verticalCenter; spacing: 2
+      anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -toast.barSpace / 2; spacing: 2
       Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
         text: toast.n.summary || toast.n.app || ""
         color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong; font.letterSpacing: 0.1 }

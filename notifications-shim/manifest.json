@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.aicyraa.island-notifications",
+  "name": "Island Notifications bridge",
+  "version": "0.1.0",
+  "author": "aicyraa",
+  "description": "Headless notification daemon for Omarchy Island: keeps D-Bus, history, Focus mode, and IPC active while suppressing stock top-right toasts.",
+  "kinds": ["service"],
+  "keepLoaded": true,
+  "entryPoints": { "service": "Service.qml" },
+  "omarchy": { "clonedFrom": "omarchy.notifications" }
+}
