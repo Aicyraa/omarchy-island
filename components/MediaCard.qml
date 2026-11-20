@@ -10,7 +10,7 @@ import "../services"
 // so the Home layout never jumps when playback starts or stops.
 //
 // Geometry (the card is 216 x 144; the inner area is 192 x 120 after a 12 px margin):
-//   cover 64 x 64 at (0, 0) · text from x 76 · controls at y 36 · spectrum y 76..98 · progress bottom 18 px.
+//   cover 64 x 64 at (0, 0) · text from x 76 · controls at y 36 · times y 70 · scrub/visualizer y 84..118.
 Item {
   id: root
   property var p: null                         // an MprisPlayer, or null for the placeholder
@@ -134,32 +134,46 @@ Item {
       }
     }
 
-    // ---------- spectrum: full width under the cover row. Resting dots in the placeholder, real bars when playing ----------
-    Visualizer {
-      id: viz
-      anchors.left: parent.left; anchors.right: parent.right
-      y: 76; height: 22; bars: 24                 // must equal `bars` in assets/cava.conf, or the extra bars never move
-      color: root.hasArt ? Qt.rgba(1, 1, 1, 0.9) : Theme.accentFill
-      opacity: root.empty ? 0.4 : 1
-      active: root.live && root.p !== null && root.p.isPlaying
-    }
+    // ---------- scrub: the visualizer is the progress bar. It grows up and down from a centre line, and the bars
+    // past the playhead are dimmed. The elapsed time rides above the playhead, the total sits at the right end.
+    // Click or drag on it to seek, when the player allows it. Resting dots in the placeholder. ----------
+    Item {
+      id: scrub
+      x: 0; y: 70; width: parent.width; height: 48
+      readonly property bool seekable: root.p !== null && root.p.canSeek && root.p.lengthSupported && root.p.length > 0
+      readonly property real frac: root.p && root.p.length > 0 ? Math.min(1, root.p.position / root.p.length) : 0
+      function seekTo(x) { if (seekable) root.p.position = Math.max(0, Math.min(1, x / width)) * root.p.length }
 
-    // ---------- progress (hidden details in the placeholder: an empty track) ----------
-    Column {
-      anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; spacing: 2
-      // Click or drag anywhere on the strip (14 px, taller than the bar) to seek, when the player allows it.
-      Item { width: parent.width; height: 14
-        readonly property bool seekable: root.p !== null && root.p.canSeek && root.p.lengthSupported && root.p.length > 0
-        function seekTo(x) { if (seekable) root.p.position = Math.max(0, Math.min(1, x / width)) * root.p.length }
-        PillSlider { anchors.verticalCenter: parent.verticalCenter; width: parent.width; thin: true; interactive: false
-          value: root.p && root.p.length > 0 ? Math.min(1, root.p.position / root.p.length) : 0 }
-        MouseArea { anchors.fill: parent; enabled: parent.seekable; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-          onPressed: function (m) { parent.seekTo(m.x) }
-          onPositionChanged: function (m) { if (pressed) parent.seekTo(m.x) } }
+      Text {
+        id: elapsed
+        visible: !root.empty; y: 0
+        x: 0                                        // fixed at the left: the start time never moves
+        textFormat: Text.PlainText; text: root.p ? root.fmt(root.p.position) : ""
+        color: root.fg; font.pixelSize: Theme.typeCaption
       }
-      Item { width: parent.width; height: 10; visible: !root.empty
-        Text { textFormat: Text.PlainText; text: root.p ? root.fmt(root.p.position) : ""; color: root.fgMuted; font.pixelSize: Theme.typeCaption }
-        Text { anchors.right: parent.right; textFormat: Text.PlainText; text: root.p ? root.fmt(root.p.length) : ""; color: root.fgMuted; font.pixelSize: Theme.typeCaption } }
+      Text {
+        id: total
+        visible: !root.empty                        // fixed at the right end
+        anchors.right: parent.right; y: 0
+        textFormat: Text.PlainText; text: root.p ? root.fmt(root.p.length) : ""
+        color: root.fg; font.pixelSize: Theme.typeCaption
+      }
+
+      Visualizer {
+        id: viz
+        anchors.left: parent.left; anchors.right: parent.right
+        y: 14; height: 34; bars: 24                 // bars must equal `bars` in assets/cava.conf, or the extra bars never move
+        mirror: true; progress: root.empty ? -1 : scrub.frac
+        color: root.hasArt ? Qt.rgba(1, 1, 1, 0.9) : Theme.accentFill
+        opacity: root.empty ? 0.4 : 1
+        active: root.live && root.p !== null && root.p.isPlaying
+      }
+      MouseArea {
+        x: 0; y: viz.y - 6; width: scrub.width; height: viz.height + 12
+        enabled: scrub.seekable; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+        onPressed: function (m) { scrub.seekTo(m.x) }
+        onPositionChanged: function (m) { if (pressed) scrub.seekTo(m.x) }
+      }
     }
   }
 }

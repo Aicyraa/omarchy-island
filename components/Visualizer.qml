@@ -10,6 +10,8 @@ Item {
   id: root
   property bool active: false
   property int bars: 24
+  property bool mirror: false                   // bars grow up and down from the centre line
+  property real progress: -1                    // 0..1 playback position; bars past it are dimmed. -1: off
   property color color: Theme.accentFill
   property var levels: []                       // 0..1 per bar (cava sends 0..~1000 whatever ascii_max_value says)
 
@@ -36,9 +38,13 @@ Item {
     delegate: Rectangle {
       required property int index
       readonly property real v: root.levels.length > index ? root.levels[index] : 0
+      // Bars past the playhead are dimmed when the visualizer doubles as a progress bar.
+      readonly property bool ahead: root.progress >= 0 && (index + 0.5) / root.bars > root.progress
       x: index * (root.barW + root.gap); width: root.barW; radius: width / 2
-      height: Math.max(3, v * root.height); anchors.bottom: parent.bottom
-      color: root.color; opacity: 0.55 + 0.45 * v
+      height: Math.max(3, v * root.height)
+      // mirror: grows up and down from the centre line; otherwise it grows up from the base
+      y: root.mirror ? (root.height - height) / 2 : root.height - height
+      color: root.color; opacity: ahead ? 0.28 : 0.55 + 0.45 * v
       Behavior on height { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 70 } }
     }
   }

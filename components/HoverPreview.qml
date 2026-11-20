@@ -21,10 +21,18 @@ Item {
   implicitHeight: col.implicitHeight + 2 * pad
 
   readonly property var players: Mpris.players.values
+  // Priority: a playing player beats a paused one; any other player beats the Chromium audible-tab bridge
+  // (so a real media app is never hidden by a background tab that is only making sound).
+  function isBridge(p) { return String(p.dbusName || "").indexOf("chromium_audible") >= 0 }
   readonly property var player: {
-    for (var i = 0; i < players.length; i++) if (players[i].isPlaying) return players[i]
-    for (var j = 0; j < players.length; j++) if (String(players[j].trackTitle || "") !== "") return players[j]
-    return null                               // an idle browser with no track is not worth a card
+    var best = null, bestRank = -1
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i]
+      if (!p.isPlaying && String(p.trackTitle || "") === "") continue   // an idle browser is not worth a card
+      var rank = (p.isPlaying ? 2 : 0) + (isBridge(p) ? 0 : 1)
+      if (rank > bestRank) { best = p; bestRank = rank }
+    }
+    return best
   }
   function screen() { return win ? win.screenName : "" }
 
@@ -110,9 +118,9 @@ Item {
           readonly property color fg: on ? Theme.accentText : Theme.text
           readonly property color fgMuted: on ? Theme.textOnAccentMuted : Theme.textMuted
           Rectangle {                                          // icon disc (wide tiles)
-            visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 34; height: 34; radius: 17
+            visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 30; height: 30; radius: 15
             color: qt.on ? Qt.rgba(1, 1, 1, 0.16) : Theme.mix(Theme.surface, Theme.text, 0.10)
-            Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconMd; color: qt.fg } }
+            Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconSm; color: qt.fg } }
           Icon { visible: !qt.wide; anchors.horizontalCenter: parent.horizontalCenter
             y: qt.label !== "" ? 10 : (qt.height - height) / 2; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
           Text { visible: !qt.wide && qt.label !== ""; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
@@ -120,12 +128,12 @@ Item {
             font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
           Column {
             visible: qt.wide
-            anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 34 + Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s8
+            anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 30 + Theme.s8 + 2; anchors.right: parent.right; anchors.rightMargin: Theme.s8
             anchors.verticalCenter: parent.verticalCenter; spacing: 1
             Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line1
-              color: qt.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+              color: qt.fg; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
             Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line2
-              color: qt.fgMuted; font.pixelSize: Theme.typeLabel }
+              color: qt.fgMuted; font.pixelSize: Theme.typeCaption - 1 }
           }
           MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
             onClicked: function (m) { if (m.button === Qt.RightButton) qt.opened(); else qt.toggled() } }
@@ -190,6 +198,7 @@ Item {
             icon: "volume"
             iconItem: VolumeIcon { level: Audio.volume; muted: Audio.muted; size: Theme.iconMd; color: Theme.accentText }
             value: Audio.muted ? 0 : Audio.volume
+            maxValue: 1.5
             onMoved: function (v) { Audio.setVolume(v) }
           }
           PillSlider {
