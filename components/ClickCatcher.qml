@@ -18,7 +18,7 @@ PanelWindow {
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
   // Overlay: above the bar and the dock, so a click on them while the widget is open counts as outside (the island has a hole).
   WlrLayershell.layer: WlrLayer.Overlay
-  visible: IslandState.pinned && IslandState.modeFor(modelData.name) === "widget"
+  visible: (IslandState.pinned || IslandState.keyboardExclusive) && IslandState.modeFor(modelData.name) === "widget"
 
   // A stray press can arrive as the layer appears (the keypress that opened the widget is not a click): ignore anything
   // for 300 ms after it appears, and count only a complete click, a press AND release on the catcher.

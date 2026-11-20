@@ -24,6 +24,9 @@ Singleton {
 
   // ---- layers (each written only by its own functions below) ----
   property string widgetName: ""      // "" = no widget open
+  property string openingWidget: ""
+  property string openingKind: ""
+  property bool opening: false
   property bool hudActive: false
   property string hudKind: ""
   property real hudValue: 0           // percent, 0..100
@@ -62,19 +65,23 @@ Singleton {
   property bool reducedMotion: false  // durations -> 0, no overshoot
 
   // ---- derived ----
-  readonly property string mode:
-    widgetName !== "" ? "widget"
-    : hudActive ? "hud"
-    : notifActive ? "notification"
-    : hoverOpen ? "hover"
-    : "idle"
+  function currentMode() {
+    if (opening) return "opening"
+    if (widgetName !== "") return "widget"
+    if (hudActive) return "hud"
+    if (notifActive) return "notification"
+    if (hoverOpen) return "hover"
+    return "idle"
+  }
+  readonly property string mode: currentMode()
 
   // What one screen should show. Widgets/HUD only appear on the owning
   // (focused) monitor; every other monitor stays idle.
   function modeFor(screenName) {
-    if (mode === "idle") return "idle"
-    if (mode === "hover") return screenName === hoverScreen ? "hover" : "idle"
-    return screenName === activeScreen ? mode : "idle"
+    var m = currentMode()
+    if (m === "idle") return "idle"
+    if (m === "hover") return screenName === hoverScreen ? "hover" : "idle"
+    return screenName === activeScreen ? m : "idle"
   }
 
   readonly property bool fullscreen:
@@ -107,7 +114,10 @@ Singleton {
       else { pendingHoverScreen = screenName; openTimer.restart() }
     } else {
       if (hoverOpen) { if (screenName === hoverScreen) closeTimer.restart() }
-      else if (pendingHoverScreen === screenName) openTimer.stop()
+      else if (pendingHoverScreen === screenName) {
+        openTimer.stop()
+        if (opening && openingKind === "hover") cancelOpening()
+      }
     }
   }
 
@@ -116,26 +126,74 @@ Singleton {
   // timer and focus-grab closes (keyboard focus moving away is not a decision to close it). Opened from the bar or IPC,
   // it closes as before when the cursor leaves it.
   property bool pinned: false
+  property bool keyboardExclusive: false
   // A one-shot instruction for the widget that opens next (e.g. "wifi-share" from the menu's QR entry).
   property string intent: ""
   // Each screen's island clickable zone (pill, widget and ears), in that screen's coordinates. The click catcher leaves
   // this hole in its input region, so clicks on the island and on an open widget reach the island.
   property var zoneRects: ({})
   function setZone(name, r) { var z = Object.assign({}, zoneRects); z[name] = r; zoneRects = z }
+  function beginOpening(kind, name, screenName) {
+    openingKind = kind
+    openingWidget = name || ""
+    activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()
+    if (reducedMotion) {
+      opening = false
+      openingWidget = ""
+      openingKind = ""
+      if (kind === "hover") {
+        hoverScreen = activeScreen
+        hoverOpen = true
+      } else {
+        widgetName = name || ""
+      }
+      return
+    }
+    opening = true
+    openingTimer.restart()
+  }
+  function cancelOpening() {
+    if (!opening) return
+    opening = false
+    openingWidget = ""
+    openingKind = ""
+    openingTimer.stop()
+  }
   function openWidget(name, screenName, pin) {
     pinned = !!pin
-    activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()
-    widgetName = name                    // A -> B swaps directly, never via idle
+    if (widgetName === "" && name !== "") {
+      if (hoverOpen) {
+        // Hover preview is already detached and floating: morph straight into the widget.
+        activeScreen = (screenName && screenName !== "") ? screenName : (hoverScreen || focusedScreenName())
+        widgetName = name
+      } else if (opening) {
+        // Reuse the detached capsule already dropping; only retarget what it becomes.
+        openingKind = "widget"
+        openingWidget = name
+        activeScreen = (screenName && screenName !== "") ? screenName : activeScreen
+      } else {
+        beginOpening("widget", name, screenName)
+      }
+    } else {
+      activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()
+      widgetName = name                    // A -> B swaps directly, never replays opening
+    }
     openTimer.stop(); closeTimer.stop(); hoverOpen = false
     touch()
   }
   function toggleWidget(name, screenName, pin) {
-    if (widgetName === name) closeWidget(); else openWidget(name, screenName, pin)
+    if (widgetName === name || (opening && openingKind === "widget" && openingWidget === name)) closeWidget()
+    else openWidget(name, screenName, pin)
   }
   function closeWidget(reason) {
-    if (widgetName === "") return
+    if (widgetName === "" && !opening) return
     pinned = false
-    console.warn("island: widget closed:", widgetName, reason || "(explicit)")
+    keyboardExclusive = false
+    console.warn("island: widget closed:", widgetName || openingWidget, reason || "(explicit)")
+    opening = false
+    openingWidget = ""
+    openingKind = ""
+    openingTimer.stop()
     widgetName = ""
     idleTimer.stop()
     // Straight back to idle. Hover does not resume by itself, so the pill never flashes its expanded form
@@ -230,13 +288,32 @@ Singleton {
 
   // Timers exist but only RUN when started, so nothing ticks while idle.
   Timer { id: openTimer; interval: 170
-    onTriggered: { root.hoverScreen = root.pendingHoverScreen; root.hoverOpen = true } }
+    onTriggered: {
+      if (root.widgetName === "" && !root.hoverOpen && !root.opening)
+        root.beginOpening("hover", "", root.pendingHoverScreen)
+    } }
   Timer { id: closeTimer; interval: 380
     // The pointer was reported gone. Confirm with the real cursor position before collapsing the hover form.
     onTriggered: root.probeCursor(root.hoverScreen, function (inside, raw) {
       if (inside) closeTimer.restart()
       else { console.warn("island: hover closed, cursor away (" + raw + ")"); root.hoverOpen = false } }) }
   Timer { id: hudTimer; interval: 1500; onTriggered: root.hudActive = false }
+  Timer { id: openingTimer; interval: 150
+    onTriggered: {
+      if (!root.opening) return
+      var kind = root.openingKind, name = root.openingWidget, screen = root.activeScreen
+      if (kind === "widget" && name === "") { root.cancelOpening(); return }
+      root.opening = false
+      root.openingWidget = ""
+      root.openingKind = ""
+      if (kind === "hover") {
+        root.hoverScreen = screen
+        root.hoverOpen = true
+      } else {
+        root.widgetName = name
+      }
+      root.touch()
+    } }
   Timer { id: idleTimer
     interval: root.timeoutFor(root.widgetName)
     onTriggered: {

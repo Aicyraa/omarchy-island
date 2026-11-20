@@ -38,8 +38,9 @@ Item {
   // fills the part the real content does not cover yet with placeholder rows, so the pill opens at its final size and the
   // data just fills in. The reservation ends when loading ends, or after 2.5 s so an empty result cannot hold it forever.
   property bool dataLoading: false
+  property bool useReserve: true
   property real reserve: 0
-  readonly property bool reserving: (dataLoading || Quickshell.env("ISLAND_FORCE_LOADING") === "1") && reserve > 0 && reserveTimer.running
+  readonly property bool reserving: useReserve && (dataLoading || Quickshell.env("ISLAND_FORCE_LOADING") === "1") && reserve > 0 && reserveTimer.running
   Timer { id: reserveTimer; interval: 2500; running: true }
 
   focus: true

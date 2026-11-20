@@ -25,7 +25,17 @@ PanelWindow {
   readonly property string screenName: modelData.name
   // What THIS screen shows right now (idle on every screen unless it owns the
   // widget/HUD/hover).
-  readonly property string myMode: IslandState.modeFor(screenName)
+  readonly property string globalMode: IslandState.mode
+  readonly property string myMode:
+    globalMode === "idle" ? "idle"
+    : globalMode === "hover" ? (screenName === IslandState.hoverScreen ? "hover" : "idle")
+    : (screenName === IslandState.activeScreen ? globalMode : "idle")
+  // Idle stays docked flush to the top edge with concave ears; opening detaches
+  // the time capsule, drops it down by `detachedOffset`, and morphs it into a
+  // floating detached widget (or hover preview) with all four corners rounded.
+  readonly property bool detachedMode: myMode === "opening" || myMode === "hover" || myMode === "widget"
+  readonly property real capsuleAnchorX: (win.width - win.idleSize.width) / 2
+  readonly property int detachedOffset: 12
 
   // ---- geometry: pill size per mode ----
   readonly property int topMargin: 0      // flush with the top edge
@@ -42,7 +52,7 @@ PanelWindow {
     var it = widgetLoader.item
     if (it && pill.shownWidget === name && it.implicitHeight > 0)
       return Qt.size(Math.min(Theme.panelMaxWidth, it.implicitWidth), it.implicitHeight)
-    var saved = savedHeight(name)
+    var saved = (name === "wifi") ? 0 : savedHeight(name)
     return Qt.size(Registry.width(name), saved > 0 ? saved : Registry.height(name))
   }
   // The hover preview sizes itself; before it is loaded, use its fixed height (the media card always has a slot now).
@@ -53,6 +63,7 @@ PanelWindow {
   }
   function sizeFor(m) {
     switch (m) {
+    case "opening":      return Qt.size(idleForm.widthFor(), 26)
     case "hover":        return hoverSize()
     case "widget":       return widgetSizeOf(IslandState.widgetName)
     case "hud":          return Qt.size(300, 42)
@@ -61,8 +72,8 @@ PanelWindow {
     }
   }
   readonly property size target: sizeFor(myMode)
-  // Used by State to decide whether a still cursor is on the widget (width includes the ears).
-  function pillBox() { return Qt.size(target.width + 2 * ear, target.height) }
+  // Used by State to decide whether a still cursor is on the widget (includes vertical detached offset).
+  function pillBox() { return Qt.size(target.width + 2 * ear, target.height + (win.detachedMode ? win.detachedOffset : 0)) }
   Component.onCompleted: { IslandState.islands[screenName] = win; IslandState.setZone(screenName, zoneRect) }
   Component.onDestruction: delete IslandState.islands[screenName]
   // The size of what is actually ON SCREEN right now. It lags `target` by the fade-out beat, and it is
@@ -81,9 +92,12 @@ PanelWindow {
   exclusiveZone: topMargin + idleSize.height
 
   WlrLayershell.namespace: "aicyraa-island"
-  // Only grab the keyboard while a widget is open on this screen.
-  // Widgets take the keyboard on click. (The menu used to hold it exclusively for typing, but that stopped outside clicks from closing it.)
-  WlrLayershell.keyboardFocus: myMode === "widget" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+  // Widgets that accept immediate text typing (ThemePicker, Menu, WorldClock search)
+  // declare `wantsKeyboard: true` so Wayland delivers keystrokes immediately without
+  // requiring a pointer click first; ClickCatcher still handles click-outside closes.
+  readonly property bool needsKeyboard: myMode === "widget" && widgetLoader.item !== null && widgetLoader.item !== undefined && widgetLoader.item.wantsKeyboard === true
+  onNeedsKeyboardChanged: if (screenName === IslandState.activeScreen || !needsKeyboard) IslandState.keyboardExclusive = needsKeyboard
+  WlrLayershell.keyboardFocus: needsKeyboard ? WlrKeyboardFocus.Exclusive : (myMode === "widget" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
   // Hide in fullscreen unless the user explicitly opened a widget; always hide under the screensaver.
   visible: !IslandState.barHidden && !IslandState.screensaver && !(IslandState.fullscreen && myMode !== "widget")
@@ -101,10 +115,9 @@ PanelWindow {
   }
   HyprlandFocusGrab {
     windows: [win]
-    // The menu is keybind-opened (pinned) but watches for a click outside too. It holds the keyboard, so after it has
-    // settled (menuArmed: 700 ms after it opens, since taking the keyboard itself clears the grab) the grab is only
-    // cleared by a press elsewhere. The cursor check then closes it if the pointer is away.
-    active: win.myMode === "widget" && !win.grabHold && (!IslandState.pinned || (IslandState.widgetName === "menu" && win.menuArmed))
+    // The menu and keyboard-input widgets (ThemePicker, WorldClock search) hold exclusive keyboard focus,
+    // which clears HyprlandFocusGrab immediately; ClickCatcher handles click-outside for them cleanly.
+    active: win.myMode === "widget" && !win.grabHold && !win.needsKeyboard && (!IslandState.pinned || (IslandState.widgetName === "menu" && win.menuArmed))
     onCleared: if (IslandState.pinned && IslandState.widgetName !== "menu") { /* keybind-opened: ClickCatcher handles it */ } else IslandState.guard("focus grab cleared", function (stayed) {
       if (stayed) { win.grabHold = true; Qt.callLater(function () { win.grabHold = false }) } })
   }
@@ -119,19 +132,23 @@ PanelWindow {
   // The window is centred on the screen (it anchors to the top edge only), so add its offset to get screen coordinates.
   // It covers BOTH the target zone and the pill as it is drawn right now (the pill springs, so for a moment it can be
   // taller than the target when a list shrinks); the hole follows the animation frame by frame.
-  readonly property real zoneL: Math.min(zone.x, pill.x - ear)
-  readonly property real zoneR: Math.max(zone.x + zone.width, pill.x + pill.width + ear)
+  readonly property real zoneL: Math.min(zone.x, pill.x - (win.detachedMode ? 0 : ear))
+  readonly property real zoneR: Math.max(zone.x + zone.width, pill.x + pill.width + (win.detachedMode ? 0 : ear))
+  readonly property real zoneT: Math.min(zone.y, pill.y)
   readonly property real zoneB: Math.max(zone.y + zone.height, pill.y + pill.height)
-  readonly property rect zoneRect: Qt.rect(Math.round((win.screen.width - win.width) / 2) + zoneL, 0, zoneR - zoneL, zoneB)
+  readonly property rect zoneRect: Qt.rect(Math.round((win.screen.width - win.width) / 2) + zoneL, zoneT, zoneR - zoneL, zoneB - zoneT)
   onZoneRectChanged: IslandState.setZone(screenName, zoneRect)
   mask: Region { item: zone; Region { item: leftSat } Region { item: rightSat } }
   Item {
     id: zone
     anchors.horizontalCenter: parent.horizontalCenter
-    y: 0
-    width: win.target.width + 2 * win.ear
-    height: win.topMargin + win.target.height + (win.myMode === "widget" ? 0 : 6)
-    HoverHandler { onHoveredChanged: { IslandState.hoverIntent(hovered, win.screenName); if (hovered) Prefetch.touch() } }
+    // Bridge the top gap while idle/opening/hovering so moving the pointer from the top edge into the floating pill never drops hover.
+    y: win.myMode === "widget" ? win.detachedOffset : 0
+    width: win.target.width + (win.detachedMode ? 0 : 2 * win.ear)
+    height: win.myMode === "widget" ? win.target.height : win.target.height + (win.detachedMode ? win.detachedOffset : 6)
+    HoverHandler {
+      onHoveredChanged: { IslandState.hoverIntent(hovered, win.screenName); if (hovered) Prefetch.touch() }
+    }
   }
 
   // ---- debug: measure + overlay (inactive unless `island debug ...` is used) ----
@@ -213,7 +230,10 @@ PanelWindow {
   // the pill clips its content).
   Shape {
     z: 3
-    x: pill.x - win.ear; y: win.topMargin
+    opacity: win.detachedMode ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
+    x: pill.x - win.ear; y: pill.y
     width: win.ear; height: win.ear
     preferredRendererType: Shape.CurveRenderer
     ShapePath {
@@ -226,7 +246,10 @@ PanelWindow {
   }
   Shape {
     z: 3
-    x: pill.x + pill.width; y: win.topMargin
+    opacity: win.detachedMode ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
+    x: pill.x + pill.width; y: pill.y
     width: win.ear; height: win.ear
     preferredRendererType: Shape.CurveRenderer
     ShapePath {
@@ -247,11 +270,12 @@ PanelWindow {
   Rectangle {
     id: leftSat
     z: 0
+    visible: true
     antialiasing: true
     layer.enabled: true; layer.samples: 4      // an offscreen layer with 4x multisampling: smooth rounded edges
     y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
     width: wsView.implicitWidth + 2 * 10
-    x: pill.x - win.satTuck - width
+    x: win.capsuleAnchorX - win.satTuck - width
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
     // The capsule's padding (everything but the dots) opens the workspace overview; the dots keep switching workspace.
     MouseArea { id: wsArea; z: -1; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -269,7 +293,7 @@ PanelWindow {
     Behavior on color { ColorAnimation { duration: 120 } }
     width: 2 * 10 + (Power.present ? 18 : 0) + (Indicators.recording ? 8 + (Power.present ? 9 : 0) : 0)
     Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    x: pill.x + pill.width + win.satTuck
+    x: win.capsuleAnchorX + win.idleSize.width + win.satTuck
     Row {
       anchors.centerIn: parent; spacing: 9
       // Screen recording: a red dot that pulses; click stops the recording.
@@ -296,18 +320,23 @@ PanelWindow {
     z: 2
     antialiasing: true
     layer.enabled: true; layer.samples: 4
-    y: win.topMargin
+    y: win.detachedMode ? win.topMargin + win.detachedOffset : win.topMargin
+    Behavior on y { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 5.2; damping: 0.48; epsilon: 0.25 } }
     anchors.horizontalCenter: parent.horizontalCenter
     width: win.target.width
     height: win.delayedH
-    // Attached to the top edge: square top corners, rounded bottom corners
-    // (per-corner radii need Qt 6.7+).
-    topLeftRadius: 0
-    topRightRadius: 0
+    // Idle attaches to the top edge; opening detaches the time capsule and
+    // morphs it into a floating pill with all four corners rounded (Qt 6.7+).
+    topLeftRadius: win.detachedMode ? Math.min(Theme.pillRadius, height / 2) : 0
+    topRightRadius: win.detachedMode ? Math.min(Theme.pillRadius, height / 2) : 0
     bottomLeftRadius: Math.min(Theme.pillRadius, height / 2)
     bottomRightRadius: Math.min(Theme.pillRadius, height / 2)
+    Behavior on topLeftRadius { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+    Behavior on topRightRadius { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
     color: Theme.pill
     clip: true                           // content never spills while resizing
+    border.width: win.detachedMode ? 1 : 0
+    border.color: Qt.rgba(Theme.outline.r, Theme.outline.g, Theme.outline.b, 0.22)
 
     // SpringAnimation: `spring` = stiffness, `damping` = how fast bounce dies,
     // `epsilon` = stop threshold. See README tuning cheat sheet.
@@ -317,11 +346,11 @@ PanelWindow {
     // Power widget to the 26px idle bar: heights 154 95 52 35 29 27 26 (never below 26). Note Qt's `damping`
     // is not a damping ratio: 1.0 does not mean "critical", it just crawls (the collapse took ~0.7 s).
     Behavior on width {
-      enabled: !IslandState.reducedMotion
+      enabled: !IslandState.reducedMotion && win.myMode !== "opening"
       SpringAnimation { spring: win.shrinkW ? 6.0 : 3.4; damping: win.shrinkW ? 0.55 : 0.34; epsilon: 0.5 }
     }
     Behavior on height {
-      enabled: !IslandState.reducedMotion
+      enabled: !IslandState.reducedMotion && win.myMode !== "opening"
       SpringAnimation { spring: win.shrinkH ? 6.0 : 3.0; damping: win.shrinkH ? 0.55 : 0.36; epsilon: 0.5 }
     }
 
@@ -366,15 +395,18 @@ PanelWindow {
     readonly property real fit: gating ? rawFit : 1
     onRawFitChanged: if (gating && rawFit >= 0.98) gating = false
     Timer { interval: 500; running: pill.gating; onTriggered: pill.gating = false }
-    Item {
-      id: content
+      Item {
+        id: content
       anchors.top: parent.top
       anchors.horizontalCenter: parent.horizontalCenter
       width: win.shownSize.width
-      height: win.shownSize.height
-      property real fade: 1                 // animated by the swap; the real opacity also waits for the pill (fit)
-      opacity: fade * pill.fit
-      focus: win.myMode === "widget"
+        height: win.shownSize.height
+        property real fade: 1                 // animated by the swap; the real opacity also waits for the pill (fit)
+        opacity: fade * pill.fit
+        scale: win.myMode === "hover" ? 1.01 : 1
+        Behavior on scale { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        focus: win.myMode === "widget"
+
       // BeforeItem: we see every key first (to reset the inactivity timer and
       // handle Esc), then unhandled keys fall through to the widget.
       Keys.priority: Keys.BeforeItem
@@ -399,16 +431,26 @@ PanelWindow {
         NumberAnimation { target: content; property: "fade"; to: 1
           duration: IslandState.reducedMotion ? 0 : 200; easing.type: Easing.OutCubic }
       }
-      Connections { target: win; function onMyModeChanged() { swap.restart() } }
+      Connections {
+        target: win
+        function onMyModeChanged() {
+          // Idle -> opening keeps the exact time pill visible while it detaches and drops down.
+          if (pill.shownMode === "idle" && win.myMode === "opening") {
+            pill.shownMode = "opening"
+            return
+          }
+          swap.restart()
+        }
+      }
       Connections { target: IslandState
         function onWidgetNameChanged() { if (win.myMode === "widget" && pill.shownWidget !== IslandState.widgetName) swap.restart() } }
 
-      // ---------- idle + hover form (always instantiated: it also reports both widths) ----------
+      // ---------- idle + opening time capsule (always instantiated: reports idle width too) ----------
       IdleForm {
         id: idleForm
         win: win
         anchors.fill: parent
-        visible: pill.shownMode === "idle"
+        visible: pill.shownMode === "idle" || pill.shownMode === "opening"
       }
 
       // ---------- hover form: preview of the essentials (loaded only while shown) ----------
@@ -471,9 +513,10 @@ PanelWindow {
         focus: true
         source: active && pill.shownWidget !== "" ? "widgets/" + Registry.fileOf(pill.shownWidget) : ""
         onLoaded: {
-          if (item.hasOwnProperty("reserve")) item.reserve = win.savedHeight(pill.shownWidget)
+          if (item.hasOwnProperty("reserve") && item.useReserve !== false) item.reserve = win.savedHeight(pill.shownWidget)
           sizeSave.restart()
-          item.forceActiveFocus()
+          if (item.hasOwnProperty("initialFocus") && item.initialFocus) item.initialFocus.forceActiveFocus()
+          else item.forceActiveFocus()
           // Widgets that need the window (e.g. tray context menus) declare `hostWindow`.
           if (item.hasOwnProperty("hostWindow")) item.hostWindow = win
         }

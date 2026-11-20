@@ -14,9 +14,9 @@ Item {
   readonly property real viewH: flick ? flick.height : 0
   readonly property real contentH: flick ? flick.contentHeight : 1
   readonly property real maxY: Math.max(1, contentH - viewH)
-  readonly property real margin: 4
+  readonly property real margin: 5
   readonly property real trackH: Math.max(1, height - 2 * margin)
-  readonly property real thumbH: Math.max(28, Math.min(trackH, trackH * viewH / contentH))
+  readonly property real thumbH: Math.max(24, Math.min(trackH, trackH * viewH / contentH))
   readonly property real thumbY: margin + (trackH - thumbH) * Math.max(0, Math.min(1, flick.contentY / maxY))
 
   // "Recently scrolled": keeps the bar bright for a moment after the wheel stops.
@@ -30,9 +30,9 @@ Item {
 
   Rectangle {
     id: thumb
-    anchors.right: parent.right; anchors.rightMargin: 3
+    anchors.right: parent.right; anchors.rightMargin: 8
     y: root.thumbY; height: root.thumbH
-    width: root.hot ? 6 : 4; radius: width / 2
+    width: root.hot ? 4 : 2; radius: width / 2
     color: root.dragging ? Theme.accentInk : Theme.textMuted
     opacity: root.dragging ? 1 : (root.hot ? 0.85 : 0.35)
     Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutBack } }
