@@ -14,9 +14,29 @@ Rules:
 
 ## Using the graph in this project (read this with the rules above)
 - **Query first, then search.** For any question about how this plugin works, run `graphify query "<question>"` (or `graphify path "<A>" "<B>"`, `graphify explain "<concept>"`) BEFORE `grep`, `rg`, `find` or reading source files. Only then open or grep the specific files the answer points to. Put the same rule in every subagent prompt that explores the code.
-- **Know the graph's blind spot.** graphify cannot parse `.qml`, and almost all of this plugin is QML (`Island.qml`, `State.qml`, `Theme.qml`, `Bar.qml`, `components/`, `widgets/`, `services/`). The graph currently covers only `deploy.py`, `widgets/Registry.js`, `components/Icons.js`, `assets/*.sh`, the two `manifest.json` files and the README (concepts from the README, not from the code). So a query that comes back empty or README-shaped does not mean the code has nothing: follow up with `grep` and `Read` on the QML files. The README's architecture sections are the best map of the QML; graph nodes such as `Island.qml` are README mentions.
+- **Know the graph's blind spot.** graphify cannot parse `.qml`, and almost all of this plugin is QML (`Island.qml`, `State.qml`, `Theme.qml`, `Bar.qml`, `components/`, `widgets/`, `services/`, `notifications-shim/`). The graph currently covers only `deploy.py`, `widgets/Registry.js`, `components/Icons.js`, `assets/*.sh`, the `manifest.json` files and the README (concepts from the README, not from the code). So a query that comes back empty or README-shaped does not mean the code has nothing: follow up with `grep` and `Read` on the QML files. The README's architecture sections are the best map of the QML; graph nodes such as `Island.qml` are README mentions.
 - **Update after changing things.**
   - After editing code the graph can read (`.py`, `.js`, `.sh`, `.json`): run `graphify update .` (AST only, free).
   - After changing `README.md` (new sections, renamed concepts): run `/graphify . --update` so the README is re-extracted (this uses a model).
   - After editing only QML, `graphify update .` finds nothing to do; the graph is not stale because it never contained that code, but update the README section that describes the change so the graph's view of the project stays accurate.
 - `graphify-out/` is generated; the manual `/graphify` run and `graphify update .` are the only things that rewrite it. Keep `deploy.py` and the QML test rig (`rig.qml`) workflow from the README unchanged.
+
+## Qt 6 / QML Skills, MCP & Plugins
+
+This codebase is a Qt 6 / Qt Quick / Quickshell plugin. Always use the installed Qt skills, MCP servers, and review tools when designing, editing, reviewing, or debugging QML:
+
+### Required Skills (read `SKILL.md` before applying)
+- **`qt-qml`**: Apply whenever writing, refactoring, or fixing `.qml` files (bindings, `Loader` lifecycles, `required property` on delegates, avoiding layout-thrashing width/height animations inside `ListView`, GPU `scale`/`opacity` transitions, `Text.PlainText` for untrusted data, no Qt 5 import versions).
+- **`qt-ui-design`**: Apply whenever designing or polishing widget layouts, typography hierarchy, focus navigation, contrast (WCAG >= 4.5:1 via `Theme.qml` tokens), and motion budgets. Keep Island's **asymmetrical Apple-inspired layout** (dominant focal block + offset supporting column) while preserving shared `Theme.qml` tokens, pill identity, and `reducedMotion` support.
+- **`qt-qml-review`** (and `qml-review-agent`): Use before committing significant QML changes to catch binding loops, focus traps, delegate regressions, and performance issues.
+- **`qt-canvas2d`**: Use when working on imperative 2D drawing (`Canvas` / `Sparkline.qml` / `GlobeView.qml` / QR rendering).
+- **`qt-qml-profiler`**, **`qt-qml-test`**, **`qt-qml-test-run`**, **`qt-qml-docs`**: Use when profiling frame drops/stutter, writing or running Qt Quick tests, or generating QML API documentation.
+- **`omarchy`**: Required whenever reading or modifying user configs in `~/.config/hypr/` or `~/.config/omarchy/` (e.g., `bindings.lua`, `shell.json`, plugin enablement). Never edit `/usr/share/omarchy/`.
+
+### Qt Documentation MCP (`qt-docs` / `qt-ai-skills_qt-docs`)
+- Before relying on Qt 6.7+ APIs (such as per-corner `Rectangle` radii, `HoverHandler`, `Shape` / `CurveRenderer`, `ListView` reuse/margins, or `Animator` types), verify exact properties, signals, and defaults with `qt_documentation_search` and `qt_documentation_read` from the `qt-docs` MCP server.
+
+### Validation Workflow
+1. Run `/usr/lib/qt6/bin/qmllint` on modified `.qml` files to catch syntax, duplicate properties, and invalid bindings early.
+2. Deploy with `python3 deploy.py`, reload the shell with `omarchy restart shell`, and verify live geometry/contrast via `omarchy-shell island debug measure` and `omarchy-shell island debug contrast`.
+3. Never hardcode hex colors outside `Theme.qml`'s fallback block (except explicit white/black QR quiet zones), and always keep `textFormat: Text.PlainText` on dynamic/external text.
