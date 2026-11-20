@@ -16,6 +16,7 @@ Item {
   property string icon: ""
   property Component iconItem: null        // optional custom icon (e.g. the animated VolumeIcon)
   property real value: 0
+  property real maxValue: 1
   property real step: 0.05
   property bool selected: false
   property bool showValue: false
@@ -28,7 +29,9 @@ Item {
   implicitHeight: thin ? 6 : Theme.sliderHeight
   height: implicitHeight
 
-  readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.35) : Theme.accentFill
+  readonly property bool boosted: root.maxValue > 1.0 && root.value > 1.005
+  readonly property color fillColor: dimmed ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.35)
+                                            : (boosted ? Theme.mix(Theme.accentFill, Theme.warning, 0.45) : Theme.accentFill)
   readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
   // No outline: selection and hover only lift the track a little (the fill keeps the accent).
@@ -36,10 +39,21 @@ Item {
     color: root.selected ? Theme.mix(Theme.surface, Theme.text, 0.14) : (area.containsMouse && root.interactive ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface)
     Behavior on color { ColorAnimation { duration: 140 } } }
 
+  // 100% unity marker when the slider supports amplification above 100% (e.g. 150% audio).
+  Rectangle {
+    visible: !root.thin && root.maxValue > 1.0
+    z: 2
+    x: Math.round(root.width * (1.0 / root.maxValue)) - 1
+    anchors.verticalCenter: parent.verticalCenter
+    width: 2; height: Math.max(10, parent.height * 0.42); radius: 1
+    color: root.boosted ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.45)
+                        : Qt.rgba(Theme.textMuted.r, Theme.textMuted.g, Theme.textMuted.b, 0.45)
+  }
+
   Rectangle {
     id: fill
     // Never narrower than the icon so the icon always stays inside the fill.
-    width: Math.max(root.thin ? 0 : height, root.width * root.value) + (area.pressed && !root.thin ? 6 : 0)
+    width: Math.max(root.thin ? 0 : height, root.width * Math.max(0, Math.min(1, root.value / Math.max(0.01, root.maxValue)))) + (area.pressed && !root.thin ? 6 : 0)
     height: parent.height; radius: height / 2
     color: root.fillColor
     // A light sheen from the top edge: the same accent, a touch brighter at the top.
@@ -69,7 +83,7 @@ Item {
     visible: root.showValue && !root.thin
     anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter
     textFormat: Text.PlainText; text: Math.round(root.value * 100) + "%"
-    color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
+    color: root.boosted ? Theme.warningInk : Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
   }
 
   MouseArea {
@@ -77,9 +91,9 @@ Item {
     enabled: root.interactive
     anchors.fill: parent
     hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-    function set(x) { root.moved(Math.max(0, Math.min(1, x / width))) }
+    function set(x) { root.moved(Math.max(0, Math.min(root.maxValue, root.maxValue * x / width))) }
     onPressed: function (m) { set(m.x) }
     onPositionChanged: function (m) { if (pressed) set(m.x) }
-    onWheel: function (w) { root.moved(Math.max(0, Math.min(1, root.value + (w.angleDelta.y > 0 ? root.step : -root.step)))) }
+    onWheel: function (w) { root.moved(Math.max(0, Math.min(root.maxValue, root.value + (w.angleDelta.y > 0 ? root.step : -root.step)))) }
   }
 }

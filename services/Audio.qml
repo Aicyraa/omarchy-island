@@ -20,7 +20,9 @@ Singleton {
   readonly property real micVolume: hasSource ? source.audio.volume : 0
   readonly property bool micMuted: hasSource ? source.audio.muted : false
 
-  function clamp(v) { return Math.max(0, Math.min(1, v)) }
+  // PipeWire accepts software amplification above unity; keep the UI bounded at
+  // 150% so a slider cannot create an accidental runaway level.
+  function clamp(v) { return Math.max(0, Math.min(1.5, v)) }
   function setVolume(v) { if (!hasSink) return; sink.audio.muted = false; sink.audio.volume = clamp(v) }
   function toggleMute() { if (hasSink) sink.audio.muted = !sink.audio.muted }
   function setMicVolume(v) { if (hasSource) source.audio.volume = clamp(v) }
