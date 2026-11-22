@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import ".."
 
 // The ONE slider. A thick pill track with the icon INSIDE the filled part (the
@@ -35,34 +36,36 @@ Item {
   readonly property color iconColor: dimmed ? Theme.text : Theme.accentText
 
   // No outline: selection and hover only lift the track a little (the fill keeps the accent).
-  Rectangle { antialiasing: true; anchors.fill: parent; radius: height / 2
+  SmoothRect { anchors.fill: parent; radius: height / 2
     color: root.selected ? Theme.mix(Theme.surface, Theme.text, 0.14) : (area.containsMouse && root.interactive ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface)
     Behavior on color { ColorAnimation { duration: 140 } } }
 
-  // 100% unity marker when the slider supports amplification above 100% (e.g. 150% audio).
-  Rectangle {
-    visible: !root.thin && root.maxValue > 1.0
-    z: 2
-    x: Math.round(root.width * (1.0 / root.maxValue)) - 1
-    anchors.verticalCenter: parent.verticalCenter
-    width: 2; height: Math.max(10, parent.height * 0.42); radius: 1
-    color: root.boosted ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.45)
-                        : Qt.rgba(Theme.textMuted.r, Theme.textMuted.g, Theme.textMuted.b, 0.45)
-  }
-
-  Rectangle {
+  Item {
     id: fill
     // Never narrower than the icon so the icon always stays inside the fill.
     width: Math.max(root.thin ? 0 : height, root.width * Math.max(0, Math.min(1, root.value / Math.max(0.01, root.maxValue)))) + (area.pressed && !root.thin ? 6 : 0)
-    height: parent.height; radius: height / 2
-    color: root.fillColor
-    // A light sheen from the top edge: the same accent, a touch brighter at the top.
-    gradient: Gradient {
-      GradientStop { position: 0; color: Qt.lighter(root.fillColor, 1.1) }
-      GradientStop { position: 1; color: root.fillColor }
-    }
+    height: parent.height
     Behavior on width { enabled: !area.pressed; NumberAnimation { duration: IslandState.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
-    Behavior on color { ColorAnimation { duration: 200 } }
+
+    Shape {
+      anchors.fill: parent
+      readonly property bool isBgSurface: true
+      preferredRendererType: Shape.CurveRenderer
+      ShapePath {
+        strokeWidth: -1
+        fillGradient: LinearGradient {
+          x1: 0; y1: 0
+          x2: 0; y2: fill.height
+          GradientStop { position: 0; color: Qt.lighter(root.fillColor, 1.1) }
+          GradientStop { position: 1; color: root.fillColor }
+        }
+        PathRectangle {
+          width: fill.width > 0.5 ? fill.width : 0
+          height: fill.height > 0.5 ? fill.height : 0
+          radius: fill.height / 2
+        }
+      }
+    }
 
     Item {
       visible: !root.thin
@@ -70,19 +73,19 @@ Item {
       width: Theme.iconMd; height: Theme.iconMd
       Loader { anchors.fill: parent; sourceComponent: root.iconItem ? root.iconItem : plainIcon }
       Component { id: plainIcon; Icon { name: root.icon; size: Theme.iconMd; color: root.iconColor } }
-      Rectangle {                              // badge, e.g. the mute mark on the icon
+      SmoothRect {                              // badge, e.g. the mute mark on the icon
         visible: root.badge !== ""
         x: parent.width - 9; y: parent.height - 9; width: 12; height: 12; radius: 6; color: Theme.danger
-        border.width: 1.5; border.color: root.fillColor
+        borderWidth: 1.5; borderColor: root.fillColor
         Icon { anchors.centerIn: parent; name: root.badge; size: 8; color: Theme.textOnDanger; strokeWidth: 3 }
       }
     }
   }
 
-  Text {
+  Label {
     visible: root.showValue && !root.thin
     anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter
-    textFormat: Text.PlainText; text: Math.round(root.value * 100) + "%"
+    mono: true; text: Math.round(root.value * 100) + "%"
     color: root.boosted ? Theme.warningInk : Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
   }
 

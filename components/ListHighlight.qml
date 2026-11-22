@@ -1,12 +1,12 @@
 import QtQuick
 import ".."
 
-// The sliding highlight lives in the scrolled content, behind the rows. It is a rectangle whose TOP and BOTTOM edges
+// The sliding highlight lives in the scrolled content, behind the rows. It is a rounded shape whose TOP and BOTTOM edges
 // (for lists) move on their own clocks: the edge that leads the motion is quick (200 ms) and the trailing edge follows
 // slower (320 ms), so the highlight stretches while it travels and then settles, like a drop of liquid. Both edges
 // start from wherever the highlight currently is, so a second move mid-flight never jumps. Horizontal edges follow the
-// same rule. It bleeds 8 px sideways like the rows do.
-Rectangle {
+// same rule and stay strictly inside the panel's uniform outer padding.
+SmoothRect {
   id: hl
   // what it follows: the focused item, the coordinate space it lives in, and the column it re-places on
   property Item host: null
@@ -32,7 +32,7 @@ Rectangle {
     var it = host.focusItem
     if (!it) return
     var p = it.mapToItem(container, 0, 0)
-    var nL = p.x - Theme.s8, nT = p.y, nR = p.x + it.width + Theme.s8, nB = p.y + it.height
+    var nL = p.x, nT = p.y, nR = p.x + it.width, nB = p.y + it.height
     if (first || IslandState.reducedMotion) {
       fL = tL = nL; fR = tR = nR; fT = tT = nT; fB = tB = nB
       pHead = 1; pTail = 1

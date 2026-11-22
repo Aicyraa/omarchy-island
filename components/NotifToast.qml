@@ -42,7 +42,7 @@ Item {
   Item { id: body; width: parent.width; height: parent.height; transformOrigin: Item.Top
     NotifThumb {
       id: thumb
-      x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -toast.barSpace / 2
+      x: toast.inset; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -toast.barSpace / 2
       size: 40; badge: true; preview: toast.preview; iconName: toast.iconName
       transformOrigin: Item.Center
     }
@@ -50,19 +50,19 @@ Item {
       anchors.left: thumb.right; anchors.leftMargin: Theme.s12
       anchors.right: parent.right; anchors.rightMargin: toast.inset
       anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -toast.barSpace / 2; spacing: 2
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+      Label { width: parent.width; elide: Text.ElideRight
         text: toast.n.summary || toast.n.app || ""
         color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong; font.letterSpacing: 0.1 }
-      Text { width: parent.width; elide: Text.ElideRight; maximumLineCount: 1; textFormat: Text.PlainText
+      Label { width: parent.width; elide: Text.ElideRight; maximumLineCount: 1
         visible: text !== ""; text: toast.n.body || toast.n.app || ""
         color: Theme.textMuted; font.pixelSize: Theme.typeBody }
     }
     // The track and the drain. A soft track under the fill; both ends rounded.
-    Rectangle {
+    SmoothRect {
       x: toast.inset; anchors.bottom: parent.bottom; anchors.bottomMargin: 9
       width: parent.width - 2 * toast.inset; height: 3; radius: 1.5
       color: Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.10)
-      Rectangle {
+      SmoothRect {
         height: parent.height; radius: parent.radius
         width: parent.width * IslandState.notifLeft
         color: Theme.accentFill

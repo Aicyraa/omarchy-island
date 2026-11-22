@@ -28,9 +28,9 @@ Item {
     flick.contentY = Math.max(0, Math.min(maxY, r * maxY))
   }
 
-  Rectangle {
+  SmoothRect {
     id: thumb
-    anchors.right: parent.right; anchors.rightMargin: 8
+    anchors.right: parent.right; anchors.rightMargin: 6
     y: root.thumbY; height: root.thumbH
     width: root.hot ? 4 : 2; radius: width / 2
     color: root.dragging ? Theme.accentInk : Theme.textMuted

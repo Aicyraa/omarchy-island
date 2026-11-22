@@ -107,10 +107,10 @@ Item {
     // ---------- title + artist ----------
     Column {
       x: cover.width + 12; y: 0; width: parent.width - x; spacing: 2
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+      Label { width: parent.width; elide: Text.ElideRight
         text: root.empty ? "Nothing playing" : (root.title !== "" ? root.title : "Unknown title")
         color: root.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong }
-      Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+      Label { width: parent.width; elide: Text.ElideRight
         text: root.empty ? "Waiting for music" :(root.artist !== "" ? root.artist : (root.p ? root.p.identity : ""))
         color: root.fgMuted; font.pixelSize: Theme.typeLabel }
     }
@@ -144,18 +144,18 @@ Item {
       readonly property real frac: root.p && root.p.length > 0 ? Math.min(1, root.p.position / root.p.length) : 0
       function seekTo(x) { if (seekable) root.p.position = Math.max(0, Math.min(1, x / width)) * root.p.length }
 
-      Text {
+      Label {
         id: elapsed
         visible: !root.empty; y: 0
         x: 0                                        // fixed at the left: the start time never moves
-        textFormat: Text.PlainText; text: root.p ? root.fmt(root.p.position) : ""
+        mono: true; text: root.p ? root.fmt(root.p.position) : ""
         color: root.fg; font.pixelSize: Theme.typeCaption
       }
-      Text {
+      Label {
         id: total
         visible: !root.empty                        // fixed at the right end
         anchors.right: parent.right; y: 0
-        textFormat: Text.PlainText; text: root.p ? root.fmt(root.p.length) : ""
+        mono: true; text: root.p ? root.fmt(root.p.length) : ""
         color: root.fg; font.pixelSize: Theme.typeCaption
       }
 

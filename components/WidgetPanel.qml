@@ -25,11 +25,9 @@ Item {
   property Item focusItem: null
   readonly property var column: col        // exposed for the layout measurement tool
 
-  property int pad: Theme.panelPadding     // a widget may choose a tighter edge (the menu uses 8)
-  // The scrolling area is inset by `inset` at the top and bottom, so when a long list scrolls its
-  // rows are clipped 8px BEFORE the pill edge instead of flush against it. The column's own
-  // top/bottom padding shrinks by the same amount, so the resting padding is still exactly `pad`.
-  readonly property int inset: Theme.s8
+  property int pad: Theme.panelPadding     // uniform outer padding on all four sides
+  // Clip the scrolling area at `pad` top and bottom so scrolled lists keep clean bottom/top padding.
+  readonly property int inset: pad
   readonly property real contentH: col.implicitHeight + 2 * pad
 
   // ---- no snapping while data loads ----
@@ -51,18 +49,18 @@ Item {
   function reveal(item) {
     if (!item) return
     var p = item.mapToItem(col, 0, 0)
-    var top = p.y + (pad - inset) - Theme.s8, bottom = p.y + (pad - inset) + item.height + Theme.s8
+    var top = p.y - Theme.s8, bottom = p.y + item.height + Theme.s8
     if (top < flick.contentY) flick.contentY = Math.max(0, top)
     else if (bottom > flick.contentY + flick.height) flick.contentY = Math.min(flick.contentHeight - flick.height, bottom - flick.height)
   }
 
   Flickable {
     id: flick
-    y: panel.inset
+    y: panel.pad
     width: panel.width
-    height: panel.height - 2 * panel.inset
+    height: panel.height - 2 * panel.pad
     contentWidth: width
-    contentHeight: col.implicitHeight + 2 * (panel.pad - panel.inset)
+    contentHeight: col.implicitHeight
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     interactive: panel.scrollable
@@ -75,7 +73,7 @@ Item {
     Column {
       id: skeleton
       visible: panel.reserving && rows > 0
-      x: panel.pad; y: col.y + col.implicitHeight + Theme.sectionGap
+      x: panel.pad; y: col.implicitHeight + Theme.sectionGap
       width: panel.width - 2 * panel.pad; spacing: Theme.rowGap
       readonly property real room: panel.reserve - panel.contentH - Theme.sectionGap
       readonly property int rows: Math.max(0, Math.floor((room + spacing) / (44 + spacing)))
@@ -84,26 +82,26 @@ Item {
         NumberAnimation { to: 1.0; duration: 900; easing.type: Easing.InOutSine } }
       Repeater {
         model: skeleton.rows
-        delegate: Rectangle { antialiasing: true; width: skeleton.width; height: 44; radius: Theme.tileRadius - 4; color: Theme.surface
-          Rectangle { antialiasing: true; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; color: Theme.mix(Theme.surface, Theme.text, 0.08) }
-          Rectangle { antialiasing: true; x: Theme.s12 + 26 + Theme.s12; y: 12; width: (parent.width - 90) * (index % 2 ? 0.45 : 0.6); height: 8; radius: 4; color: Theme.mix(Theme.surface, Theme.text, 0.10) }
-          Rectangle { antialiasing: true; x: Theme.s12 + 26 + Theme.s12; y: 26; width: (parent.width - 90) * (index % 2 ? 0.3 : 0.38); height: 6; radius: 3; color: Theme.mix(Theme.surface, Theme.text, 0.06) } }
+        delegate: SmoothRect { width: skeleton.width; height: 44; radius: Theme.tileRadius; color: Theme.surface
+          SmoothRect { x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; radius: 13; color: Theme.mix(Theme.surface, Theme.text, 0.08) }
+          SmoothRect { x: Theme.s12 + 26 + Theme.s12; y: 12; width: (parent.width - 90) * (index % 2 ? 0.45 : 0.6); height: 8; radius: 4; color: Theme.mix(Theme.surface, Theme.text, 0.10) }
+          SmoothRect { x: Theme.s12 + 26 + Theme.s12; y: 26; width: (parent.width - 90) * (index % 2 ? 0.3 : 0.38); height: 6; radius: 3; color: Theme.mix(Theme.surface, Theme.text, 0.06) } }
       }
     }
 
     Column {
       id: col
-      x: panel.pad; y: panel.pad - panel.inset
+      x: panel.pad; y: 0
       width: panel.width - 2 * panel.pad
       spacing: Theme.sectionGap
     }
   }
 
   // ---- scroll cues: fades at the clipped edges + a thin indicator ----
-  Rectangle { visible: panel.scrollable && flick.contentY > 2; width: panel.width; height: 22; y: flick.y
+  Rectangle { visible: panel.scrollable && flick.contentY > 2; x: panel.pad; width: panel.width - 2 * panel.pad; height: 22; y: flick.y
     gradient: Gradient { GradientStop { position: 0; color: Theme.pill } GradientStop { position: 1; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } } }
   Rectangle { visible: panel.scrollable && flick.contentY < flick.contentHeight - flick.height - 2
-    width: panel.width; height: 22; y: flick.y + flick.height - 22
+    x: panel.pad; width: panel.width - 2 * panel.pad; height: 22; y: flick.y + flick.height - 22
     gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0) } GradientStop { position: 1; color: Theme.pill } } }
-  Scroller { id: bar; flick: flick; visible: panel.scrollable; x: panel.width - 16; width: 16; y: flick.y; height: flick.height }
+  Scroller { id: bar; flick: flick; visible: panel.scrollable; x: panel.width - 14; width: 14; y: flick.y; height: flick.height }
 }

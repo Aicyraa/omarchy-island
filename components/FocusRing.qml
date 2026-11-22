@@ -3,13 +3,13 @@ import ".."
 
 // The selection ring. When an item gains focus the ring eases in from slightly larger and fades in; when focus leaves
 // it fades out. One short ease-out per property, so it lands cleanly.
-Rectangle {
+SmoothRect {
   id: ring
   property bool on: false
   property color ringColor: Theme.text
   anchors.fill: parent
   color: "transparent"
-  border.width: 2; border.color: ringColor
+  borderWidth: 2; borderColor: ringColor
   opacity: on ? 1 : 0
   scale: on ? 1 : 1.06
   visible: opacity > 0.01

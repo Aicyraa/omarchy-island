@@ -40,7 +40,7 @@ Item {
   // x where the title text starts in the wide form (icon slot + gaps).
   readonly property real textX: (iconCircle ? Theme.s16 + 38 + Theme.s12 : Theme.s16 + 2 + Theme.iconMd + Theme.s8)
 
-  Rectangle {
+  SmoothRect {
     anchors.fill: parent; radius: root.r
     color: area.pressed ? Qt.lighter(root.fill, 1.18) : (area.containsMouse ? Qt.lighter(root.fill, 1.09) : root.fill)
     Behavior on color { ColorAnimation { duration: 150 } }
@@ -49,11 +49,11 @@ Item {
   FocusRing { on: root.selected; radius: root.r; ringColor: root.danger ? Theme.dangerInk : Theme.text }
 
   // Number badge in the safe inset.
-  Text {
+  Label {
     visible: root.keyHint !== ""
     anchors.top: parent.top; anchors.right: parent.right
     anchors.topMargin: root.badgeInset; anchors.rightMargin: root.badgeInset
-    textFormat: Text.PlainText; text: root.keyHint
+    mono: true; text: root.keyHint
     color: root.badgeColor; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
   }
 
@@ -78,16 +78,16 @@ Item {
           }
         }
       }
-      Text {
+      Label {
         visible: root.showTitle && root.title !== ""
         anchors.horizontalCenter: parent.horizontalCenter
-        textFormat: Text.PlainText; text: root.title; color: root.fg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
+        text: root.title; color: root.fg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
       }
-      Text {
+      Label {
         visible: root.subtitle !== ""
         anchors.horizontalCenter: parent.horizontalCenter
         width: root.width - Theme.s16; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
-        textFormat: Text.PlainText; text: root.subtitle
+        text: root.subtitle
         color: root.selected && root.danger ? Theme.dangerInk : root.fgMuted; font.pixelSize: Theme.rowSub
       }
     }
@@ -99,9 +99,9 @@ Item {
     anchors.left: parent.left; anchors.leftMargin: root.iconCircle ? Theme.s16 : Theme.s16 + 2
     anchors.verticalCenter: parent.verticalCenter
     spacing: root.iconCircle ? Theme.s12 : Theme.s8
-    Rectangle {
+    SmoothRect {
       visible: root.iconCircle
-      width: 38; height: 38; radius: Theme.tileRadius
+      width: 38; height: 38; radius: 19
       color: root.on ? Qt.rgba(0, 0, 0, 0.14) : Theme.surfaceRaised
       Icon { anchors.centerIn: parent; name: root.icon; size: Theme.iconMd - 2; color: root.fg }
     }
@@ -110,12 +110,12 @@ Item {
       visible: root.showTitle
       anchors.verticalCenter: parent.verticalCenter
       spacing: 1
-      Text { width: Math.max(10, root.width - root.textX - (root.keyHint !== "" ? root.badgeInset + 14 : Theme.s16))
-        elide: Text.ElideRight; textFormat: Text.PlainText; text: root.title
+      Label { width: Math.max(10, root.width - root.textX - (root.keyHint !== "" ? root.badgeInset + 14 : Theme.s16))
+        elide: Text.ElideRight; text: root.title
         color: root.fg; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
-      Text { visible: root.subtitle !== ""
+      Label { visible: root.subtitle !== ""
         width: Math.max(10, root.width - root.textX - Theme.s16); elide: Text.ElideRight
-        textFormat: Text.PlainText; text: root.subtitle; color: root.fgMuted; font.pixelSize: Theme.rowSub }
+        text: root.subtitle; color: root.fgMuted; font.pixelSize: Theme.rowSub }
     }
   }
 
