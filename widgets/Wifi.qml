@@ -93,8 +93,8 @@ WidgetPanel {
   // ---- header (Power + QR only; both circular restart/refresh buttons removed) ----
   Item {
     width: parent.width; height: 44
-    Rectangle {
-      id: badge; antialiasing: true; width: 44; height: 44; radius: 22
+    SmoothRect {
+      id: badge; width: 44; height: 44; radius: 22
       color: Net.connected ? Theme.accentFill : Theme.surface
       WifiIcon {
         anchors.centerIn: parent; size: Theme.iconLg; off: !Net.enabled; level: Net.connected ? Net.strength : 0
@@ -104,13 +104,13 @@ WidgetPanel {
     Column {
       anchors.left: badge.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
       anchors.right: buttons.left; anchors.rightMargin: Theme.s8; spacing: 1
-      Text {
-        width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+      Label {
+        width: parent.width; elide: Text.ElideRight
         color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
         text: !Net.hasWifi ? "No Wi-Fi adapter" : (!Net.enabled ? "Wi-Fi is off" : (Net.connected ? Net.ssid : "Not connected"))
       }
-      Text {
-        width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+      Label {
+        width: parent.width; elide: Text.ElideRight
         color: Theme.textMuted; font.pixelSize: Theme.typeBody
         text: !Net.hasWifi ? "Nothing to manage on this machine"
             : (!Net.enabled ? "Turn on to browse networks"
@@ -138,18 +138,18 @@ WidgetPanel {
         { k: "Band", v: root.band(root.info.freq) || "—", w: parent.metricW },
         { k: "Link", v: root.info.bitrate ? String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "—", w: parent.metricW }
       ]
-      delegate: Rectangle {
+      delegate: SmoothRect {
         required property var modelData
-        width: modelData.w; height: 46; radius: Theme.radiusChip + 2; color: Theme.surface; antialiasing: true
+        width: modelData.w; height: 46; radius: Theme.radiusChip + 2; color: Theme.surface
         Column {
           anchors.centerIn: parent; width: parent.width - Theme.s12; spacing: 2
-          Text {
-            width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
+          Label {
+            width: parent.width; horizontalAlignment: Text.AlignHCenter
             text: modelData.k; color: Theme.textMuted; font.pixelSize: Theme.typeCaption
           }
-          Text {
-            width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: modelData.v; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
+          Label {
+            width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; mono: true
+            text: modelData.v; color: Theme.text; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
           }
         }
       }
@@ -160,10 +160,10 @@ WidgetPanel {
   Item {
     visible: root.sharing
     width: parent.width; height: 268
-    Rectangle {
+    SmoothRect {
       id: codeCard
       anchors.horizontalCenter: parent.horizontalCenter; anchors.top: parent.top
-      width: 220; height: 220; radius: Theme.tileRadius; color: "#ffffff"; antialiasing: true
+      width: 220; height: 220; radius: Theme.tileRadius; color: "#ffffff"
       Canvas {
         id: codeCanvas
         anchors.fill: parent; anchors.margins: 10
@@ -183,15 +183,15 @@ WidgetPanel {
           }
         }
       }
-      Text {
-        visible: root.qr.size === 0; anchors.centerIn: parent; textFormat: Text.PlainText
+      Label {
+        visible: root.qr.size === 0; anchors.centerIn: parent
         text: root.qr.error !== "" ? root.qr.error : "Making the code…"; color: "#444444"; font.pixelSize: Theme.typeBody
         horizontalAlignment: Text.AlignHCenter; width: parent.width - 24; wrapMode: Text.WordWrap
       }
     }
-    Text {
+    Label {
       anchors.horizontalCenter: parent.horizontalCenter; anchors.top: codeCard.bottom; anchors.topMargin: Theme.s12
-      textFormat: Text.PlainText; text: "Scan with a phone to join " + root.qr.ssid; color: Theme.textMuted; font.pixelSize: Theme.typeBody
+      text: "Scan with a phone to join " + root.qr.ssid; color: Theme.textMuted; font.pixelSize: Theme.typeBody
     }
   }
   onQrChanged: codeCanvas.requestPaint()
@@ -217,8 +217,8 @@ WidgetPanel {
       }
     }
   }
-  Text {
-    visible: Net.enabled && root.nets.length === 0 && !root.sharing; textFormat: Text.PlainText
+  Label {
+    visible: Net.enabled && root.nets.length === 0 && !root.sharing
     text: root.scanning ? "Discovering networks…" : "No networks found"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
   }
 

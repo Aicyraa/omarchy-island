@@ -35,7 +35,7 @@ WidgetPanel {
     }
   }
 
-  component Side: Rectangle {
+  component Side: SmoothRect {
     id: side
     required property bool isInput
     readonly property bool mine: root.inputSide === isInput
@@ -55,8 +55,8 @@ WidgetPanel {
       // Header: mute disc, Output/Input title + active device, live percentage (warning tint >100%).
       Item {
         width: parent.width; height: 38
-        Rectangle {
-          id: disc; antialiasing: true; width: 38; height: 38; radius: 19
+        SmoothRect {
+          id: disc; width: 38; height: 38; radius: 19
           color: side.muted ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.accentFill
           Behavior on color { ColorAnimation { duration: 150 } }
           Icon {
@@ -76,18 +76,18 @@ WidgetPanel {
           anchors.left: disc.right; anchors.leftMargin: Theme.s12
           anchors.right: pct.left; anchors.rightMargin: Theme.s8
           anchors.verticalCenter: parent.verticalCenter; spacing: 1
-          Text {
-            width: parent.width; textFormat: Text.PlainText; text: side.isInput ? "Input" : "Output"
+          Label {
+            width: parent.width; text: side.isInput ? "Input" : "Output"
             color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
           }
-          Text {
-            width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+          Label {
+            width: parent.width; elide: Text.ElideRight
             text: side.muted ? "Muted" : (side.current ? Audio.label(side.current) : "No device")
             color: side.muted ? Theme.warningInk : Theme.textMuted; font.pixelSize: Theme.typeLabel
           }
         }
-        Text {
-          id: pct; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+        Label {
+          id: pct; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; mono: true
           text: Math.round(side.vol * 100) + "%"
           color: side.muted ? Theme.textMuted : (side.boosted ? Theme.warningInk : Theme.text)
           font.pixelSize: side.isInput ? 18 : 22; font.weight: Theme.weightStrong
@@ -95,8 +95,7 @@ WidgetPanel {
       }
 
       // Available devices first (swapped above the slider).
-      Text {
-        textFormat: Text.PlainText
+      Label {
         text: side.isInput ? "Microphones" : "Speakers & headphones"
         color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
       }
@@ -120,8 +119,8 @@ WidgetPanel {
             }
           }
         }
-        Text {
-          visible: side.devs.length === 0; textFormat: Text.PlainText
+        Label {
+          visible: side.devs.length === 0
           text: side.isInput ? "No input devices" : "No output devices"
           color: Theme.textMuted; font.pixelSize: Theme.typeBody
         }

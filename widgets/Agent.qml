@@ -4,7 +4,7 @@ import "../services"
 
 // Agents: asymmetrical AI harness & usage overview. Shows currently running and default
 // harnesses (OpenCode, Antigravity, Claude Code, Codex, etc.) with quota bars for
-// limit-tracked providers and model/token breakdowns for local-stats harnesses.
+// limit-tracked providers and model/token/session breakdowns for local-stats harnesses.
 // Keys: R refresh · Esc close.
 WidgetPanel {
   id: root
@@ -60,57 +60,57 @@ WidgetPanel {
     visible: root.agents.length > 0
     width: parent.width; spacing: Theme.s12
 
-    Rectangle {
-      width: root.sumLeftW; height: 64; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+    SmoothRect {
+      width: root.sumLeftW; height: 66; radius: Theme.tileRadius; color: Theme.surface
       Column {
         anchors.left: parent.left; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
-        Text { textFormat: Text.PlainText; text: "Tokens today"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
-        Text { textFormat: Text.PlainText; text: root.fmt(root.todayTokens); color: Theme.text; font.pixelSize: 24; font.weight: Theme.weightStrong }
+        Label { text: "Tokens today"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+        Label { mono: true; text: root.fmt(root.todayTokens); color: Theme.text; font.pixelSize: 24; font.weight: Theme.weightStrong }
       }
       Row {
         anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: 6
-        Rectangle {
-          visible: root.activeCount > 0; height: 22; width: runPillRow.implicitWidth + 14; radius: 11; antialiasing: true
+        SmoothRect {
+          visible: root.activeCount > 0; height: 22; width: runPillRow.implicitWidth + 14; radius: 11
           color: Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.20)
           Row {
             id: runPillRow; anchors.centerIn: parent; spacing: 5
-            Rectangle { width: 6; height: 6; radius: 3; color: Theme.successInk; anchors.verticalCenter: parent.verticalCenter }
-            Text { textFormat: Text.PlainText; text: root.activeCount + " active"; color: Theme.successInk; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
+            SmoothRect { width: 6; height: 6; radius: 3; color: Theme.successInk; anchors.verticalCenter: parent.verticalCenter }
+            Label { text: root.activeCount + " active"; color: Theme.successInk; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
           }
         }
-        Rectangle {
-          visible: AgentUsage.defaultAgent !== ""; height: 22; width: defLbl.implicitWidth + 14; radius: 11; antialiasing: true
+        SmoothRect {
+          visible: AgentUsage.defaultAgent !== ""; height: 22; width: defLbl.implicitWidth + 14; radius: 11
           color: Theme.surfaceRaised
-          Text { id: defLbl; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Default: " + AgentUsage.defaultAgent; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+          Label { id: defLbl; anchors.centerIn: parent; text: "Default: " + AgentUsage.defaultAgent; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
         }
       }
     }
 
-    Rectangle {
-      width: root.sumRightW; height: 64; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+    SmoothRect {
+      width: root.sumRightW; height: 66; radius: Theme.tileRadius; color: Theme.surface
       Column {
         anchors.left: parent.left; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
-        Text { textFormat: Text.PlainText; text: "7-day activity"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
-        Text { textFormat: Text.PlainText; text: root.fmt(root.weekTokens); color: Theme.text; font.pixelSize: 18; font.weight: Theme.weightStrong }
+        Label { text: "7-day activity"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+        Label { mono: true; text: root.fmt(root.weekTokens); color: Theme.text; font.pixelSize: 18; font.weight: Theme.weightStrong }
       }
       Row {
         anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-        Text {
+        Label {
           visible: AgentUsage.fetchedAt > 0; anchors.verticalCenter: parent.verticalCenter
-          textFormat: Text.PlainText; text: root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: Theme.typeCaption
+          text: root.ago(AgentUsage.fetchedAt); color: Theme.textMuted; font.pixelSize: Theme.typeCaption
         }
         IconButton { icon: "refresh"; onClicked: AgentUsage.collect(true) }
       }
     }
   }
 
-  Text { visible: !root.loading && root.agents.length === 0; textFormat: Text.PlainText; text: "No agent usage yet"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
-  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading harness usage…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Label { visible: !root.loading && root.agents.length === 0; text: "No agent usage yet"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Label { visible: root.loading; text: "Reading harness usage…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
   // ---- Per-agent asymmetrical cards ----
   Repeater {
     model: root.agents
-    delegate: Rectangle {
+    delegate: SmoothRect {
       id: card
       required property var modelData
       readonly property color track: Theme.mix(Theme.surface, Theme.text, 0.14)
@@ -119,23 +119,22 @@ WidgetPanel {
       readonly property bool hasLocalUsage: modelData.today > 0 || (modelData.inT + modelData.outT) > 0 || modelData.totalPrompts > 0
       width: parent.width
       height: cardRow.implicitHeight + 2 * Theme.s12
-      radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
-      border.width: modelData.isRunning ? 1 : 0
-      border.color: Qt.rgba(Theme.successInk.r, Theme.successInk.g, Theme.successInk.b, 0.45)
+      radius: Theme.tileRadius; color: Theme.surface
+      borderWidth: modelData.isRunning ? 1 : 0
+      borderColor: Qt.rgba(Theme.successInk.r, Theme.successInk.g, Theme.successInk.b, 0.45)
 
       Row {
         id: cardRow
-        x: Theme.s12; y: Theme.s12; width: parent.width - 2 * Theme.s12; spacing: Theme.s12
+        x: Theme.s16; y: Theme.s12; width: parent.width - 2 * Theme.s16; spacing: Theme.s12
         readonly property real leftW: Math.round((width - Theme.s12) * 0.68)
         readonly property real rightW: width - Theme.s12 - leftW
 
-        // Dominant left side: identity, status badges, and quota OR local token/model breakdown.
         Column {
           width: cardRow.leftW; spacing: Theme.s8
 
           Row {
             width: parent.width; spacing: Theme.s8
-            Rectangle {
+            SmoothRect {
               width: 28; height: 28; radius: Theme.radiusChip; anchors.verticalCenter: parent.verticalCenter
               color: card.modelData.isRunning
                 ? Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.22)
@@ -145,33 +144,33 @@ WidgetPanel {
                 color: card.modelData.top >= 0.9 ? Theme.dangerInk : (card.modelData.isRunning ? Theme.successInk : Theme.accentInk)
               }
             }
-            Text {
-              anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+            Label {
+              anchors.verticalCenter: parent.verticalCenter
               text: card.modelData.name; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
             }
-            Rectangle {
-              visible: card.modelData.isRunning; height: 18; width: runTag.implicitWidth + 10; radius: 9; anchors.verticalCenter: parent.verticalCenter
+            SmoothRect {
+              visible: card.modelData.isRunning; height: 20; width: runTag.implicitWidth + 12; radius: 10; anchors.verticalCenter: parent.verticalCenter
               color: Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.20)
-              Text { id: runTag; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Running"; color: Theme.successInk; font.pixelSize: Theme.typeCaption - 1; font.weight: Theme.weightLabel }
+              Label { id: runTag; anchors.centerIn: parent; text: "Running"; color: Theme.successInk; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
             }
-            Rectangle {
-              visible: card.modelData.isDefault; height: 18; width: defTag.implicitWidth + 10; radius: 9; anchors.verticalCenter: parent.verticalCenter
+            SmoothRect {
+              visible: card.modelData.isDefault; height: 20; width: defTag.implicitWidth + 12; radius: 10; anchors.verticalCenter: parent.verticalCenter
               color: Theme.accentFill
-              Text { id: defTag; anchors.centerIn: parent; textFormat: Text.PlainText; text: "Default"; color: Theme.accentText; font.pixelSize: Theme.typeCaption - 1; font.weight: Theme.weightLabel }
+              Label { id: defTag; anchors.centerIn: parent; text: "Default"; color: Theme.accentText; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
             }
-            Text {
-              visible: card.modelData.tier !== ""; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+            Label {
+              visible: card.modelData.tier !== ""; anchors.verticalCenter: parent.verticalCenter
               text: card.modelData.tier; color: Theme.textMuted; font.pixelSize: Theme.typeCaption
             }
           }
 
-          // Mode A: Provider exposes quota limits (Claude Code, Codex, etc.)
+          // Mode A: Provider exposes quota limits
           Column {
             visible: card.limitKnown
             width: parent.width; spacing: 4
-            Rectangle {
+            SmoothRect {
               width: parent.width; height: 7; radius: 3.5; color: card.track
-              Rectangle {
+              SmoothRect {
                 width: Math.max(card.mainLimit && card.mainLimit.percent > 0 ? 6 : 0, parent.width * Math.min(1, Math.max(0, card.mainLimit ? card.mainLimit.percent : 0)))
                 height: parent.height; radius: 3.5
                 color: card.mainLimit && card.mainLimit.percent >= 0.9 ? Theme.dangerInk
@@ -179,15 +178,15 @@ WidgetPanel {
               }
             }
             Item {
-              width: parent.width; height: 14
-              Text {
+              width: parent.width; height: 15
+              Label {
                 anchors.left: parent.left; anchors.right: limRight.left; anchors.rightMargin: Theme.s8
-                elide: Text.ElideRight; textFormat: Text.PlainText
+                elide: Text.ElideRight
                 text: (card.mainLimit ? String(card.mainLimit.label || "Limit") : "") + (card.modelData.status !== "" ? (" · " + card.modelData.status) : "")
                 color: Theme.textMuted; font.pixelSize: Theme.typeCaption
               }
-              Text {
-                id: limRight; anchors.right: parent.right; textFormat: Text.PlainText
+              Label {
+                id: limRight; anchors.right: parent.right; mono: true
                 text: (card.mainLimit ? Math.round(card.mainLimit.percent * 100) + "%" : "")
                     + (card.mainLimit && root.resets(card.mainLimit.resetsAt) !== "" ? (" · " + root.resets(card.mainLimit.resetsAt)) : "")
                 color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel
@@ -195,32 +194,32 @@ WidgetPanel {
             }
           }
 
-          // Mode B: Local-stats / multi-model harness (e.g. OpenCode, Antigravity)
+          // Mode B: Local-stats / multi-model harness
           Column {
             visible: !card.limitKnown
             width: parent.width; spacing: 4
             Row {
               width: parent.width; spacing: Theme.s8
-              Rectangle {
-                visible: card.modelData.topModel !== ""; height: 20; width: Math.min(parent.width * 0.62, modTxt.implicitWidth + 14); radius: 10
+              SmoothRect {
+                visible: card.modelData.topModel !== ""; height: 22; width: Math.min(parent.width * 0.62, modTxt.implicitWidth + 14); radius: 11
                 color: Theme.surfaceRaised
-                Text {
+                Label {
                   id: modTxt; anchors.centerIn: parent; width: parent.width - 12; horizontalAlignment: Text.AlignHCenter
-                  elide: Text.ElideRight; textFormat: Text.PlainText; text: root.shortModel(card.modelData.topModel)
+                  elide: Text.ElideRight; text: root.shortModel(card.modelData.topModel)
                   color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel
                 }
               }
-              Text {
-                anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+              Label {
+                anchors.verticalCenter: parent.verticalCenter
                 text: card.hasLocalUsage
                   ? (card.modelData.totalPrompts + " prompts · " + card.modelData.sessions + " sessions")
                   : (card.modelData.isDefault ? "Configured default harness" : "Ready")
                 color: Theme.textMuted; font.pixelSize: Theme.typeCaption
               }
             }
-            Text {
+            Label {
               visible: card.modelData.inT + card.modelData.outT > 0
-              width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+              width: parent.width; elide: Text.ElideRight; mono: true
               text: root.fmt(card.modelData.outT) + " out · " + root.fmt(card.modelData.inT) + " in"
                   + (card.modelData.cacheT > 0 ? (" · " + root.fmt(card.modelData.cacheT) + " cached") : "")
               color: Theme.textMuted; font.pixelSize: Theme.typeCaption
@@ -228,7 +227,6 @@ WidgetPanel {
           }
         }
 
-        // Offset right side: 7-day sparkbars + today's tokens
         Column {
           width: cardRow.rightW; anchors.verticalCenter: parent.verticalCenter; spacing: 4
           Row {
@@ -238,22 +236,22 @@ WidgetPanel {
               delegate: Item {
                 required property int index; required property real modelData
                 width: 6; height: 22
-                Rectangle {
-                  antialiasing: true; anchors.bottom: parent.bottom; width: 6; radius: 3
+                SmoothRect {
+                  anchors.bottom: parent.bottom; width: 6; radius: 3
                   height: Math.max(3, 22 * parent.modelData / card.modelData.dayMax)
                   color: parent.index === card.modelData.days.length - 1 ? Theme.accentInk : card.track
                 }
               }
             }
           }
-          Text {
-            anchors.right: parent.right; textFormat: Text.PlainText
+          Label {
+            anchors.right: parent.right; mono: true
             text: card.modelData.today > 0 ? root.fmt(card.modelData.today) : (card.modelData.totalPrompts > 0 ? (card.modelData.totalPrompts + " total") : "—")
             color: card.modelData.today > 0 ? Theme.text : Theme.textMuted
             font.pixelSize: 15; font.weight: Theme.weightStrong
           }
-          Text {
-            anchors.right: parent.right; textFormat: Text.PlainText
+          Label {
+            anchors.right: parent.right
             text: card.modelData.today > 0 ? "tokens today" : (card.modelData.totalPrompts > 0 ? "prompts" : "no tokens yet")
             color: Theme.textMuted; font.pixelSize: Theme.typeCaption
           }

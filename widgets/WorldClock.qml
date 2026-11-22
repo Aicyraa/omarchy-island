@@ -153,13 +153,13 @@ WidgetPanel {
     width: parent.width
     height: Math.max(leftCard.height, right.height)
 
-    Rectangle {
+    SmoothRect {
       id: leftCard
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
       width: 204
       height: leftCol.implicitHeight + 2 * Theme.s12
-      radius: Theme.tileRadius + 2; color: Theme.surface; antialiasing: true
+      radius: Theme.tileRadius + 2; color: Theme.surface
 
       Column {
         id: leftCol
@@ -170,25 +170,25 @@ WidgetPanel {
         }
         Column {
           width: parent.width; spacing: 2
-          Text {
-            width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; textFormat: Text.PlainText
+          Label {
+            width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
             text: root.rows[root.sel] ? root.rows[root.sel].city : ""; color: Theme.text
             font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
           }
-          Text {
-            width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
+          Label {
+            width: parent.width; horizontalAlignment: Text.AlignHCenter; mono: true
             text: root.rows[root.sel] ? (root.rows[root.sel].time + (root.rows[root.sel].night ? " · Night" : " · Day")) : ""
             color: Theme.textMuted; font.pixelSize: Theme.typeLabel
           }
         }
-        Rectangle {
-          antialiasing: true; visible: !root.searching; width: parent.width; height: 30; radius: 15
+        SmoothRect {
+          visible: !root.searching; width: parent.width; height: 30; radius: 15
           color: addArea.containsMouse ? Theme.mix(Theme.surfaceRaised, Theme.text, 0.14) : Theme.surfaceRaised
           Behavior on color { ColorAnimation { duration: 120 } }
           Row {
             anchors.centerIn: parent; spacing: 6
             Icon { name: "plus"; size: Theme.iconSm; color: Theme.text; anchors.verticalCenter: parent.verticalCenter }
-            Text { textFormat: Text.PlainText; text: "Add city"; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
+            Label { text: "Add city"; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
           }
           MouseArea { id: addArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.openSearch() }
         }
@@ -215,7 +215,7 @@ WidgetPanel {
             width: parent.width; height: 48
             FocusTarget { selected: root.sel === index && !root.searching; target: parent }
             Icon {
-              id: dayIcon; x: 0; anchors.verticalCenter: parent.verticalCenter
+              id: dayIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter
               name: modelData.night ? "moon" : "sun"; size: Theme.iconMd
               color: modelData.night ? Theme.textMuted : Theme.warningInk
             }
@@ -223,40 +223,40 @@ WidgetPanel {
               anchors.left: dayIcon.right; anchors.leftMargin: Theme.s12
               anchors.right: timeText.left; anchors.rightMargin: Theme.s8
               anchors.verticalCenter: parent.verticalCenter; spacing: 1
-              Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.city; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
-              Text {
-                width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeCaption
+              Label { width: parent.width; elide: Text.ElideRight; text: modelData.city; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+              Label {
+                width: parent.width; elide: Text.ElideRight; color: Theme.textMuted; font.pixelSize: Theme.typeCaption
                 text: [modelData.day, modelData.offset].filter(function (x) { return x !== "" }).join(" · "); visible: text !== ""
               }
             }
-            Text {
+            Label {
               id: timeText; anchors.right: barBox.left; anchors.rightMargin: Theme.s12
-              width: 72; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter
-              textFormat: Text.PlainText; text: modelData.time; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
+              width: 76; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter
+              mono: true; text: modelData.time; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
             }
             // 24h daylight & working-hours strip
             Item {
-              id: barBox; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+              id: barBox; anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
               width: Math.max(108, Math.round(parent.width * 0.34)); height: 16
-              Rectangle { antialiasing: true; anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 8; radius: 4; color: Theme.outline; opacity: 0.30 }
-              Rectangle { x: parent.width * 9 / 24; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 8 / 24; height: 8; radius: 2; color: Theme.accentInk; opacity: 0.55 }
-              Rectangle { antialiasing: true; x: parent.width * modelData.hour / 24 - 1.5; anchors.verticalCenter: parent.verticalCenter; width: 3; height: 16; radius: 1.5; color: Theme.text }
+              SmoothRect { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 8; radius: 4; color: Theme.outline; opacity: 0.30 }
+              SmoothRect { x: parent.width * 9 / 24; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 8 / 24; height: 8; radius: 2; color: Theme.accentInk; opacity: 0.55 }
+              SmoothRect { x: parent.width * modelData.hour / 24 - 1.5; anchors.verticalCenter: parent.verticalCenter; width: 3; height: 16; radius: 1.5; color: Theme.text }
             }
-            MouseArea { anchors.fill: parent; anchors.leftMargin: -Theme.s8; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.sel = rowItem.index }
+            MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.sel = rowItem.index }
           }
         }
       }
-      Text {
-        visible: !root.searching && root.rows.length === 0; textFormat: Text.PlainText
+      Label {
+        visible: !root.searching && root.rows.length === 0
         text: "Reading time zones…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
       }
 
       // ---- keyboard-editable search ----
       Column {
         id: searchCol; visible: root.searching; width: parent.width; spacing: Theme.s8
-        Rectangle {
-          antialiasing: true; width: parent.width; height: 40; radius: Theme.tileRadius; color: Theme.surface
-          border.width: tzInput.activeFocus ? 1 : 0; border.color: Theme.accentInk
+        SmoothRect {
+          width: parent.width; height: 40; radius: Theme.tileRadius; color: Theme.surface
+          borderWidth: tzInput.activeFocus ? 1 : 0; borderColor: Theme.accentInk
           Icon { id: sIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: Theme.textMuted }
           TextInput {
             id: tzInput
@@ -264,6 +264,7 @@ WidgetPanel {
             anchors.right: parent.right; anchors.rightMargin: Theme.s12
             anchors.verticalCenter: parent.verticalCenter
             selectByMouse: true; color: Theme.text; selectionColor: Theme.accentFill; selectedTextColor: Theme.accentText
+            renderType: Theme.textRenderType; font.family: Theme.fontFamily; font.hintingPreference: Theme.fontHinting
             font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel
             onTextChanged: { root.query = text; root.pick = 0 }
             Keys.onPressed: function (e) {
@@ -273,9 +274,9 @@ WidgetPanel {
               else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { if (root.matches[root.pick]) root.addZone(root.matches[root.pick]); e.accepted = true }
             }
           }
-          Text {
+          Label {
             visible: tzInput.text === ""; anchors.left: tzInput.left; anchors.verticalCenter: parent.verticalCenter
-            textFormat: Text.PlainText; text: "Search time zones…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
+            text: "Search time zones…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
           }
           MouseArea { anchors.fill: parent; z: -1; onClicked: tzInput.forceActiveFocus() }
         }
@@ -287,8 +288,8 @@ WidgetPanel {
             onClicked: root.addZone(modelData)
           }
         }
-        Text {
-          visible: root.matches.length === 0; textFormat: Text.PlainText
+        Label {
+          visible: root.matches.length === 0
           text: root.allZones.length === 0 ? "Loading…" : "No match"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
         }
       }

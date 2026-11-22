@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import ".."
 import "../services"
 
@@ -22,35 +23,47 @@ WidgetPanel {
 
   dataLoading: state === "loading"
   compact: state !== "ok"
-  Text { visible: root.state === "loading"; textFormat: Text.PlainText; text: "Fetching weather…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Label { visible: root.state === "loading"; text: "Fetching weather…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
   Row { visible: root.state === "error"; spacing: Theme.s8
     Icon { name: "alert"; size: Theme.iconLg; color: Theme.warningInk; anchors.verticalCenter: parent.verticalCenter }
-    Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter
+    Label { anchors.verticalCenter: parent.verticalCenter
       text: "Couldn't load weather. Check your connection."; color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
 
   // The condition card: a soft sky tint (warm by day, cool at night), the big icon and temperature, the condition
   // and place, and High / Low on the right.
   readonly property bool night: w.icon.indexOf("moon") >= 0
-  Rectangle {
-    visible: root.state === "ok"; antialiasing: true
-    width: parent.width; height: 96; radius: Theme.tileRadius + 2
-    gradient: Gradient { orientation: Gradient.Horizontal
-      GradientStop { position: 0; color: Theme.mix(Theme.surface, root.night ? Theme.accentFill : Theme.warning, root.night ? 0.30 : 0.20) }
-      GradientStop { position: 1; color: Theme.surface } }
+  Item {
+    id: heroCard
+    visible: root.state === "ok"
+    width: parent.width; height: 96
+    Shape {
+      anchors.fill: parent
+      readonly property bool isBgSurface: true
+      preferredRendererType: Shape.CurveRenderer
+      ShapePath {
+        strokeWidth: -1
+        fillGradient: LinearGradient {
+          x1: 0; y1: 0; x2: heroCard.width; y2: 0
+          GradientStop { position: 0; color: Theme.mix(Theme.surface, root.night ? Theme.accentFill : Theme.warning, root.night ? 0.30 : 0.20) }
+          GradientStop { position: 1; color: Theme.surface }
+        }
+        PathRectangle { width: heroCard.width; height: heroCard.height; radius: Theme.tileRadius + 2 }
+      }
+    }
     Icon { id: heroIcon; x: Theme.s16; anchors.verticalCenter: parent.verticalCenter; name: root.w.icon; size: 52
       color: root.w.icon === "sun" ? Theme.warningInk : Theme.text }
-    Text { id: heroTemp; anchors.left: heroIcon.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
-      textFormat: Text.PlainText; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 46; font.weight: Theme.weightStrong }
+    Label { id: heroTemp; anchors.left: heroIcon.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
+      mono: true; text: root.w.temp + "°"; color: Theme.text; font.pixelSize: 46; font.weight: Theme.weightStrong }
     Column { anchors.left: heroTemp.right; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
-      Text { textFormat: Text.PlainText; text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel }
-      Text { textFormat: Text.PlainText; text: root.w.place + (WeatherData.age > 120000 ? " · " + Math.round(WeatherData.age / 60000) + " min ago" : ""); color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
+      Label { text: root.w.desc; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel }
+      Label { text: root.w.place + (WeatherData.age > 120000 ? " · " + Math.round(WeatherData.age / 60000) + " min ago" : ""); color: Theme.textMuted; font.pixelSize: Theme.typeBody } }
     Column { anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 4
       Row { spacing: 6; anchors.right: parent.right
-        Text { text: "High"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.verticalCenter: parent.verticalCenter }
-        Text { text: root.w.hi + "°"; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
+        Label { text: "High"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.verticalCenter: parent.verticalCenter }
+        Label { mono: true; text: root.w.hi + "°"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
       Row { spacing: 6; anchors.right: parent.right
-        Text { text: "Low"; textFormat: Text.PlainText; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.verticalCenter: parent.verticalCenter }
-        Text { text: root.w.lo + "°"; textFormat: Text.PlainText; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
+        Label { text: "Low"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; anchors.verticalCenter: parent.verticalCenter }
+        Label { mono: true; text: root.w.lo + "°"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter } }
     }
   }
   Row { visible: root.state === "ok"; width: parent.width; spacing: Theme.s12

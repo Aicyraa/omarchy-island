@@ -35,8 +35,8 @@ WidgetPanel {
     else if (e.key >= Qt.Key_1 && e.key <= Qt.Key_3) { setProfile(e.key - Qt.Key_1); e.accepted = true }
   }
 
-  Text {
-    visible: !Power.present; textFormat: Text.PlainText
+  Label {
+    visible: !Power.present
     text: "No battery in this machine"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle
   }
 
@@ -49,8 +49,8 @@ WidgetPanel {
     width: parent.width; spacing: Theme.s12
 
     // Left hero card: big percentage, state pill, time remaining, animated charge gauge.
-    Rectangle {
-      width: root.heroW; height: 118; radius: Theme.tileRadius + 2; color: Theme.surface; antialiasing: true
+    SmoothRect {
+      width: root.heroW; height: 118; radius: Theme.tileRadius + 2; color: Theme.surface
       property real shown: Power.level * 100
       Behavior on shown { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
 
@@ -58,14 +58,14 @@ WidgetPanel {
         anchors.fill: parent; anchors.margins: Theme.s16; spacing: Theme.s8
         Item {
           width: parent.width; height: 48
-          Text {
+          Label {
             id: pctText; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-            textFormat: Text.PlainText; text: Math.round(parent.parent.parent.shown) + "%"
+            mono: true; text: Math.round(parent.parent.parent.shown) + "%"
             color: Theme.text; font.pixelSize: 40; font.weight: Theme.weightStrong
           }
-          Rectangle {
+          SmoothRect {
             anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-            height: 24; width: stateRow.implicitWidth + 16; radius: 12; antialiasing: true
+            height: 24; width: stateRow.implicitWidth + 16; radius: 12
             color: Power.charging || Power.full
               ? Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.22)
               : (Power.low ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.22) : Theme.surfaceRaised)
@@ -75,8 +75,8 @@ WidgetPanel {
                 visible: Power.charging || Power.low; name: Power.charging ? "bolt" : "alert"; size: 12
                 color: Power.charging ? Theme.successInk : Theme.dangerInk; anchors.verticalCenter: parent.verticalCenter
               }
-              Text {
-                textFormat: Text.PlainText; text: Power.stateText
+              Label {
+                text: Power.stateText
                 color: Power.charging || Power.full ? Theme.successInk : (Power.low ? Theme.dangerInk : Theme.textMuted)
                 font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter
               }
@@ -85,19 +85,19 @@ WidgetPanel {
         }
 
         // Animated charge bar inside the hero card.
-        Rectangle {
-          antialiasing: true; width: parent.width; height: 10; radius: 5
+        SmoothRect {
+          width: parent.width; height: 10; radius: 5
           color: Theme.mix(Theme.surface, Theme.text, 0.12)
-          Rectangle {
-            antialiasing: true; height: parent.height; radius: 5
+          SmoothRect {
+            height: parent.height; radius: 5
             width: Math.max(10, parent.width * Math.max(0, Math.min(1, Power.level)))
             color: root.chargeColor
             Behavior on width { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 400; easing.type: Easing.OutCubic } }
           }
         }
 
-        Text {
-          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+        Label {
+          width: parent.width; elide: Text.ElideRight
           color: Theme.textMuted; font.pixelSize: Theme.typeLabel
           text: Power.timeText(Power.secondsLeft) !== ""
             ? (Power.timeText(Power.secondsLeft) + (Power.charging ? " until full" : " remaining"))
@@ -109,43 +109,43 @@ WidgetPanel {
     // Right offset column: stacked Wattage and Health cards.
     Column {
       width: root.sideW; spacing: Theme.s8
-      Rectangle {
-        width: parent.width; height: 55; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+      SmoothRect {
+        width: parent.width; height: 55; radius: Theme.tileRadius; color: Theme.surface
         Row {
           anchors.fill: parent; anchors.leftMargin: Theme.s12; anchors.rightMargin: Theme.s12; spacing: Theme.s12
-          Rectangle {
+          SmoothRect {
             width: 32; height: 32; radius: Theme.radiusChip; anchors.verticalCenter: parent.verticalCenter
             color: Theme.mix(Theme.surface, Theme.accentFill, 0.16)
             Icon { anchors.centerIn: parent; name: "bolt"; size: Theme.iconSm; color: Power.charging ? Theme.successInk : Theme.accentInk }
           }
           Column {
             anchors.verticalCenter: parent.verticalCenter; spacing: 1
-            Text {
-              textFormat: Text.PlainText; text: Power.charging ? "Charging at" : "Power draw"
+            Label {
+              text: Power.charging ? "Charging at" : "Power draw"
               color: Theme.textMuted; font.pixelSize: Theme.typeCaption
             }
-            Text {
-              textFormat: Text.PlainText
+            Label {
+              mono: true
               text: Power.watts > 0.05 ? (Power.watts.toFixed(1) + " W") : (Power.full ? "Idle" : "—")
               color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
             }
           }
         }
       }
-      Rectangle {
-        width: parent.width; height: 55; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+      SmoothRect {
+        width: parent.width; height: 55; radius: Theme.tileRadius; color: Theme.surface
         Row {
           anchors.fill: parent; anchors.leftMargin: Theme.s12; anchors.rightMargin: Theme.s12; spacing: Theme.s12
-          Rectangle {
+          SmoothRect {
             width: 32; height: 32; radius: Theme.radiusChip; anchors.verticalCenter: parent.verticalCenter
             color: Theme.mix(Theme.surface, Theme.successInk, 0.16)
             Icon { anchors.centerIn: parent; name: "battery"; size: Theme.iconSm; color: Theme.successInk }
           }
           Column {
             anchors.verticalCenter: parent.verticalCenter; spacing: 1
-            Text { textFormat: Text.PlainText; text: "Battery health"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption }
-            Text {
-              textFormat: Text.PlainText
+            Label { text: "Battery health"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption }
+            Label {
+              mono: true
               text: root.healthPct > 0 ? (Math.round(root.healthPct) + "%") : "Good"
               color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
             }
@@ -156,17 +156,17 @@ WidgetPanel {
   }
 
   // ---- unified segmented power-profile dock with sliding accent pill ----
-  Rectangle {
+  SmoothRect {
     id: segTrack
     visible: Power.present
-    width: parent.width; height: 48; radius: 24; color: Theme.surface; antialiasing: true
+    width: parent.width; height: 48; radius: 24; color: Theme.surface
     readonly property int padIn: 4
     readonly property real segW: (width - 2 * padIn) / root.profiles.length
 
-    Rectangle {
+    SmoothRect {
       id: sliderPill
       y: segTrack.padIn; height: segTrack.height - 2 * segTrack.padIn
-      width: segTrack.segW; radius: height / 2; antialiasing: true
+      width: segTrack.segW; radius: height / 2
       x: segTrack.padIn + root.activeIndex * segTrack.segW
       color: Theme.accentFill
       Behavior on x { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 5.0; damping: 0.48; epsilon: 0.25 } }
@@ -189,8 +189,8 @@ WidgetPanel {
               color: parent.parent.isOn ? Theme.accentText : Theme.textMuted
               anchors.verticalCenter: parent.verticalCenter
             }
-            Text {
-              textFormat: Text.PlainText; text: modelData.label
+            Label {
+              text: modelData.label
               color: parent.parent.isOn ? Theme.accentText : Theme.text
               font.pixelSize: Theme.typeBody; font.weight: parent.parent.isOn ? Theme.weightStrong : Theme.weightLabel
               anchors.verticalCenter: parent.verticalCenter

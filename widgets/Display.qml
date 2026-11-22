@@ -93,8 +93,8 @@ WidgetPanel {
     width: parent.width; spacing: Theme.s12
 
     // Brightness hero card
-    Rectangle {
-      width: root.leftW; height: 108; radius: Theme.tileRadius + 2; color: Theme.surface; antialiasing: true
+    SmoothRect {
+      width: root.leftW; height: 108; radius: Theme.tileRadius + 2; color: Theme.surface
       FocusRing { on: root.row === 0; radius: parent.radius }
       Column {
         anchors.fill: parent; anchors.margins: Theme.s16; spacing: Theme.s12
@@ -103,10 +103,10 @@ WidgetPanel {
           Row {
             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
             Icon { name: "sun"; size: Theme.iconMd; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
-            Text { textFormat: Text.PlainText; text: "Brightness"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
+            Label { text: "Brightness"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
           }
-          Text {
-            anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+          Label {
+            anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; mono: true
             text: Brightness.available ? (Math.round(Brightness.level * 100) + "%") : "N/A"
             color: Brightness.available ? Theme.text : Theme.textMuted; font.pixelSize: 16; font.weight: Theme.weightStrong
           }
@@ -117,36 +117,36 @@ WidgetPanel {
           selected: root.row === 0
           onMoved: function (v) { root.row = 0; Brightness.set(v) }
         }
-        Text {
-          visible: !Brightness.available; textFormat: Text.PlainText
+        Label {
+          visible: !Brightness.available
           text: "No controllable backlight"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
         }
       }
     }
 
     // Offset Night Light card
-    Rectangle {
+    SmoothRect {
       id: nightCard
-      width: root.rightW; height: 108; radius: Theme.tileRadius + 2; antialiasing: true
+      width: root.rightW; height: 108; radius: Theme.tileRadius + 2
       readonly property color baseFill: Indicators.nightLight ? Theme.accentFill : Theme.surface
       color: nightArea.pressed ? Qt.lighter(baseFill, 1.16) : (nightArea.containsMouse ? Qt.lighter(baseFill, 1.08) : baseFill)
       Behavior on color { ColorAnimation { duration: 150 } }
       FocusRing { on: root.row === 1; radius: parent.radius }
       Column {
         anchors.fill: parent; anchors.margins: Theme.s16; spacing: Theme.s8
-        Rectangle {
-          width: 34; height: 34; radius: 17; antialiasing: true
+        SmoothRect {
+          width: 34; height: 34; radius: 17
           color: Indicators.nightLight ? Qt.rgba(1, 1, 1, 0.16) : Theme.surfaceRaised
           Icon { anchors.centerIn: parent; name: "moon"; size: Theme.iconMd - 2; color: Indicators.nightLight ? Theme.accentText : Theme.text }
         }
         Column {
           width: parent.width; spacing: 1
-          Text {
-            width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: "Night light"
+          Label {
+            width: parent.width; elide: Text.ElideRight; text: "Night light"
             color: Indicators.nightLight ? Theme.accentText : Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
           }
-          Text {
-            textFormat: Text.PlainText; text: Indicators.nightLight ? "Warm · On" : "Off"
+          Label {
+            text: Indicators.nightLight ? "Warm · On" : "Off"
             color: Indicators.nightLight ? Theme.textOnAccentMuted : Theme.textMuted; font.pixelSize: Theme.typeLabel
           }
         }
@@ -159,35 +159,35 @@ WidgetPanel {
   }
 
   // ---- Text size stepper bar ----
-  Rectangle {
-    width: parent.width; height: 56; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
+  SmoothRect {
+    width: parent.width; height: 56; radius: Theme.tileRadius; color: Theme.surface
     FocusRing { on: root.row === 2; radius: parent.radius }
     Row {
       anchors.left: parent.left; anchors.leftMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s12
-      Rectangle {
+      SmoothRect {
         width: 34; height: 34; radius: Theme.radiusChip; color: Theme.surfaceRaised; anchors.verticalCenter: parent.verticalCenter
         Icon { anchors.centerIn: parent; name: "type"; size: Theme.iconSm; color: Theme.text }
       }
       Column {
         anchors.verticalCenter: parent.verticalCenter; spacing: 0
-        Text { textFormat: Text.PlainText; text: "Text size"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
-        Text { textFormat: Text.PlainText; text: "System & terminal UI scale"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption }
+        Label { text: "Text size"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightLabel }
+        Label { text: "System & terminal UI scale"; color: Theme.textMuted; font.pixelSize: Theme.typeCaption }
       }
     }
     Row {
       anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Rectangle {
-        antialiasing: true; width: 34; height: 34; radius: 17
+      SmoothRect {
+        width: 34; height: 34; radius: 17
         color: decArea.pressed ? Theme.accentFill : (decArea.containsMouse ? Theme.mix(Theme.surfaceRaised, Theme.text, 0.14) : Theme.surfaceRaised)
         Icon { anchors.centerIn: parent; name: "chevron-left"; size: Theme.iconSm; color: decArea.pressed ? Theme.accentText : Theme.text }
         MouseArea { id: decArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize - 1) } }
       }
-      Text {
-        width: 48; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter
-        textFormat: Text.PlainText; text: root.textSize + " px"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
+      Label {
+        width: 52; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter; mono: true
+        text: root.textSize + " px"; color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
       }
-      Rectangle {
-        antialiasing: true; width: 34; height: 34; radius: 17
+      SmoothRect {
+        width: 34; height: 34; radius: 17
         color: incArea.pressed ? Theme.accentFill : (incArea.containsMouse ? Theme.mix(Theme.surfaceRaised, Theme.text, 0.14) : Theme.surfaceRaised)
         Icon { anchors.centerIn: parent; name: "chevron-right"; size: Theme.iconSm; color: incArea.pressed ? Theme.accentText : Theme.text }
         MouseArea { id: incArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.row = 2; root.setText(root.textSize + 1) } }
@@ -199,7 +199,7 @@ WidgetPanel {
   Column {
     visible: root.anyHw
     width: parent.width; spacing: Theme.s8
-    Text { textFormat: Text.PlainText; text: "Hardware"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
+    Label { text: "Hardware"; color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
     Grid {
       width: parent.width; columns: 2; spacing: Theme.s8
       readonly property real cellW: (width - Theme.s8) / 2

@@ -26,9 +26,9 @@ WidgetPanel {
     else if (e.key === Qt.Key_M) { entries[sel].secondaryActivate(); e.accepted = true }
   }
 
-  Text { visible: root.entries.length === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter; textFormat: Text.PlainText
+  Label { visible: root.entries.length === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter
     text: "No tray icons"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
-  Text { visible: root.entries.length > 0; textFormat: Text.PlainText; text: "Tray"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
+  Label { visible: root.entries.length > 0; text: "Tray"; color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong }
   Grid {
     visible: root.entries.length > 0
     columns: root.cols; spacing: Theme.s8
@@ -38,8 +38,8 @@ WidgetPanel {
         required property var modelData
         required property int index
         width: 56; height: 56
-        Rectangle { antialiasing: true; anchors.fill: parent; radius: Theme.tileRadius; color: Theme.surface
-          border.width: root.sel === index ? 2 : 0; border.color: Theme.text }
+        SmoothRect { anchors.fill: parent; radius: Theme.tileRadius; color: Theme.surface
+          borderWidth: root.sel === index ? 2 : 0; borderColor: Theme.text }
         Image { anchors.centerIn: parent; width: 28; height: 28; source: modelData.icon; sourceSize: Qt.size(56, 56); asynchronous: true }
         MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
           onClicked: function (m) { root.sel = index; if (m.button === Qt.RightButton) modelData.secondaryActivate(); else modelData.activate() } }

@@ -98,14 +98,13 @@ WidgetPanel {
   // ---- header: real focusable search pill on left, status + counter on right ----
   Item {
     width: parent.width; height: 32
-    Rectangle {
+    SmoothRect {
       id: searchBox
-      antialiasing: true
       anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
       height: 32; width: 260; radius: 16
       color: searchInput.activeFocus || root.query !== "" ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface
-      border.width: searchInput.activeFocus ? 1 : 0
-      border.color: Qt.rgba(Theme.accentInk.r, Theme.accentInk.g, Theme.accentInk.b, 0.7)
+      borderWidth: searchInput.activeFocus ? 1 : 0
+      borderColor: Qt.rgba(Theme.accentInk.r, Theme.accentInk.g, Theme.accentInk.b, 0.7)
       Behavior on color { ColorAnimation { duration: 120 } }
 
       Icon { id: searchIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: searchInput.activeFocus ? Theme.accentInk : Theme.textMuted }
@@ -117,6 +116,9 @@ WidgetPanel {
         anchors.verticalCenter: parent.verticalCenter
         selectByMouse: true
         clip: true
+        renderType: Theme.textRenderType
+        font.family: Theme.fontFamily
+        font.hintingPreference: Theme.fontHinting
         color: Theme.text; selectionColor: Theme.accentFill; selectedTextColor: Theme.accentText
         font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
         onTextChanged: if (root.query !== text) root.query = text
@@ -142,18 +144,18 @@ WidgetPanel {
         }
       }
 
-      Text {
+      Label {
         visible: searchInput.text === ""
         anchors.left: searchInput.left; anchors.right: parent.right; anchors.rightMargin: Theme.s12
         anchors.verticalCenter: parent.verticalCenter
-        textFormat: Text.PlainText; text: "Search themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
+        text: "Search themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeBody
       }
 
-      Rectangle {
+      SmoothRect {
         id: clearBtn
         visible: root.query !== ""
         anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
-        width: 20; height: 20; radius: 10; antialiasing: true
+        width: 20; height: 20; radius: 10
         color: clrSearchArea.containsMouse ? Theme.surfaceRaised : "transparent"
         Icon { anchors.centerIn: parent; name: "x"; size: 11; color: Theme.textMuted }
         MouseArea { id: clrSearchArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.clearSearch() }
@@ -164,17 +166,17 @@ WidgetPanel {
 
     Row {
       anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-      Rectangle {
+      SmoothRect {
         visible: root.current !== "" && root.applying === ""
-        height: 24; width: curChipRow.implicitWidth + 16; radius: 12; color: Theme.surface; antialiasing: true
+        height: 24; width: curChipRow.implicitWidth + 16; radius: 12; color: Theme.surface
         Row {
           id: curChipRow; anchors.centerIn: parent; spacing: 5
-          Rectangle { width: 6; height: 6; radius: 3; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
-          Text { textFormat: Text.PlainText; text: root.current; color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
+          SmoothRect { width: 6; height: 6; radius: 3; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
+          Label { text: root.current; color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
         }
       }
-      Text {
-        anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText
+      Label {
+        anchors.verticalCenter: parent.verticalCenter; mono: root.applying === ""
         text: root.applying !== "" ? ("Applying " + root.applying + "…")
             : (root.themes.length > 0 ? ((root.sel + 1) + " / " + root.themes.length)
                : (root.query !== "" ? ("0 / " + root.all.length) : ""))
@@ -183,11 +185,11 @@ WidgetPanel {
     }
   }
 
-  Text {
-    visible: !root.loading && root.all.length > 0 && root.themes.length === 0; textFormat: Text.PlainText
+  Label {
+    visible: !root.loading && root.all.length > 0 && root.themes.length === 0
     text: "No theme matches \"" + root.query + "\""; color: Theme.textMuted; font.pixelSize: Theme.typeTitle
   }
-  Text { visible: root.loading; textFormat: Text.PlainText; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
+  Label { visible: root.loading; text: "Reading themes…"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
 
   // ---- horizontal theme strip (GPU scale, fixed slot widths, zero last-card jitter) ----
   Item {
@@ -248,45 +250,46 @@ WidgetPanel {
               GradientStop { position: 1; color: Qt.rgba(card.themeBg.r, card.themeBg.g, card.themeBg.b, 0.96) }
             }
           }
-          Text {
-            x: Theme.s12; y: parent.height - 38; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight; textFormat: Text.PlainText
+          Label {
+            x: Theme.s12; y: parent.height - 38; width: parent.width - 2 * Theme.s12; elide: Text.ElideRight
+            renderType: Text.QtRendering
             text: modelData.name; color: card.themeFg; font.pixelSize: Theme.typeBody; font.weight: Theme.weightStrong
           }
           Row {
             x: Theme.s12; y: parent.height - 19; spacing: 4
             Repeater {
               model: [modelData.bg, modelData.fg, modelData.accent, modelData.red, modelData.green]
-              delegate: Rectangle {
-                antialiasing: true; required property string modelData; width: 10; height: 10; radius: 5; color: modelData
-                border.width: 1; border.color: Qt.rgba(card.themeFg.r, card.themeFg.g, card.themeFg.b, 0.35)
+              delegate: SmoothRect {
+                required property string modelData; width: 10; height: 10; radius: 5; color: modelData
+                borderWidth: 1; borderColor: Qt.rgba(card.themeFg.r, card.themeFg.g, card.themeFg.b, 0.35)
               }
             }
           }
 
           // Light / dark chip, top-left
-          Rectangle {
-            antialiasing: true; x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.50)
+          SmoothRect {
+            x: Theme.s8; y: Theme.s8; width: 22; height: 22; radius: 11; color: Qt.rgba(0, 0, 0, 0.50)
             Icon { anchors.centerIn: parent; name: modelData.mode === "light" ? "sun" : "moon"; size: 12; color: Qt.rgba(1, 1, 1, 0.92) }
           }
 
           // Improved auto-sized Current badge, top-right
-          Rectangle {
-            antialiasing: true; visible: card.isCurrent
+          SmoothRect {
+            visible: card.isCurrent
             anchors.right: parent.right; anchors.rightMargin: Theme.s8
             anchors.top: parent.top; anchors.topMargin: Theme.s8
             height: 22; width: currentRow.implicitWidth + 14; radius: 11; color: Theme.accentFill
             Row {
               id: currentRow; anchors.centerIn: parent; spacing: 4
               Icon { name: "check"; size: 11; color: Theme.accentText; strokeWidth: 2.5; anchors.verticalCenter: parent.verticalCenter }
-              Text { textFormat: Text.PlainText; text: "Current"; color: Theme.accentText; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
+              Label { renderType: Text.QtRendering; text: "Current"; color: Theme.accentText; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightStrong; anchors.verticalCenter: parent.verticalCenter }
             }
           }
 
           // Crisp highlight ring for the current / selected card
-          Rectangle {
+          SmoothRect {
             anchors.fill: parent; radius: Theme.tileRadius; color: "transparent"
-            border.width: card.isCurrent ? 2 : (card.selected ? 1 : 0)
-            border.color: card.isCurrent ? Theme.accentInk : Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.65)
+            borderWidth: card.isCurrent ? 2 : (card.selected ? 1 : 0)
+            borderColor: card.isCurrent ? Theme.accentInk : Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.65)
           }
 
           MouseArea {

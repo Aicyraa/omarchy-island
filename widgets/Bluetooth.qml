@@ -73,21 +73,21 @@ WidgetPanel {
     Item {
       visible: !(Bt.enabled && root.primaryDevice)
       width: parent.width; height: 44
-      Rectangle {
-        id: badge; antialiasing: true; width: 44; height: 44; radius: 22
+      SmoothRect {
+        id: badge; width: 44; height: 44; radius: 22
         color: Bt.enabled ? Theme.accentFill : Theme.surface
         Icon { anchors.centerIn: parent; size: Theme.iconLg; name: "bluetooth"; color: Bt.enabled ? Theme.accentText : Theme.text }
       }
       Column {
         anchors.left: badge.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter
         anchors.right: offBtns.left; anchors.rightMargin: Theme.s8; spacing: 1
-        Text {
-          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+        Label {
+          width: parent.width; elide: Text.ElideRight
           color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
           text: !Bt.hasAdapter ? "No Bluetooth adapter" : (!Bt.enabled ? "Bluetooth is off" : "Bluetooth")
         }
-        Text {
-          width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+        Label {
+          width: parent.width; elide: Text.ElideRight
           color: Theme.textMuted; font.pixelSize: Theme.typeBody
           text: !Bt.hasAdapter ? "Nothing to manage on this machine"
               : (!Bt.enabled ? "Turn on to connect devices"
@@ -110,85 +110,83 @@ WidgetPanel {
       readonly property real rightW: width - Theme.s12 - leftW
 
       // Dominant left card: connected device identity, class, MAC, and quick disconnect.
-      Rectangle {
-        width: heroRow.leftW; height: 92; radius: Theme.tileRadius; color: Theme.surface; antialiasing: true
-        Rectangle {
+      SmoothRect {
+        width: heroRow.leftW; height: 92; radius: Theme.tileRadius; color: Theme.surface
+        SmoothRect {
           id: devDisc; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter
-          width: 48; height: 48; radius: 24; color: Theme.accentFill; antialiasing: true
+          width: 48; height: 48; radius: 24; color: Theme.accentFill
           Icon { anchors.centerIn: parent; name: root.primaryDevice ? root.iconOf(root.primaryDevice) : "bluetooth"; size: Theme.iconLg; color: Theme.accentText }
         }
         Column {
           anchors.left: devDisc.right; anchors.leftMargin: Theme.s12
           anchors.right: parent.right; anchors.rightMargin: Theme.s12
           anchors.verticalCenter: parent.verticalCenter; spacing: 3
-          Row {
-            width: parent.width; spacing: 6
-            Rectangle {
-              width: 7; height: 7; radius: 3.5; color: Theme.successInk; anchors.verticalCenter: parent.verticalCenter
-            }
-            Text {
-              textFormat: Text.PlainText
-              text: root.connected.length > 1 ? ("Connected · +" + (root.connected.length - 1) + " more") : "Connected"
-              color: Theme.successInk; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel
-            }
-          }
-          Text {
-            width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: root.primaryDevice ? root.nameOf(root.primaryDevice) : ""
-            color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
-          }
-          Text {
-            width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
-            text: root.primaryDevice
-              ? (root.typeLabelOf(root.primaryDevice) + (root.primaryDevice.address ? " · " + root.primaryDevice.address : ""))
-              : ""
-            color: Theme.textMuted; font.pixelSize: Theme.typeCaption
-          }
-        }
-      }
-
-      // Offset right column: battery detail (or link summary) + adapter power control.
-      Column {
-        width: heroRow.rightW; spacing: Theme.s8
-        Rectangle {
-          width: parent.width; height: 48; radius: Theme.tileRadius; color: Theme.surfaceRaised; antialiasing: true
-          readonly property bool hasBat: root.primaryDevice !== null && root.primaryDevice.batteryAvailable
-          readonly property int batPct: hasBat ? Math.round(root.primaryDevice.battery * 100) : 0
-          Row {
-            anchors.left: parent.left; anchors.leftMargin: Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s12
-            anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
-            Icon {
-              name: parent.parent.hasBat ? "battery" : "bluetooth"; size: Theme.iconMd
-              color: parent.parent.hasBat && parent.parent.batPct <= 20 ? Theme.dangerInk : Theme.accentInk
-              anchors.verticalCenter: parent.verticalCenter
-            }
-            Column {
-              anchors.verticalCenter: parent.verticalCenter; spacing: 1
-              Text {
-                textFormat: Text.PlainText
-                text: parent.parent.parent.hasBat ? (parent.parent.parent.batPct + "%") : (root.connected.length + " active")
-                color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
-              }
-              Text {
-                textFormat: Text.PlainText
-                text: parent.parent.parent.hasBat ? "Battery" : (root.discovering ? "Scanning…" : (root.paired.length + " paired"))
-                color: Theme.textMuted; font.pixelSize: Theme.typeCaption
-              }
-            }
-          }
-        }
-        Row {
-          width: parent.width; height: 36; spacing: Theme.s8
-          Rectangle {
-            width: parent.width - 36 - Theme.s8; height: 36; radius: 18; antialiasing: true
-            color: discArea.pressed ? Theme.danger : (discArea.containsMouse ? Theme.mix(Theme.surface, Theme.danger, 0.25) : Theme.surface)
-            Behavior on color { ColorAnimation { duration: 130 } }
             Row {
-              anchors.centerIn: parent; spacing: 6
-              Icon { name: "unlink"; size: Theme.iconSm - 1; color: discArea.pressed ? Theme.textOnDanger : (discArea.containsMouse ? Theme.dangerInk : Theme.text); anchors.verticalCenter: parent.verticalCenter }
-              Text { textFormat: Text.PlainText; text: "Disconnect"; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
-                color: discArea.pressed ? Theme.textOnDanger : (discArea.containsMouse ? Theme.dangerInk : Theme.text); anchors.verticalCenter: parent.verticalCenter }
+              width: parent.width; spacing: 6
+              SmoothRect {
+                width: 7; height: 7; radius: 3.5; color: Theme.successInk; anchors.verticalCenter: parent.verticalCenter
+              }
+              Label {
+                text: root.connected.length > 1 ? ("Connected · +" + (root.connected.length - 1) + " more") : "Connected"
+                color: Theme.successInk; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel
+              }
             }
+            Label {
+              width: parent.width; elide: Text.ElideRight
+              text: root.primaryDevice ? root.nameOf(root.primaryDevice) : ""
+              color: Theme.text; font.pixelSize: 15; font.weight: Theme.weightStrong
+            }
+            Label {
+              width: parent.width; elide: Text.ElideRight; mono: true
+              text: root.primaryDevice
+                ? (root.typeLabelOf(root.primaryDevice) + (root.primaryDevice.address ? " · " + root.primaryDevice.address : ""))
+                : ""
+              color: Theme.textMuted; font.pixelSize: Theme.typeCaption
+            }
+          }
+        }
+
+        // Offset right column: battery detail (or link summary) + adapter power control.
+        Column {
+          width: heroRow.rightW; spacing: Theme.s8
+          SmoothRect {
+            width: parent.width; height: 48; radius: Theme.tileRadius; color: Theme.surfaceRaised
+            readonly property bool hasBat: root.primaryDevice !== null && root.primaryDevice.batteryAvailable
+            readonly property int batPct: hasBat ? Math.round(root.primaryDevice.battery * 100) : 0
+            Row {
+              anchors.left: parent.left; anchors.leftMargin: Theme.s12; anchors.right: parent.right; anchors.rightMargin: Theme.s12
+              anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+              Icon {
+                name: parent.parent.hasBat ? "battery" : "bluetooth"; size: Theme.iconMd
+                color: parent.parent.hasBat && parent.parent.batPct <= 20 ? Theme.dangerInk : Theme.accentInk
+                anchors.verticalCenter: parent.verticalCenter
+              }
+              Column {
+                anchors.verticalCenter: parent.verticalCenter; spacing: 1
+                Label {
+                  mono: true
+                  text: parent.parent.parent.hasBat ? (parent.parent.parent.batPct + "%") : (root.connected.length + " active")
+                  color: Theme.text; font.pixelSize: Theme.typeTitle; font.weight: Theme.weightStrong
+                }
+                Label {
+                  text: parent.parent.parent.hasBat ? "Battery" : (root.discovering ? "Scanning…" : (root.paired.length + " paired"))
+                  color: Theme.textMuted; font.pixelSize: Theme.typeCaption
+                }
+              }
+            }
+          }
+          Row {
+            width: parent.width; height: 36; spacing: Theme.s8
+            SmoothRect {
+              width: parent.width - 36 - Theme.s8; height: 36; radius: 18
+              color: discArea.pressed ? Theme.danger : (discArea.containsMouse ? Theme.mix(Theme.surface, Theme.danger, 0.25) : Theme.surface)
+              Behavior on color { ColorAnimation { duration: 130 } }
+              Row {
+                anchors.centerIn: parent; spacing: 6
+                Icon { name: "unlink"; size: Theme.iconSm - 1; color: discArea.pressed ? Theme.textOnDanger : (discArea.containsMouse ? Theme.dangerInk : Theme.text); anchors.verticalCenter: parent.verticalCenter }
+                Label { text: "Disconnect"; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
+                  color: discArea.pressed ? Theme.textOnDanger : (discArea.containsMouse ? Theme.dangerInk : Theme.text); anchors.verticalCenter: parent.verticalCenter }
+              }
             MouseArea {
               id: discArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
               onClicked: if (root.primaryDevice) root.toggleDevice(root.primaryDevice)
@@ -211,15 +209,15 @@ WidgetPanel {
     visible: devices.length > 0
     Item {
       width: parent.width; height: 18
-      Text {
+      Label {
         anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-        textFormat: Text.PlainText; text: g.label; color: Theme.textMuted
+        text: g.label; color: Theme.textMuted
         font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
       }
-      Text {
+      Label {
         visible: g.badge !== ""
         anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-        textFormat: Text.PlainText; text: g.badge; color: Theme.accentInk
+        text: g.badge; color: Theme.accentInk
         font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel
       }
     }
@@ -251,8 +249,8 @@ WidgetPanel {
     devices: root.available
     offset: root.connected.length + root.paired.length
   }
-  Text {
-    visible: Bt.enabled && root.flat.length === 0; textFormat: Text.PlainText
+  Label {
+    visible: Bt.enabled && root.flat.length === 0
     text: root.discovering ? "Scanning for nearby Bluetooth devices…" : "No devices found (press S to scan)"
     color: Theme.textMuted; font.pixelSize: Theme.typeBody
   }
