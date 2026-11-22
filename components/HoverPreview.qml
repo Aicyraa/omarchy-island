@@ -6,29 +6,26 @@ import Quickshell.Widgets
 import ".."
 import "../services"
 
-// What the pill shows on hover (and the Home widget, which is the same form pinned): a preview of the essentials.
-//   profile header (current wallpaper as its background)
-//   body, two columns:
-//     left  (narrow): Wi-Fi and Bluetooth tiles with live details, then the six icon toggles as a 3 x 2 grid
-//     right (wide):   the media card (always shown: a placeholder when nothing plays), then volume and brightness
-// Everything is live and clickable; right-click on a toggle opens its full widget. The pill sizes itself from
-// implicitWidth/implicitHeight. Height: 16 + 84 (header) + 10 + 248 (body) + 16 = 374, the fallback in Island.qml.
+// Asymmetric Hero Control Center shown on hover (and pinned as the Home widget):
+//   top banner (118 px): edge-to-edge current wallpaper fading into Theme.pill
+//   header (44 px): greeting + host, clickable date, and power shortcut (no profile picture)
+//   body (248 px):
+//     left  (268 px): Hero MediaCard + Volume & Brightness PillSliders
+//     right (180 px): staggered bento tiles (icon-disc Wi-Fi/BT, wide+square daily toggles, segmented Saver|Crash)
 Item {
   id: root
   property var win: null
   readonly property int pad: Theme.panelPadding
-  implicitWidth: 440
+  implicitWidth: 490
   implicitHeight: col.implicitHeight + 2 * pad
 
   readonly property var players: Mpris.players.values
-  // Priority: a playing player beats a paused one; any other player beats the Chromium audible-tab bridge
-  // (so a real media app is never hidden by a background tab that is only making sound).
   function isBridge(p) { return String(p.dbusName || "").indexOf("chromium_audible") >= 0 }
   readonly property var player: {
     var best = null, bestRank = -1
     for (var i = 0; i < players.length; i++) {
       var p = players[i]
-      if (!p.isPlaying && String(p.trackTitle || "") === "") continue   // an idle browser is not worth a card
+      if (!p.isPlaying && String(p.trackTitle || "") === "") continue
       var rank = (p.isPlaying ? 2 : 0) + (isBridge(p) ? 0 : 1)
       if (rank > bestRank) { best = p; bestRank = rank }
     }
@@ -36,158 +33,161 @@ Item {
   }
   function screen() { return win ? win.screenName : "" }
 
-  // ---- profile data (read once per hover) ----
   property string host: ""
+  property string bgPath: ""
   Process {
+    id: envProc
     running: true
-    command: ["hostname"]
-    stdout: StdioCollector { onStreamFinished: root.host = text.trim() }
+    command: ["bash", "-c", "hostname; readlink -f \"$HOME/.local/state/omarchy/current/background\" 2>/dev/null || true"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var lines = String(text || "").split("\n")
+        root.host = (lines[0] || "").trim()
+        var p = (lines[1] || "").trim()
+        root.bgPath = /\.(png|jpe?g|webp|bmp)$/i.test(p) ? ("file://" + p) : ""
+      }
+    }
+  }
+  Connections {
+    target: Theme
+    function onPaletteChanged() { envProc.running = true }
   }
   SystemClock { id: clock; precision: SystemClock.Minutes }
   readonly property string userName: { var u = Quickshell.env("USER") || "user"; return u.charAt(0).toUpperCase() + u.slice(1) }
   readonly property string greeting: { var h = clock.date.getHours(); return h < 5 ? "Good night" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening" }
+  readonly property bool hasBg: bgImg.status === Image.Ready
   Component.onCompleted: { Brightness.refresh(); Indicators.refresh() }
+
+  // ---------------- edge-to-edge fading background header ----------------
+  ClippingRectangle {
+    x: 1; y: 1
+    width: root.width - 2; height: 118
+    radius: Theme.pillRadius - 1
+    color: "transparent"
+    z: 0
+
+    Image {
+      id: bgImg
+      anchors.fill: parent
+      fillMode: Image.PreserveAspectCrop
+      asynchronous: true; cache: true
+      sourceSize.width: 1040; sourceSize.height: 240
+      source: root.bgPath
+      visible: status === Image.Ready
+    }
+
+    Rectangle {
+      anchors.fill: parent
+      visible: root.hasBg
+      gradient: Gradient {
+        GradientStop { position: 0.00; color: Theme.pill }
+        GradientStop { position: 0.18; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.35) }
+        GradientStop { position: 0.42; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.18) }
+        GradientStop { position: 0.78; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.88) }
+        GradientStop { position: 1.00; color: Theme.pill }
+      }
+    }
+
+    Rectangle {
+      anchors.fill: parent
+      visible: root.hasBg
+      gradient: Gradient {
+        orientation: Gradient.Horizontal
+        GradientStop { position: 0.00; color: Theme.pill }
+        GradientStop { position: 0.16; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.62) }
+        GradientStop { position: 0.32; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.08) }
+        GradientStop { position: 0.68; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.08) }
+        GradientStop { position: 0.84; color: Qt.rgba(Theme.pill.r, Theme.pill.g, Theme.pill.b, 0.62) }
+        GradientStop { position: 1.00; color: Theme.pill }
+      }
+    }
+  }
 
   Column {
     id: col
-    x: root.pad; y: root.pad; width: root.width - 2 * root.pad; spacing: 10
+    z: 1
+    x: root.pad; y: root.pad; width: root.width - 2 * root.pad; spacing: 12
 
-    // ---------------- profile header ----------------
-    ClippingRectangle {
-      width: parent.width; height: 84; radius: Theme.tileRadius; color: Theme.surface
-      Image {
-        anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true
-        sourceSize.width: 960; sourceSize.height: 400
-        source: "file://" + Quickshell.env("HOME") + "/.local/state/omarchy/current/background"
-      }
-      Rectangle { anchors.fill: parent                              // keeps the text readable on any wallpaper
-        gradient: Gradient { orientation: Gradient.Horizontal
-          GradientStop { position: 0; color: Qt.rgba(0, 0, 0, 0.66) }
-          GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.22) } } }
-      ClippingRectangle {
-        id: avatar
-        x: Theme.s16; anchors.verticalCenter: parent.verticalCenter
-        width: 52; height: 52; radius: 26; color: Theme.accentFill
-        border.width: 2; border.color: Qt.rgba(1, 1, 1, 0.85)
-        Image { id: face; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true
-          source: "file://" + Quickshell.env("HOME") + "/.face"; sourceSize.width: 104; sourceSize.height: 104 }
-        Text { anchors.centerIn: parent; visible: face.status !== Image.Ready; textFormat: Text.PlainText
-          text: root.userName.charAt(0); color: Theme.accentText; font.pixelSize: 22; font.weight: Theme.weightStrong }
-      }
+    // ---------------- slim header strip ----------------
+    Item {
+      width: parent.width; height: 44
+
       Column {
-        anchors.left: avatar.right; anchors.leftMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: 2
-        Text { textFormat: Text.PlainText; text: root.greeting; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
-        Text { textFormat: Text.PlainText; text: root.userName; color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 18; font.weight: Theme.weightStrong }
-        Text { textFormat: Text.PlainText; text: root.host; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
+        anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; spacing: 1
+        Label {
+          text: root.greeting + ", " + root.userName
+          color: root.hasBg ? Qt.rgba(1, 1, 1, 0.96) : Theme.text
+          font.pixelSize: 16; font.weight: Theme.weightStrong
+        }
+        Label {
+          visible: root.host !== ""
+          text: root.host
+          color: root.hasBg ? Qt.rgba(1, 1, 1, 0.76) : Theme.textMuted
+          font.pixelSize: Theme.typeCaption
+        }
       }
-      Column {
-        anchors.right: parent.right; anchors.rightMargin: Theme.s16; anchors.verticalCenter: parent.verticalCenter; spacing: 1
-        Text { anchors.right: parent.right; textFormat: Text.PlainText; text: Qt.formatDateTime(clock.date, "HH:mm")
-          color: Qt.rgba(1, 1, 1, 0.98); font.pixelSize: 24; font.weight: Theme.weightStrong }
-        Text { anchors.right: parent.right; textFormat: Text.PlainText; text: Qt.formatDateTime(clock.date, "ddd, MMM d")
-          color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
-        Text { anchors.right: parent.right; visible: Power.present; textFormat: Text.PlainText
-          text: Math.round(Power.level * 100) + "%" + (Power.charging ? " · charging" : ""); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: Theme.typeLabel }
+
+      Row {
+        anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: 8
+        Item {
+          width: dateLbl.implicitWidth + 8; height: 28
+          anchors.verticalCenter: parent.verticalCenter
+          Label {
+            id: dateLbl
+            anchors.centerIn: parent
+            text: Qt.formatDateTime(clock.date, "ddd, MMM d")
+            color: dateArea.containsMouse ? (root.hasBg ? Qt.rgba(1, 1, 1, 1) : Theme.text) : (root.hasBg ? Qt.rgba(1, 1, 1, 0.80) : Theme.textMuted)
+            font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel
+            Behavior on color { ColorAnimation { duration: 120 } }
+          }
+          MouseArea {
+            id: dateArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: IslandState.openWidget("calendar", root.screen())
+          }
+        }
+        SmoothRect {
+          width: 1; height: 12; radius: 0.5
+          color: root.hasBg ? Qt.rgba(1, 1, 1, 0.24) : Theme.pillBorder
+          anchors.verticalCenter: parent.verticalCenter
+        }
+        Item {
+          width: 28; height: 28
+          anchors.verticalCenter: parent.verticalCenter
+          SmoothRect {
+            anchors.fill: parent; radius: 14
+            color: root.hasBg ? Qt.rgba(1, 1, 1, 0.14) : Theme.surface
+            opacity: powerArea.containsMouse ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 120 } }
+          }
+          Icon {
+            anchors.centerIn: parent; name: "power"; size: Theme.iconSm
+            color: powerArea.containsMouse ? Theme.dangerInk : (root.hasBg ? Qt.rgba(1, 1, 1, 0.85) : Theme.textMuted)
+            Behavior on color { ColorAnimation { duration: 120 } }
+          }
+          MouseArea {
+            id: powerArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: IslandState.openWidget("power", root.screen())
+          }
+        }
       }
-      MouseArea { anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: IslandState.openWidget("calendar", root.screen()) }
     }
 
-    // ---------------- body: two columns ----------------
+    // ---------------- asymmetric two-column body ----------------
     Row {
       id: body
-      width: parent.width; spacing: Theme.s8
-      readonly property int tile: 56                              // every tile is 56 px: the wide tiles, the squares, the media slot
-      readonly property int leftW: 3 * tile + 2 * Theme.s8        // three squares across, so the wide tiles match the grid
+      width: parent.width; spacing: 10
+      readonly property int leftW: 268
+      readonly property int rightW: width - leftW - spacing
 
-      // ---- left: Wi-Fi, Bluetooth, then the six icon toggles ----
+      // ---- left focal column: hero media card + volume & brightness sliders ----
       Column {
         id: leftCol
         width: body.leftW; spacing: Theme.s8
 
-        // Wide tile: an icon disc, a name and a detail line. Also used for the 56 px squares (icon + label).
-        component QuickTile: Rectangle {
-          id: qt
-          property string icon; property bool on: false; property bool wide: false
-          property string line1; property string line2
-          property string label: ""        // a name under an icon-only tile
-          signal toggled(); signal opened()
-          radius: Theme.tileRadius; height: body.tile
-          color: area.pressed ? Qt.lighter(fill, 1.18) : (area.containsMouse ? Qt.lighter(fill, 1.09) : fill)
-          readonly property color fill: on ? Theme.accentFill : Theme.surface
-          Behavior on color { ColorAnimation { duration: 140 } }
-          readonly property color fg: on ? Theme.accentText : Theme.text
-          readonly property color fgMuted: on ? Theme.textOnAccentMuted : Theme.textMuted
-          Rectangle {                                          // icon disc (wide tiles)
-            visible: qt.wide; x: Theme.s8 + 2; anchors.verticalCenter: parent.verticalCenter; width: 30; height: 30; radius: 15
-            color: qt.on ? Qt.rgba(1, 1, 1, 0.16) : Theme.mix(Theme.surface, Theme.text, 0.10)
-            Icon { anchors.centerIn: parent; name: qt.icon; size: Theme.iconSm; color: qt.fg } }
-          Icon { visible: !qt.wide; anchors.horizontalCenter: parent.horizontalCenter
-            y: qt.label !== "" ? 10 : (qt.height - height) / 2; name: qt.icon; size: Theme.iconLg - 2; color: qt.fg }
-          Text { visible: !qt.wide && qt.label !== ""; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
-            anchors.bottomMargin: 7; textFormat: Text.PlainText; text: qt.label; color: qt.fg
-            font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
-          Column {
-            visible: qt.wide
-            anchors.left: parent.left; anchors.leftMargin: Theme.s8 + 2 + 30 + Theme.s8 + 2; anchors.right: parent.right; anchors.rightMargin: Theme.s8
-            anchors.verticalCenter: parent.verticalCenter; spacing: 1
-            Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line1
-              color: qt.fg; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
-            Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: qt.line2
-              color: qt.fgMuted; font.pixelSize: Theme.typeCaption - 1 }
-          }
-          MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
-            onClicked: function (m) { if (m.button === Qt.RightButton) qt.opened(); else qt.toggled() } }
-        }
-
-        QuickTile {
-          width: parent.width; wide: true; visible: Net.hasWifi
-          icon: Net.enabled ? "wifi" : "wifi-off"; on: Net.enabled
-          line1: !Net.enabled ? "Wi-Fi off" : (Net.connected ? Net.ssid : "Not connected")
-          line2: !Net.enabled ? "Tap to turn on" : (Net.connected
-                   ? (Net.strength > 0.75 ? "Excellent" : Net.strength > 0.5 ? "Good" : Net.strength > 0.25 ? "Fair" : "Weak") + " · " + Math.round(Net.strength * 100) + "%"
-                   : "Choose a network")
-          onToggled: Net.toggle(); onOpened: IslandState.openWidget("wifi", root.screen())
-        }
-        QuickTile {
-          width: parent.width; wide: true; visible: Bt.hasAdapter
-          icon: "bluetooth"; on: Bt.enabled
-          readonly property var dev: Bt.connectedDevices.length > 0 ? Bt.connectedDevices[0] : null
-          line1: !Bt.enabled ? "Bluetooth off" : (dev ? Bt.connectedName : "No device connected")
-          line2: !Bt.enabled ? "Tap to turn on" : (dev
-                   ? (dev.batteryAvailable ? Math.round(dev.battery * 100) + "% battery" : "Connected") + (Bt.connectedDevices.length > 1 ? " · +" + (Bt.connectedDevices.length - 1) + " more" : "")
-                   : Bt.sorted.length + " paired")
-          onToggled: Bt.toggle(); onOpened: IslandState.openWidget("bluetooth", root.screen())
-        }
-
-        Grid {
-          columns: 3; spacing: Theme.s8; width: parent.width
-          QuickTile { width: body.tile; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
-            onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen()) }
-          QuickTile { width: body.tile; label: "Night"; icon: "moon"; on: Indicators.nightLight
-            onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen()) }
-          QuickTile { width: body.tile; label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
-            onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen()) }
-          QuickTile { width: body.tile; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"; visible: Indicators.dictationAvailable
-            onToggled: Indicators.toggleDictation() }
-          // Trigger > Toggle in the menu had these two as well (the menu section is hidden in favour of this form).
-          QuickTile { width: body.tile; label: "Saver"; icon: "eye"; on: Indicators.screensaver
-            onToggled: Indicators.toggleScreensaver() }
-          QuickTile { width: body.tile; label: "Crash"; icon: "alert"; on: Indicators.crashCapture
-            onToggled: Indicators.toggleCrashCapture() }
-        }
-      }
-
-      // ---- right: the media card, then volume and brightness ----
-      Column {
-        id: rightCol
-        width: parent.width - body.leftW - Theme.s8
-        height: leftCol.implicitHeight
-        spacing: Theme.s8
-
         MediaCard {
           id: media
           width: parent.width
-          height: rightCol.height - sliders.height - Theme.s8   // fills the column beside the left stack
+          height: Math.max(144, rightCol.implicitHeight - sliders.implicitHeight - Theme.s8)
           p: root.player
         }
         Column {
@@ -206,6 +206,232 @@ Item {
             width: parent.width
             icon: "sun"; value: Brightness.level
             onMoved: function (v) { Brightness.set(v) }
+          }
+        }
+      }
+
+      // ---- right supporting column: icon-disc hierarchy + staggered bento layout ----
+      Column {
+        id: rightCol
+        width: body.rightW; spacing: Theme.s8
+
+        component ConnectivityCard: Item {
+          id: cc
+          property string icon: ""
+          property bool liveWifi: false
+          property bool on: false
+          property bool connected: false
+          property string line1: ""
+          property string line2: ""
+          property string badge: ""
+          signal toggled()
+          signal opened()
+          height: 78
+          readonly property color baseFill: on ? Theme.mix(Theme.surface, Theme.accentFill, 0.14) : Theme.surface
+          readonly property color iconFg: on ? Theme.accentText : Theme.textMuted
+          SmoothRect {
+            anchors.fill: parent; radius: Theme.tileRadius
+            color: ccArea.pressed ? Qt.lighter(cc.baseFill, 1.14) : (ccArea.containsMouse ? Qt.lighter(cc.baseFill, 1.07) : cc.baseFill)
+            borderWidth: 1
+            borderColor: cc.on ? Qt.rgba(Theme.accentInk.r, Theme.accentInk.g, Theme.accentInk.b, 0.32) : Theme.pillBorder
+            Behavior on color { ColorAnimation { duration: 140 } }
+          }
+          Item {
+            x: 9; y: 10; width: parent.width - 18; height: 28
+            SmoothRect {
+              width: 28; height: 28; radius: 14
+              color: cc.on ? Theme.accentFill : Theme.surfaceRaised
+              Behavior on color { ColorAnimation { duration: 140 } }
+              WifiIcon {
+                visible: cc.liveWifi; anchors.centerIn: parent
+                size: 15; strokeWidth: 2.0; off: !Net.enabled; level: Net.connected ? Net.strength : 0; color: cc.iconFg
+              }
+              Icon { visible: !cc.liveWifi; anchors.centerIn: parent; name: cc.icon; size: 15; color: cc.iconFg }
+            }
+            Label {
+              visible: cc.badge !== ""
+              anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+              mono: true; text: cc.badge; color: cc.on ? Theme.accentInk : Theme.textMuted; font.pixelSize: 10
+            }
+          }
+          Column {
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 9; rightMargin: 9; bottomMargin: 9 }
+            spacing: 1
+            Label { width: parent.width; elide: Text.ElideRight; text: cc.line1; color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+            Row {
+              width: parent.width; spacing: 4
+              SmoothRect { visible: cc.on; width: 5; height: 5; radius: 2.5; anchors.verticalCenter: parent.verticalCenter
+                color: cc.connected ? Theme.successInk : Theme.accentInk }
+              Label { width: parent.width - (cc.on ? 9 : 0); elide: Text.ElideRight; text: cc.line2; color: Theme.textMuted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
+            }
+          }
+          MouseArea {
+            id: ccArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: function (m) { if (m.button === Qt.RightButton) cc.opened(); else cc.toggled() }
+          }
+        }
+
+        component DailyTile: Item {
+          id: dt
+          property string icon: ""
+          property string label: ""
+          property string stateText: on ? "On" : "Off"
+          property bool on: false
+          property bool compact: false
+          signal toggled()
+          signal opened()
+          height: Theme.tileHeight
+          readonly property color baseFill: on ? Theme.mix(Theme.surface, Theme.accentFill, 0.14) : Theme.surface
+          SmoothRect {
+            anchors.fill: parent; radius: Theme.tileRadius
+            color: dtArea.pressed ? Qt.lighter(dt.baseFill, 1.14) : (dtArea.containsMouse ? Qt.lighter(dt.baseFill, 1.07) : dt.baseFill)
+            borderWidth: 1
+            borderColor: dt.on ? Qt.rgba(Theme.accentInk.r, Theme.accentInk.g, Theme.accentInk.b, 0.32) : Theme.pillBorder
+            Behavior on color { ColorAnimation { duration: 140 } }
+          }
+          // Wide form: left circular icon disc + stacked label & status
+          Item {
+            visible: !dt.compact
+            anchors.fill: parent
+            SmoothRect {
+              x: 9; anchors.verticalCenter: parent.verticalCenter; width: 28; height: 28; radius: 14
+              color: dt.on ? Theme.accentFill : Theme.surfaceRaised
+              Behavior on color { ColorAnimation { duration: 140 } }
+              Icon { anchors.centerIn: parent; name: dt.icon; size: 14; color: dt.on ? Theme.accentText : Theme.text }
+            }
+            Column {
+              anchors { left: parent.left; right: parent.right; leftMargin: 44; rightMargin: 8; verticalCenter: parent.verticalCenter }
+              spacing: 1
+              Label { width: parent.width; elide: Text.ElideRight; text: dt.label; color: Theme.text; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
+              Label { width: parent.width; elide: Text.ElideRight; text: dt.stateText; color: dt.on ? Theme.accentInk : Theme.textMuted; font.pixelSize: 10 }
+            }
+          }
+          // Compact square form: centered icon disc over label + corner status dot
+          Item {
+            visible: dt.compact
+            anchors.fill: parent
+            SmoothRect {
+              visible: dt.on
+              anchors.top: parent.top; anchors.right: parent.right; anchors.topMargin: 7; anchors.rightMargin: 7
+              width: 5; height: 5; radius: 2.5; color: Theme.accentInk
+            }
+            Column {
+              anchors.centerIn: parent; spacing: 3
+              SmoothRect {
+                anchors.horizontalCenter: parent.horizontalCenter; width: 26; height: 26; radius: 13
+                color: dt.on ? Theme.accentFill : Theme.surfaceRaised
+                Behavior on color { ColorAnimation { duration: 140 } }
+                Icon { anchors.centerIn: parent; name: dt.icon; size: 13; color: dt.on ? Theme.accentText : Theme.text }
+              }
+              Label { anchors.horizontalCenter: parent.horizontalCenter; text: dt.label; color: Theme.text; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+            }
+          }
+          MouseArea {
+            id: dtArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: function (m) { if (m.button === Qt.RightButton) dt.opened(); else dt.toggled() }
+          }
+        }
+
+        component SegChip: Item {
+          id: sc
+          property string icon: ""
+          property string label: ""
+          property bool on: false
+          signal toggled()
+          height: parent.height
+          SmoothRect {
+            anchors.fill: parent; anchors.margins: 3; radius: height / 2
+            color: sc.on ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.24)
+                 : (scArea.containsMouse ? Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.08) : "transparent")
+            Behavior on color { ColorAnimation { duration: 140 } }
+          }
+          Row {
+            anchors.centerIn: parent; spacing: 5
+            SmoothRect { visible: sc.on; width: 5; height: 5; radius: 2.5; color: Theme.accentInk; anchors.verticalCenter: parent.verticalCenter }
+            Icon { anchors.verticalCenter: parent.verticalCenter; name: sc.icon; size: 13; color: sc.on ? Theme.accentInk : Theme.textMuted }
+            Label { anchors.verticalCenter: parent.verticalCenter; text: sc.label; color: sc.on ? Theme.text : Theme.textMuted; font.pixelSize: Theme.typeCaption; font.weight: Theme.weightLabel }
+          }
+          MouseArea {
+            id: scArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: sc.toggled()
+          }
+        }
+
+        // Row 1: Asymmetrical Connectivity (56% Wi-Fi / 44% Bluetooth)
+        Row {
+          id: connRow
+          width: parent.width; spacing: Theme.s8
+          visible: Net.hasWifi || Bt.hasAdapter
+          readonly property int count: (Net.hasWifi ? 1 : 0) + (Bt.hasAdapter ? 1 : 0)
+          readonly property int wifiW: count === 1 ? width : Math.round((width - Theme.s8) * 0.56)
+          readonly property int btW: count === 1 ? width : (width - Theme.s8 - wifiW)
+
+          ConnectivityCard {
+            width: connRow.wifiW; visible: Net.hasWifi; liveWifi: true
+            icon: Net.enabled ? "wifi" : "wifi-off"; on: Net.enabled; connected: Net.connected
+            line1: Net.enabled && Net.connected ? Net.ssid : "Wi-Fi"
+            line2: !Net.enabled ? "Off" : (Net.connected ? "Connected" : "Ready")
+            badge: Net.enabled && Net.connected ? Math.round(Net.strength * 100) + "%" : ""
+            onToggled: Net.toggle(); onOpened: IslandState.openWidget("wifi", root.screen())
+          }
+          ConnectivityCard {
+            width: connRow.btW; visible: Bt.hasAdapter
+            icon: "bluetooth"; on: Bt.enabled
+            readonly property var dev: Bt.connectedDevices.length > 0 ? Bt.connectedDevices[0] : null
+            connected: dev !== null
+            line1: Bt.enabled && dev ? Bt.connectedName : "Bluetooth"
+            line2: !Bt.enabled ? "Off" : (dev ? "Connected" : Bt.sorted.length + " paired")
+            badge: Bt.enabled && dev && dev.batteryAvailable ? Math.round(dev.battery * 100) + "%" : ""
+            onToggled: Bt.toggle(); onOpened: IslandState.openWidget("bluetooth", root.screen())
+          }
+        }
+
+        // Rows 2 & 3: Staggered Bento Daily Toggles (58%/42% then 42%/58%)
+        Column {
+          id: dailyGrid
+          width: parent.width; spacing: Theme.s8
+          readonly property int wideW: Math.round((width - Theme.s8) * 0.58)
+          readonly property int sqW: width - Theme.s8 - wideW
+          Row {
+            width: parent.width; spacing: Theme.s8
+            DailyTile {
+              width: dailyGrid.wideW; label: "Focus"; icon: Indicators.dnd ? "bell-off" : "bell"; on: Indicators.dnd
+              onToggled: Indicators.toggleDnd(); onOpened: IslandState.openWidget("notifications", root.screen())
+            }
+            DailyTile {
+              width: dailyGrid.sqW; compact: true; label: "Night"; icon: "moon"; on: Indicators.nightLight
+              onToggled: Indicators.toggleNightLight(); onOpened: IslandState.openWidget("display", root.screen())
+            }
+          }
+          Row {
+            width: parent.width; spacing: Theme.s8
+            DailyTile {
+              width: Indicators.dictationAvailable ? dailyGrid.sqW : parent.width
+              compact: Indicators.dictationAvailable
+              label: "Awake"; icon: "coffee"; on: Indicators.stayAwake
+              onToggled: Indicators.toggleStayAwake(); onOpened: IslandState.openWidget("battery", root.screen())
+            }
+            DailyTile {
+              visible: Indicators.dictationAvailable
+              width: dailyGrid.wideW; label: "Dictate"; icon: "mic-dictate"; on: Indicators.dictation !== "idle"
+              stateText: Indicators.dictation !== "idle" ? "Live" : "Off"
+              onToggled: Indicators.toggleDictation()
+            }
+          }
+        }
+
+        // Row 4: Unified segmented utility bar (Saver | Crash)
+        SmoothRect {
+          width: parent.width; height: 34; radius: 17
+          color: Theme.surface; borderWidth: 1; borderColor: Theme.pillBorder
+          Row {
+            anchors.fill: parent
+            readonly property real segW: (width - 1) / 2
+            SegChip { width: parent.segW; label: "Saver"; icon: "eye"; on: Indicators.screensaver; onToggled: Indicators.toggleScreensaver() }
+            SmoothRect { width: 1; height: 14; radius: 0.5; color: Theme.pillBorder; anchors.verticalCenter: parent.verticalCenter }
+            SegChip { width: parent.segW; label: "Crash"; icon: "alert"; on: Indicators.crashCapture; onToggled: Indicators.toggleCrashCapture() }
           }
         }
       }

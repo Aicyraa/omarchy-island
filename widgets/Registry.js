@@ -7,7 +7,7 @@
 // pill; the spring retargets when the real size arrives. Names not listed fall back
 // to Placeholder.
 var widgets = {
-  home:          { file: "Home.qml", w: 440, h: 374 },
+  home:          { file: "Home.qml", w: 490, h: 336 },
   wifi:          { file: "Wifi.qml", w: 500, h: 320 },
   bluetooth:     { file: "Bluetooth.qml", w: 520, h: 240 },
   audio:         { file: "Audio.qml", w: 660, h: 280 },
@@ -17,7 +17,7 @@ var widgets = {
   worldclock:    { file: "WorldClock.qml", w: 660, h: 340 },
   power:         { file: "Power.qml", w: 668, h: 128 },
   notifications: { file: "Notifications.qml", w: 500, h: 360 },
-  system:        { file: "System.qml", w: 620, h: 420 },
+  system:        { file: "System.qml", w: 640, h: 420 },
   tray:          { file: "Tray.qml", w: 200, h: 48 },
   theme:         { file: "ThemePicker.qml", w: 720, h: 210 },
   look:          { file: "Look.qml", w: 640, h: 420 },
