@@ -279,8 +279,8 @@ Singleton {
   function startRequest(p) {
     cancelRequest()
     request = { active: true, mode: p.mode === "input" ? "input" : "select", prompt: String(p.prompt || ""),
-                options: Array.isArray(p.options) ? p.options : [], selectionFile: String(p.selectionFile || ""),
-                doneFile: String(p.doneFile || "") }
+                options: Array.isArray(p.options) ? p.options : [], width: Number(p.width) || 0,
+                selectionFile: String(p.selectionFile || ""), doneFile: String(p.doneFile || "") }
   }
   // Every exit that is not a choice (Esc, a click outside, a newer request, closing) writes ONLY the done file, so the
   // script that asked waits no longer and sees that nothing was chosen.

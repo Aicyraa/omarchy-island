@@ -13,13 +13,14 @@ import "../menu-core/MenuModel.js" as MenuModel
 // Running an action closes the widget first (as Power does).
 WidgetPanel {
   id: root
-  preferredWidth: 520
-  pad: 8                                  // a tighter edge: the rail and the list sit close to the panel edges
+  preferredWidth: dmenu && MenuData.request.width > 0
+    ? Math.max(520, Math.min(Theme.panelMaxWidth, MenuData.request.width))
+    : 520
   hint: "type to search · ↑/↓ move · Enter open or run · ←/Backspace up · Tab rail · Esc up or close"
 
-  // The fixed body. Search (30) + gap (12) + body (326) + footer (6 + 14) + padding (2 x 8) is 404, within the 420 px
-  // panel limit, so the panel itself never scrolls: only the list does, and only when its rows overflow.
-  readonly property int bodyH: 396
+  // Search (30) + gap (12) + body (380) + top/bottom padding (2 x 16 = 32) = 454 <= 470,
+  // so only the list scrolls and outer 4-side padding stays strictly uniform.
+  readonly property int bodyH: 380
   readonly property int railW: 44
   readonly property string glyphFamily: "JetBrainsMono Nerd Font"
   readonly property string homeGlyph: "󰋜"
@@ -109,7 +110,8 @@ WidgetPanel {
     else if (id === "toggle.notifications") Indicators.toggleDnd()
   }
 
-  // dmenu options are "<glyph>\t<label>\t<detail>" (glyph and detail optional); the answer is "<label>" or "<label>\t<detail>".
+  // dmenu options are "<glyph>\t<label>\t<detail>" (glyph and detail optional) or "<KEYBIND> → <Action>";
+  // `answer` keeps the full original string so callers like `omarchy-menu-keybindings` match cleanly.
   function dmenuRows() {
     if (dmenuInput) return []
     var out = []
@@ -118,11 +120,20 @@ WidgetPanel {
     for (var i = 0; i < options.length; i++) {
       var parts = String(options[i] || "").split("\t")
       var icon = parts.length > 1 ? parts.shift() : ""
-      var label = parts.shift() || ""
+      var rawLabel = parts.shift() || ""
+      var label = rawLabel
+      var shortcut = ""
+      if (icon === "") {
+        var arrow = rawLabel.indexOf(" → ")
+        if (arrow > 0) {
+          shortcut = rawLabel.slice(0, arrow).trim()
+          label = rawLabel.slice(arrow + 3).trim()
+        }
+      }
       var detail = parts.join("\t")
-      if (q && label.toLowerCase().indexOf(q) < 0 && detail.toLowerCase().indexOf(q) < 0) continue
-      out.push({ id: "dmenu." + i, kind: "dmenu", label: label, icon: icon, description: detail,
-                 answer: detail ? label + "\t" + detail : label, section: "" })
+      if (q && label.toLowerCase().indexOf(q) < 0 && shortcut.toLowerCase().indexOf(q) < 0 && detail.toLowerCase().indexOf(q) < 0) continue
+      out.push({ id: "dmenu." + i, kind: "dmenu", label: label, shortcut: shortcut, icon: icon, description: detail,
+                 answer: detail ? rawLabel + "\t" + detail : rawLabel, section: "" })
     }
     return out
   }
@@ -240,39 +251,41 @@ WidgetPanel {
 
   // ---- search row: the back button (in a submenu), the search box, the item count ----
   Item { id: searchRow; width: parent.width; height: 30
-    Rectangle {
+    SmoothRect {
       id: back
       visible: !root.dmenu && root.route !== "root" && root.query === ""
       width: 30; height: 30; radius: 15; color: backArea.containsMouse ? Theme.mix(Theme.surface, Theme.text, 0.12) : Theme.surface
       Icon { anchors.centerIn: parent; name: "chevron-left"; size: Theme.iconSm }
       MouseArea { id: backArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.up() }
     }
-    Rectangle {
+    SmoothRect {
       id: searchBox
-      anchors.left: parent.left; anchors.right: countChip.left; anchors.rightMargin: Theme.s8
+      anchors.left: parent.left; anchors.right: countChip.visible ? countChip.left : parent.right
+      anchors.rightMargin: countChip.visible ? Theme.s8 : 0
       anchors.leftMargin: back.visible ? 38 : 0
       height: 30; radius: 15
       color: root.query !== "" ? Theme.mix(Theme.surface, Theme.text, 0.08) : Theme.surface
       Icon { id: searchIcon; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.iconSm; color: Theme.textMuted }
-      Text { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
-        elide: Text.ElideRight; textFormat: Text.PlainText
+      Label { x: Theme.s12 + Theme.iconSm + Theme.s8; width: parent.width - x - Theme.s12; anchors.verticalCenter: parent.verticalCenter
+        elide: Text.ElideRight
         text: root.query !== "" ? root.query : (root.dmenu && root.dmenuPrompt !== "" ? root.dmenuPrompt : "Search apps and actions")
         color: root.query === "" ? Theme.textMuted : Theme.text; font.pixelSize: Theme.typeTitle; font.weight: root.query === "" ? Font.Normal : Theme.weightLabel }
     }
     // A chip: the item count, the hovered rail item's name, or on the Install page how many installed apps were hidden.
     readonly property int hiddenInstallCount: { MenuData.revision; return MenuData.hiddenInstallCount() }
     readonly property bool onInstall: root.route.indexOf("install") === 0 || root.railId === "install"
-    readonly property string chipText: root.dmenu ? ""
+    readonly property string chipText: root.dmenuInput ? ""
+      : root.dmenu ? (root.rows.length + (root.rows.length === 1 ? " item" : " items"))
       : (root.railHover !== "" ? root.railHover
         : (root.rows.length + (root.rows.length === 1 ? " item" : " items")
            + (onInstall && hiddenInstallCount > 0 ? "  ·  " + hiddenInstallCount + " installed hidden" : "")))
-    Rectangle {
+    SmoothRect {
       id: countChip
       anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
       visible: searchRow.chipText !== ""
       height: 22; radius: 11; width: chipLabel.implicitWidth + 2 * Theme.s12
       color: Theme.surface
-      Text { id: chipLabel; anchors.centerIn: parent; textFormat: Text.PlainText; text: searchRow.chipText
+      Label { id: chipLabel; anchors.centerIn: parent; text: searchRow.chipText
         color: Theme.textMuted; font.pixelSize: Theme.typeLabel; font.weight: Theme.weightLabel }
     }
   }
@@ -284,7 +297,7 @@ WidgetPanel {
   Item {
     width: parent.width; height: root.bodyH
     // The rail is a square container; its items are square too, so the whole column reads as one block.
-    Rectangle {
+    SmoothRect {
       id: rail
       visible: !root.dmenu
       width: root.railW; height: root.bodyH; color: Theme.surface; radius: Theme.tileRadius
@@ -299,7 +312,7 @@ WidgetPanel {
           readonly property bool active: modelData.id === root.highlightedRail
           width: rail.width; height: root.railItemH
           // A square, rounded icon box, centred in its row of the rail.
-          Rectangle {
+          SmoothRect {
             width: Math.min(root.railItemH, root.railW - 8); height: width
             anchors.centerIn: parent
             radius: Theme.radiusChip
@@ -313,9 +326,9 @@ WidgetPanel {
               asynchronous: true; smooth: true; mipmap: true
               source: railItem.modelData.kind === "app" && railItem.modelData.icon ? (Quickshell.iconPath(railItem.modelData.icon, true) || "") : "" }
             // Centred by its ink, not its advance: nerd-font glyphs have uneven side bearings, so a centred advance sits off-centre.
-            Text { id: railGlyph; visible: railItem.modelData.kind !== "app"
-              textFormat: Text.PlainText; text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
-              font.family: root.glyphFamily; font.pixelSize: 17
+            Label { id: railGlyph; visible: railItem.modelData.kind !== "app"
+              mono: true; text: railItem.modelData.icon || ""; color: railItem.active ? Theme.text : Theme.textMuted
+              font.pixelSize: 17
               anchors.verticalCenter: parent.verticalCenter
               x: (parent.width - railInk.boundingRect.width) / 2 - railInk.boundingRect.x
               TextMetrics { id: railInk; font: railGlyph.font; text: railGlyph.text } }
@@ -331,8 +344,8 @@ WidgetPanel {
 
     ListView {
       id: list
-      x: root.dmenu ? 0 : root.railW + Theme.s12 - 8     // 8 px further left: the highlight's bleed stays inside the list's clip
-      width: parent.width - x - 14    // 14 px lane: the scroll indicator sits in it, clear of the rows
+      x: root.dmenu ? 0 : root.railW + Theme.s12
+      width: parent.width - x
       height: root.bodyH
       clip: true
       model: root.rows
@@ -350,25 +363,20 @@ WidgetPanel {
         required property string section
         width: list.width
         height: section === "" ? 0 : (section === "divider" ? 12 : 26)
-        Rectangle { visible: section === "divider"; x: Theme.s8; width: parent.width - 2 * Theme.s8; height: 1
+        Rectangle { visible: section === "divider"; x: Theme.s12; width: parent.width - 2 * Theme.s12; height: 1
           anchors.verticalCenter: parent.verticalCenter; color: Theme.mix(Theme.surface, Theme.text, 0.14) }
-        Text { visible: section !== "" && section !== "divider"; x: Theme.s8; anchors.verticalCenter: parent.verticalCenter
-          textFormat: Text.PlainText; text: section.toUpperCase(); color: Theme.textMuted
+        Label { visible: section !== "" && section !== "divider"; x: Theme.s12; anchors.verticalCenter: parent.verticalCenter
+          text: section.toUpperCase(); color: Theme.textMuted
           font.pixelSize: Theme.typeCaption; font.weight: Theme.weightStrong; font.letterSpacing: 1.2 }
       }
       delegate: Item {
         id: rowItem
         required property var modelData
         required property int index
-        // The shared highlight bleeds 8 px past a row on each side. Rows sit 8 px in from the list's edges, and are 24 px
-        // narrower, so the whole highlight stays inside the list's clip (no flat cut, no black strip) and clear of the
-        // trailing switches and the scroll lane.
-        x: 8; width: list.width - 24; height: Theme.rowHeight
+        readonly property bool hasLead: rowItem.modelData.kind !== "dmenu" || (rowItem.modelData.icon || "") !== ""
+        x: 0; width: list.width - (list.interactive ? 10 : 0); height: Theme.rowHeight
         opacity: 0
-        // The focus highlight follows this box (8 px in from the row on each side); it bleeds 8 px more, so it starts 12 px
-        // from the sidebar, the same gap as before, and stays inside the list's clip.
-        Item { id: focusBox; anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8 }
-        FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: focusBox }
+        FocusTarget { selected: root.sel === rowItem.index && !root.railFocus; target: rowItem }
         // The rows fade in one after another when the list is built (the first eight), and at once with reduced motion.
         SequentialAnimation on opacity {
           running: true
@@ -380,37 +388,66 @@ WidgetPanel {
           onClicked: { root.railFocus = false; root.sel = index; root.open(rowItem.modelData) } }
         Item {
           id: lead
+          visible: rowItem.hasLead
           x: Theme.s12; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26
           Image { visible: rowItem.modelData.kind === "app"; anchors.fill: parent; sourceSize: Qt.size(40, 40)
             asynchronous: true; smooth: true; mipmap: true
             source: rowItem.modelData.kind === "app" && rowItem.modelData.icon ? (Quickshell.iconPath(rowItem.modelData.icon, true) || "") : "" }
           Icon { visible: rowItem.modelData.kind === "toggle"; anchors.centerIn: parent; size: Theme.iconMd
             name: rowItem.modelData.icon || ""; color: index === root.sel ? Theme.text : Theme.textMuted }
-          Text { visible: rowItem.modelData.kind !== "app" && rowItem.modelData.kind !== "toggle"; anchors.fill: parent
-            horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; textFormat: Text.PlainText
+          Label { visible: rowItem.modelData.kind !== "app" && rowItem.modelData.kind !== "toggle"; anchors.fill: parent
+            horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; mono: true
             text: rowItem.modelData.icon || ""; color: index === root.sel ? Theme.text : Theme.textMuted
-            font.family: root.glyphFamily; font.pixelSize: 18 }
+            font.pixelSize: 18 }
         }
         Column {
-          x: lead.x + 26 + Theme.s16; anchors.verticalCenter: parent.verticalCenter
-          width: parent.width - x - 96
-          Text { width: parent.width; elide: Text.ElideRight
+          anchors.left: parent.left
+          anchors.leftMargin: rowItem.hasLead ? (lead.x + 26 + Theme.s16) : Theme.s12
+          anchors.right: trailingRow.left
+          anchors.rightMargin: Theme.s12
+          anchors.verticalCenter: parent.verticalCenter
+          Label { width: parent.width; elide: Text.ElideRight
             textFormat: root.qText() !== "" ? Text.StyledText : Text.PlainText
             text: root.qText() !== "" ? root.markedLabel(rowItem.modelData.label, root.qText()) : (rowItem.modelData.label || "")
             color: Theme.text; font.pixelSize: Theme.rowTitle; font.letterSpacing: Theme.rowLetter; font.weight: Theme.weightLabel }
-          Text { visible: text !== ""; width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText
+          Label { visible: text !== ""; width: parent.width; elide: Text.ElideRight
             text: rowItem.modelData.description || ""; color: Theme.textMuted; font.pixelSize: Theme.typeBody }
         }
         Row {
+          id: trailingRow
           anchors.right: parent.right; anchors.rightMargin: Theme.s12; anchors.verticalCenter: parent.verticalCenter; spacing: Theme.s8
+          // Keybind guide pill positioned cleanly on the right side (e.g. from "SUPER + K → Keybindings").
+          SmoothRect {
+            visible: (rowItem.modelData.shortcut || "") !== ""
+            anchors.verticalCenter: parent.verticalCenter
+            height: 24
+            width: Math.min(Math.round(rowItem.width * 0.46), kbMetrics.width + Theme.s16)
+            radius: Theme.radiusChip - 2
+            color: rowItem.index === root.sel ? Theme.mix(Theme.surfaceRaised, Theme.accentFill, 0.25) : Theme.surfaceRaised
+            Behavior on color { ColorAnimation { duration: 120 } }
+            TextMetrics { id: kbMetrics; font: kbTxt.font; text: rowItem.modelData.shortcut || "" }
+            Label {
+              id: kbTxt
+              anchors.centerIn: parent
+              width: parent.width - Theme.s12
+              horizontalAlignment: Text.AlignHCenter
+              elide: Text.ElideRight
+              mono: true
+              textFormat: root.qText() !== "" ? Text.StyledText : Text.PlainText
+              text: root.qText() !== "" ? root.markedLabel(rowItem.modelData.shortcut, root.qText()) : (rowItem.modelData.shortcut || "")
+              color: rowItem.index === root.sel ? Theme.text : Theme.textMuted
+              font.pixelSize: Theme.typeCaption
+              font.weight: Theme.weightLabel
+            }
+          }
           // A toggle shows a switch (the track fills when it is on); other checked rows keep the tick.
-          Rectangle {
+          SmoothRect {
             visible: rowItem.modelData.kind === "toggle"
             anchors.verticalCenter: parent.verticalCenter
             width: 32; height: 18; radius: 9
             color: rowItem.modelData.checked === true ? Theme.accentFill : Theme.surfaceRaised
             Behavior on color { ColorAnimation { duration: IslandState.reducedMotion ? 0 : 160 } }
-            Rectangle {
+            SmoothRect {
               width: 14; height: 14; radius: 7; anchors.verticalCenter: parent.verticalCenter
               x: rowItem.modelData.checked === true ? parent.width - width - 2 : 2
               color: Theme.surface
@@ -419,22 +456,22 @@ WidgetPanel {
           }
           Icon { visible: rowItem.modelData.checked === true && rowItem.modelData.kind !== "toggle"; anchors.verticalCenter: parent.verticalCenter; size: Theme.iconSm
             name: "check"; color: Theme.text; strokeWidth: 2 }
-          Text { visible: text !== ""; textFormat: Text.PlainText; text: root.trailingFor(rowItem.modelData)
+          Label { visible: text !== ""; text: root.trailingFor(rowItem.modelData)
             color: Theme.textMuted; font.pixelSize: Theme.rowTrail; font.weight: Theme.weightLabel; anchors.verticalCenter: parent.verticalCenter }
-          Text { visible: root.pinnedOn(rowItem.modelData); textFormat: Text.PlainText; text: "pinned"
+          Label { visible: root.pinnedOn(rowItem.modelData); text: "pinned"
             color: Theme.textMuted; font.pixelSize: Theme.typeCaption; anchors.verticalCenter: parent.verticalCenter }
         }
       }
       // A thin indicator in the lane right of the list, shown only while the rows run past the body.
-      Rectangle {
+      SmoothRect {
         parent: list.parent
         visible: list.contentHeight > list.height + 1
-        x: list.x + list.width + 5; y: list.y
+        x: list.x + list.width - 4; y: list.y
         width: 3; radius: 2; color: Theme.mix(Theme.surface, Theme.text, 0.35)
         height: Math.max(24, list.height * list.height / list.contentHeight)
         transform: Translate { y: (list.height - height) * (list.contentY / Math.max(1, list.contentHeight - list.height)) }
       }
-      Text { anchors.centerIn: parent; visible: list.count === 0; textFormat: Text.PlainText
+      Label { anchors.centerIn: parent; visible: list.count === 0
         text: root.query !== "" ? "No match" : "Nothing here"; color: Theme.textMuted; font.pixelSize: Theme.typeTitle }
     }
   }
