@@ -28,3 +28,5 @@ ClickCatcher 1.0 components/ClickCatcher.qml
 ListHighlight 1.0 components/ListHighlight.qml
 NotifThumb 1.0 components/NotifThumb.qml
 NotifToast 1.0 components/NotifToast.qml
+Label 1.0 components/Label.qml
+SmoothRect 1.0 components/SmoothRect.qml

@@ -19,6 +19,7 @@ Singleton {
 
   // ---- Fallback block: the only hex literals in the plugin. Used until the
   // palette file loads, or if a key is missing from it. ----
+  readonly property color pureBlack: "#000000"
   readonly property var fallback: ({
     background: "#101315", lighter_background: "#1c2124", selection: "#2b3237",
     muted: "#707880", foreground: "#cacccc", dark_foreground: "#8a9096",
@@ -92,20 +93,25 @@ Singleton {
   readonly property int rowTitle: 14
   readonly property int rowSub: 12
   readonly property int rowTrail: 12
-  readonly property real rowLetter: 0.2
+  readonly property real rowLetter: 0.1
   readonly property int sliderHeight: 44
   readonly property int tileHeight: 56
-  readonly property int tileRadius: 18
-  // The shared type scale (use these instead of raw pixel sizes): caption 10, label 11, body 12, title 14, value 26.
-  readonly property int typeCaption: 10
-  readonly property int typeLabel: 11
-  readonly property int typeBody: 12
+  readonly property int tileRadius: 14
+  // Crisp typography tokens for 1x DPI screens (Adwaita Sans UI + JetBrainsMono tabular metrics).
+  readonly property string fontFamily: "Adwaita Sans"
+  readonly property string monoFamily: "JetBrainsMono Nerd Font"
+  readonly property int textRenderType: Text.NativeRendering
+  readonly property int fontHinting: Font.PreferVerticalHinting
+  // The shared type scale (use these instead of raw pixel sizes): caption 11, label 12, body 13, title 14, value 26.
+  readonly property int typeCaption: 11
+  readonly property int typeLabel: 12
+  readonly property int typeBody: 13
   readonly property int typeTitle: 14
   readonly property int typeValue: 26
   // Shared corner radii: cards use tileRadius, chips and small rows use radiusChip.
   readonly property int radiusChip: 10
-  readonly property int pillRadius: IslandState.cornerRadius + 4   // matches the Compass menu
-  readonly property int windowWidth: 1000       // wide enough for the widest pill (720) plus a capsule on each side
+  readonly property int pillRadius: Math.max(20, IslandState.cornerRadius + 14)   // smooth outer curves on solid black panels
+  readonly property int windowWidth: 1080       // wide enough for the widest pill (720) plus flanking capsules and shadows on each side
   readonly property int windowHeight: 570       // the fixed layer window: taller than any pill (widgets <= panelMaxHeight, hover form with a player ~435)
   readonly property int panelMaxHeight: 470    // the fixed layer window is sized for this
   readonly property int panelMinHeight: 48
@@ -121,13 +127,25 @@ Singleton {
 
   // ---- Semantic roles. Each has a Behavior, so a theme switch cross-fades
   // over 250ms instead of snapping. ----
-  property color background: Qt.color(pick("background"))
-  property color surface: Qt.color(pick("lighter_background"))
-  property color surfaceRaised: Qt.color(pick("selection"))
+  readonly property color rawBg: Qt.color(pick("background"))
+  readonly property color rawSurface: Qt.color(pick("lighter_background"))
+  readonly property color rawRaised: Qt.color(pick("selection"))
+  readonly property color rawFg: Qt.color(pick("foreground"))
+  property color background: rawBg
+  // All island surfaces and widgets sit on an opaque solid black pill with soft drop shadow.
+  property color pillBase: pureBlack
+  property color pill: pillBase
+  property color pillBorder: Qt.rgba(1, 1, 1, 0.10)
+  property color surface: dark
+    ? (luminance(rawSurface) < 0.012 ? mix(pureBlack, Qt.rgba(1, 1, 1, 1), 0.09) : rawSurface)
+    : mix(pureBlack, rawBg, 0.12)
+  property color surfaceRaised: dark
+    ? (luminance(rawRaised) <= luminance(surface) + 0.005 ? mix(surface, Qt.rgba(1, 1, 1, 1), 0.08) : rawRaised)
+    : mix(pureBlack, rawBg, 0.20)
   property color outline: Qt.color(pick("muted"))
-  property color text: readable(Qt.color(pick("foreground")), surface, 4.5)
+  property color text: lift(rawFg, [pillBase, surface, surfaceRaised], Qt.rgba(1, 1, 1, 1), 4.5)
   // Secondary text must stay legible (>= 4.5:1) on the pill AND on tiles/rows.
-  property color textMuted: lift(Qt.color(pick("dark_foreground")), [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
+  property color textMuted: lift(Qt.color(pick("dark_foreground")), [surface, surfaceRaised, pillBase], text, 4.5)
   property color accent: Qt.color(pick("accent"))
   // Text on an accent fill. The accent itself is often mid-tone, which forces near-black text (heavy, harsh).
   // So the FILL is the accent deepened toward the pill just far enough for the normal light text colour to reach
@@ -137,29 +155,23 @@ Singleton {
     return accent
   }
   property color accentText: readable(text, accentFill, 4.5)
-  // Secondary text ON an accent fill (tile subtitles, badges): slightly softer than
-  // accentText but still >= 4.5:1 against the accent.
-  // Accent/status colours as TEXT, ICONS or LINES: nudged toward the text colour until they reach
-  // 4.5:1 on the pill, tiles and raised rows. Use the plain accent/success/warning/danger only for
-  // FILLS (with accentText / textOnWarning / textOnDanger on top), never for text.
-  property color accentInk: lift(accent, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
-  property color successInk: lift(success, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
-  property color warningInk: lift(warning, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
-  property color dangerInk: lift(danger, [surface, surfaceRaised, pillBase], Qt.color(pick("foreground")), 4.5)
-  property color textOnWarning: readable(background, warning, 4.5)
-  property color textOnDanger: readable(background, danger, 4.5)
-  property color textOnAccentMuted: lift(mix(accentText, accentFill, 0.25), [accentFill], accentText, 4.5)
-  // Small label colour on a normal (inactive) tile, e.g. the number badge.
-  property color badgeText: lift(mix(text, surface, 0.4), [surface, surfaceRaised], text, 4.5)
   property color success: Qt.color(pick("green"))
   property color warning: Qt.color(pick("yellow"))
   property color danger: Qt.color(pick("red"))
-  // The pill itself: the theme background, slightly see-through for blur.
-  // A near-black theme background (e.g. #03050f) is harsh and flattens the tiles; lift it toward the surface colour so
-  // the pill is a deep tone, not pure black (Material dark guidance: ~#121212, never #000). Lighter backgrounds are kept.
-  property color pillBase: luminance(background) < 0.01 ? mix(background, surface, 0.65) : background
-  // The same see-through as Alacritty (opacity 0.70), so the blur behind shows through every island widget.
-  property color pill: Qt.rgba(pillBase.r, pillBase.g, pillBase.b, 0.70)
+  // Accent/status colours as TEXT, ICONS or LINES: nudged toward the text colour until they reach
+  // 4.5:1 on the pill, tiles and raised rows. Use the plain accent/success/warning/danger only for
+  // FILLS (with accentText / textOnWarning / textOnDanger on top), never for text.
+  property color accentInk: lift(accent, [surface, surfaceRaised, pillBase], text, 4.5)
+  property color successInk: lift(success, [surface, surfaceRaised, pillBase], text, 4.5)
+  property color warningInk: lift(warning, [surface, surfaceRaised, pillBase], text, 4.5)
+  property color dangerInk: lift(danger, [surface, surfaceRaised, pillBase], text, 4.5)
+  property color textOnWarning: readable(pillBase, warning, 4.5)
+  property color textOnDanger: readable(pillBase, danger, 4.5)
+  // Secondary text ON an accent fill (tile subtitles, badges): slightly softer than
+  // accentText but still >= 4.5:1 against the accent.
+  property color textOnAccentMuted: lift(mix(accentText, accentFill, 0.25), [accentFill], accentText, 4.5)
+  // Small label colour on a normal (inactive) tile, e.g. the number badge.
+  property color badgeText: lift(mix(text, surface, 0.4), [surface, surfaceRaised], text, 4.5)
 
   Behavior on background { ColorAnimation { duration: 250 } }
   Behavior on surface { ColorAnimation { duration: 250 } }
@@ -170,6 +182,7 @@ Singleton {
   Behavior on accent { ColorAnimation { duration: 250 } }
   Behavior on accentFill { ColorAnimation { duration: 250 } }
   Behavior on pillBase { ColorAnimation { duration: 250 } }
+  Behavior on pill { ColorAnimation { duration: 250 } }
   Behavior on accentText { ColorAnimation { duration: 250 } }
   Behavior on accentInk { ColorAnimation { duration: 250 } }
   Behavior on successInk { ColorAnimation { duration: 250 } }

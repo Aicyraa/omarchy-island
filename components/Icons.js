@@ -94,6 +94,7 @@ var paths = {
 // Vertical extent (y0, y1 on the 24-grid) of the PATH of the icons that appear as status indicators in the bar.
 // Icon.matchBattery uses it to scale them to the battery body's height (8 units), like the Wi-Fi glyph.
 var extent = {
-  "coffee": [3, 19], "moon": [3.5, 20.5], "bell-off": [3.5, 21], "mic-dictate": [3, 21],
+  "coffee": [3, 19], "moon": [3.5, 20.5], "bell": [5, 21], "bell-off": [3.5, 21],
+  "bluetooth": [3, 21], "mic-dictate": [3, 21],
   "download": [4, 20], "record": [7, 17]
 }
