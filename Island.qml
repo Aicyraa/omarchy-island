@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
@@ -31,14 +32,15 @@ PanelWindow {
     : globalMode === "hover" ? (screenName === IslandState.hoverScreen ? "hover" : "idle")
     : (screenName === IslandState.activeScreen ? globalMode : "idle")
   // Idle stays docked flush to the top edge with concave ears; opening detaches
-  // the time capsule, drops it down by `detachedOffset`, and morphs it into a
-  // floating detached widget (or hover preview) with all four corners rounded.
-  readonly property bool detachedMode: myMode === "opening" || myMode === "hover" || myMode === "widget"
-  readonly property real capsuleAnchorX: (win.width - win.idleSize.width) / 2
-  readonly property int detachedOffset: 12
+  // cleanly off the top edge (`detachedOffset`) and transforms directly into the
+  // floating widget (or hover preview) with all four corners rounded.
+  readonly property bool detachedMode: myMode === "hover" || myMode === "widget"
+  readonly property int topGap: 6         // matches top & bottom margin below the idle bar
+  readonly property int detachedOffset: win.topGap
 
   // ---- geometry: pill size per mode ----
   readonly property int topMargin: 0      // flush with the top edge
+  readonly property int topStripH: idleSize.height + topGap
   readonly property int ear: 12           // concave corner ears (same as the Compass menu)
 
   // CONTENT-SIZED PANELS: a widget's pill size is its own implicit size
@@ -59,11 +61,10 @@ PanelWindow {
   function hoverSize() {
     var it = hoverLoader.item
     if (it && it.implicitHeight > 0) return Qt.size(it.implicitWidth, it.implicitHeight)
-    return Qt.size(440, 374)
+    return Qt.size(490, 336)
   }
   function sizeFor(m) {
     switch (m) {
-    case "opening":      return Qt.size(idleForm.widthFor(), 26)
     case "hover":        return hoverSize()
     case "widget":       return widgetSizeOf(IslandState.widgetName)
     case "hud":          return Qt.size(300, 42)
@@ -74,7 +75,10 @@ PanelWindow {
   readonly property size target: sizeFor(myMode)
   // Used by State to decide whether a still cursor is on the widget (includes vertical detached offset).
   function pillBox() { return Qt.size(target.width + 2 * ear, target.height + (win.detachedMode ? win.detachedOffset : 0)) }
-  Component.onCompleted: { IslandState.islands[screenName] = win; IslandState.setZone(screenName, zoneRect) }
+  Component.onCompleted: {
+    IslandState.islands[screenName] = win
+    IslandState.setZone(screenName, zoneRect)
+  }
   Component.onDestruction: delete IslandState.islands[screenName]
   // The size of what is actually ON SCREEN right now. It lags `target` by the fade-out beat, and it is
   // what the content is laid out at. This is what keeps an outgoing widget at its OWN size while it
@@ -86,10 +90,9 @@ PanelWindow {
   anchors.top: true                     // top edge only -> centered horizontally
   implicitWidth: Theme.windowWidth
   implicitHeight: Theme.windowHeight
-  // Reserve exactly the collapsed height so tiled windows don't jump when the
-  // pill grows (it overlays windows instead).
+  // Reserve just enough space above general:gaps_out so top and bottom topbar margins match equally.
   exclusionMode: rig ? ExclusionMode.Ignore : ExclusionMode.Normal
-  exclusiveZone: topMargin + idleSize.height
+  exclusiveZone: Math.max(0, win.topStripH - IslandState.gapsOut)
 
   WlrLayershell.namespace: "aicyraa-island"
   // Widgets that accept immediate text typing (ThemePicker, Menu, WorldClock search)
@@ -127,7 +130,7 @@ PanelWindow {
   // px bigger than the pill's TARGET size, which "bridges" the gap while the pill
   // is mid-spring so moving into the expanded pill never counts as leaving. For a
   // widget it is EXACTLY the pill (plus the ears), so clicks just outside pass through.
-  // Clickable: the centre zone and the two side capsules; everything else passes clicks through.
+  // Clickable: the centre zone; everything else passes clicks through.
   // Published for the click catcher (see ClickCatcher.qml): the zone in this screen's coordinates.
   // The window is centred on the screen (it anchors to the top edge only), so add its offset to get screen coordinates.
   // It covers BOTH the target zone and the pill as it is drawn right now (the pill springs, so for a moment it can be
@@ -138,14 +141,14 @@ PanelWindow {
   readonly property real zoneB: Math.max(zone.y + zone.height, pill.y + pill.height)
   readonly property rect zoneRect: Qt.rect(Math.round((win.screen.width - win.width) / 2) + zoneL, zoneT, zoneR - zoneL, zoneB - zoneT)
   onZoneRectChanged: IslandState.setZone(screenName, zoneRect)
-  mask: Region { item: zone; Region { item: leftSat } Region { item: rightSat } }
+  mask: Region { item: zone }
   Item {
     id: zone
     anchors.horizontalCenter: parent.horizontalCenter
     // Bridge the top gap while idle/opening/hovering so moving the pointer from the top edge into the floating pill never drops hover.
     y: win.myMode === "widget" ? win.detachedOffset : 0
     width: win.target.width + (win.detachedMode ? 0 : 2 * win.ear)
-    height: win.myMode === "widget" ? win.target.height : win.target.height + (win.detachedMode ? win.detachedOffset : 6)
+    height: win.myMode === "widget" ? win.target.height : win.target.height + (win.detachedMode ? win.detachedOffset : win.topGap)
     HoverHandler {
       onHoveredChanged: { IslandState.hoverIntent(hovered, win.screenName); if (hovered) Prefetch.touch() }
     }
@@ -165,8 +168,8 @@ PanelWindow {
         kind = "text"; w = Math.min(c.contentWidth, c.width); h = c.contentHeight
         if (c.horizontalAlignment === Text.AlignRight) x = p.x + c.width - w
         else if (c.horizontalAlignment === Text.AlignHCenter) x = p.x + (c.width - w) / 2
-      } else if (c.preferredRendererType !== undefined) { kind = "shape"; w = c.width * c.scale; h = c.height * c.scale }
-      else if (c.radius !== undefined && c.children.length === 0 && c.width <= 40 && c.height <= 40) kind = "shape"   // dots, bars, fills
+      } else if (c.preferredRendererType !== undefined && c.isBgSurface !== true) { kind = "shape"; w = c.width * c.scale; h = c.height * c.scale }
+      else if (c.radius !== undefined && c.isBgSurface !== true && c.children.length === 0 && c.width <= 40 && c.height <= 40) kind = "shape"   // dots, bars, fills
       else if (c.paintedWidth !== undefined) { kind = "image"; w = c.paintedWidth; h = c.paintedHeight }
       out.push({ x: x, y: p.y, w: w, h: h, kind: kind, name: c.objectName || "" })
       if (depth < 9) walk(c, out, depth + 1)
@@ -232,7 +235,7 @@ PanelWindow {
     z: 3
     opacity: win.detachedMode ? 0 : 1
     visible: opacity > 0.01
-    Behavior on opacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
+    Behavior on opacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
     x: pill.x - win.ear; y: pill.y
     width: win.ear; height: win.ear
     preferredRendererType: Shape.CurveRenderer
@@ -248,7 +251,7 @@ PanelWindow {
     z: 3
     opacity: win.detachedMode ? 0 : 1
     visible: opacity > 0.01
-    Behavior on opacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
+    Behavior on opacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
     x: pill.x + pill.width; y: pill.y
     width: win.ear; height: win.ear
     preferredRendererType: Shape.CurveRenderer
@@ -261,82 +264,52 @@ PanelWindow {
     }
   }
 
-  // ---- side capsules: workspaces on the left, battery on the right ----
-  // They are separate floating capsules just outside the pill's ears. Their x follows the pill's (springing) edges,
-  // so when the pill grows into a widget they are pushed outward, and they come back with it.
-  readonly property int satY: 3
-  readonly property int satH: 20
-  readonly property int satTuck: 6       // how far a capsule slides under the pill's concave ear (the ear is drawn above it)
-  Rectangle {
-    id: leftSat
-    z: 0
-    visible: true
-    antialiasing: true
-    layer.enabled: true; layer.samples: 4      // an offscreen layer with 4x multisampling: smooth rounded edges
-    y: win.satY; height: win.satH; radius: height / 2; color: Theme.pill
-    width: wsView.implicitWidth + 2 * 10
-    x: win.capsuleAnchorX - win.satTuck - width
-    Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-    // The capsule's padding (everything but the dots) opens the workspace overview; the dots keep switching workspace.
-    MouseArea { id: wsArea; z: -1; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-      onClicked: Cmd.run(["omarchy-shell", "-q", "io.github.aicyraa.workspace-gallery.perspective", "toggle"]) }
-    Workspaces { id: wsView; anchors.centerIn: parent }
+  SmoothRect {
+    id: pillShape
+    visible: false
+    x: pill.x; y: pill.y; width: pill.width; height: pill.height
+    color: Theme.pill
+    borderWidth: win.detachedMode ? 1 : 0
+    borderColor: Theme.pillBorder
+    topLeftRadius: pill.tlRadius
+    topRightRadius: pill.trRadius
+    bottomLeftRadius: pill.blRadius
+    bottomRightRadius: pill.brRadius
   }
-  Rectangle {
-    id: rightSat
-    z: 0
-    antialiasing: true
-    layer.enabled: true; layer.samples: 4
-    visible: Power.present || Indicators.recording
-    y: win.satY; height: win.satH; radius: height / 2
-    color: batArea.containsMouse ? Theme.mix(Theme.pill, Theme.text, 0.14) : Theme.pill
-    Behavior on color { ColorAnimation { duration: 120 } }
-    width: 2 * 10 + (Power.present ? 18 : 0) + (Indicators.recording ? 8 + (Power.present ? 9 : 0) : 0)
-    Behavior on width { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    x: win.capsuleAnchorX + win.idleSize.width + win.satTuck
-    Row {
-      anchors.centerIn: parent; spacing: 9
-      // Screen recording: a red dot that pulses; click stops the recording.
-      Rectangle {
-        id: recDot
-        visible: Indicators.recording; antialiasing: true
-        anchors.verticalCenter: parent.verticalCenter
-        width: 8; height: 8; radius: 4; color: Theme.dangerInk
-        SequentialAnimation on opacity { running: Indicators.recording; loops: Animation.Infinite
-          NumberAnimation { to: 0.55; duration: 800; easing.type: Easing.InOutSine }
-          NumberAnimation { to: 1; duration: 800; easing.type: Easing.InOutSine } }
-        MouseArea { anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-          onClicked: Cmd.run(["omarchy-capture-screenrecording", "--stop-recording"]) }
-      }
-      BatteryIcon { anchors.verticalCenter: parent.verticalCenter; size: 18 }
-    }
-    MouseArea { id: batArea; z: -1; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-      acceptedButtons: Qt.LeftButton | Qt.RightButton
-      onClicked: IslandState.toggleWidget("battery", win.screenName) }
+  MultiEffect {
+    id: pillEffect
+    z: 1
+    source: pillShape
+    anchors.fill: pillShape
+    shadowEnabled: true
+    blurMax: 20
+    shadowBlur: 0.72
+    shadowColor: Qt.rgba(0, 0, 0, 1)
+    shadowOpacity: win.detachedMode ? 0.62 : 0.35
+    shadowHorizontalOffset: 0
+    shadowVerticalOffset: win.detachedMode ? 6 : 2
+    autoPaddingEnabled: true
+    paddingRect: Qt.rect(8, 0, 8, 12)
+    Behavior on shadowOpacity { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+    Behavior on shadowVerticalOffset { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
   }
 
-  Rectangle {
+  Item {
     id: pill
     z: 2
-    antialiasing: true
-    layer.enabled: true; layer.samples: 4
     y: win.detachedMode ? win.topMargin + win.detachedOffset : win.topMargin
-    Behavior on y { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 5.2; damping: 0.48; epsilon: 0.25 } }
-    anchors.horizontalCenter: parent.horizontalCenter
+    Behavior on y { enabled: !IslandState.reducedMotion; SpringAnimation { spring: 5.2; damping: 0.56; epsilon: 0.25 } }
+    x: Math.round((parent.width - width) / 2)
     width: win.target.width
     height: win.delayedH
-    // Idle attaches to the top edge; opening detaches the time capsule and
-    // morphs it into a floating pill with all four corners rounded (Qt 6.7+).
-    topLeftRadius: win.detachedMode ? Math.min(Theme.pillRadius, height / 2) : 0
-    topRightRadius: win.detachedMode ? Math.min(Theme.pillRadius, height / 2) : 0
-    bottomLeftRadius: Math.min(Theme.pillRadius, height / 2)
-    bottomRightRadius: Math.min(Theme.pillRadius, height / 2)
-    Behavior on topLeftRadius { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-    Behavior on topRightRadius { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-    color: Theme.pill
-    clip: true                           // content never spills while resizing
-    border.width: win.detachedMode ? 1 : 0
-    border.color: Qt.rgba(Theme.outline.r, Theme.outline.g, Theme.outline.b, 0.22)
+    // Idle attaches to the top edge; opening detaches cleanly off the top edge and transforms in one fluid motion.
+    property real tlRadius: win.detachedMode ? Math.min(Theme.pillRadius, height / 2) : 0
+    property real trRadius: win.detachedMode ? Math.min(Theme.pillRadius, height / 2) : 0
+    readonly property real blRadius: Math.min(Theme.pillRadius, height / 2)
+    readonly property real brRadius: Math.min(Theme.pillRadius, height / 2)
+    Behavior on tlRadius { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+    Behavior on trRadius { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+    clip: true                           // content never spills while resizing; unlayered for crisp Label text
 
     // SpringAnimation: `spring` = stiffness, `damping` = how fast bounce dies,
     // `epsilon` = stop threshold. See README tuning cheat sheet.
@@ -346,11 +319,11 @@ PanelWindow {
     // Power widget to the 26px idle bar: heights 154 95 52 35 29 27 26 (never below 26). Note Qt's `damping`
     // is not a damping ratio: 1.0 does not mean "critical", it just crawls (the collapse took ~0.7 s).
     Behavior on width {
-      enabled: !IslandState.reducedMotion && win.myMode !== "opening"
+      enabled: !IslandState.reducedMotion
       SpringAnimation { spring: win.shrinkW ? 6.0 : 3.4; damping: win.shrinkW ? 0.55 : 0.34; epsilon: 0.5 }
     }
     Behavior on height {
-      enabled: !IslandState.reducedMotion && win.myMode !== "opening"
+      enabled: !IslandState.reducedMotion
       SpringAnimation { spring: win.shrinkH ? 6.0 : 3.0; damping: win.shrinkH ? 0.55 : 0.36; epsilon: 0.5 }
     }
 
@@ -403,8 +376,6 @@ PanelWindow {
         height: win.shownSize.height
         property real fade: 1                 // animated by the swap; the real opacity also waits for the pill (fit)
         opacity: fade * pill.fit
-        scale: win.myMode === "hover" ? 1.01 : 1
-        Behavior on scale { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
         focus: win.myMode === "widget"
 
       // BeforeItem: we see every key first (to reset the inactivity timer and
@@ -433,24 +404,17 @@ PanelWindow {
       }
       Connections {
         target: win
-        function onMyModeChanged() {
-          // Idle -> opening keeps the exact time pill visible while it detaches and drops down.
-          if (pill.shownMode === "idle" && win.myMode === "opening") {
-            pill.shownMode = "opening"
-            return
-          }
-          swap.restart()
-        }
+        function onMyModeChanged() { swap.restart() }
       }
       Connections { target: IslandState
         function onWidgetNameChanged() { if (win.myMode === "widget" && pill.shownWidget !== IslandState.widgetName) swap.restart() } }
 
-      // ---------- idle + opening time capsule (always instantiated: reports idle width too) ----------
+      // ---------- idle time capsule (always instantiated: reports idle width too) ----------
       IdleForm {
         id: idleForm
         win: win
         anchors.fill: parent
-        visible: pill.shownMode === "idle" || pill.shownMode === "opening"
+        visible: pill.shownMode === "idle"
       }
 
       // ---------- hover form: preview of the essentials (loaded only while shown) ----------
@@ -487,7 +451,7 @@ PanelWindow {
           visible: parent.isText
           anchors.centerIn: parent; spacing: Theme.s8
           Icon { name: parent.parent.k.indexOf("mic") === 0 ? "mic-off" : "info"; size: Theme.iconMd; anchors.verticalCenter: parent.verticalCenter }
-          Text { textFormat: Text.PlainText; text: IslandState.hudMessage; color: Theme.text; font.pixelSize: 13; font.weight: Theme.weightLabel
+          Label { text: IslandState.hudMessage; color: Theme.text; font.pixelSize: Theme.typeBody; font.weight: Theme.weightLabel
             anchors.verticalCenter: parent.verticalCenter }
         }
       }

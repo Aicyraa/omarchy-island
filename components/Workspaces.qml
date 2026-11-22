@@ -13,10 +13,10 @@ import ".."
 Item {
   id: root
 
-  readonly property int slot: 11        // width of one slot
-  readonly property int dot: 5          // resting diameter
-  readonly property int activeW: 6      // the focused pill's width at rest
-  readonly property int capH: 10        // the focused pill's height (short: it sits easily in the 20 px capsule)
+  readonly property int slot: 13        // width of one slot
+  readonly property int dot: 4          // resting diameter
+  readonly property int activeW: 12     // the focused pill's width at rest
+  readonly property int capH: 5         // horizontal gliding pill height
   readonly property int baseCount: 5
 
   readonly property var realIds: {
@@ -74,9 +74,8 @@ Item {
       Behavior on appear { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
       scale: IslandState.reducedMotion ? 1 : appear
 
-      Rectangle {
+      SmoothRect {
         visible: !cell.gap
-        antialiasing: true
         anchors.centerIn: parent
         width: root.dot; height: root.dot; radius: width / 2
         color: Theme.textMuted
@@ -90,7 +89,7 @@ Item {
         visible: cell.gap
         anchors.centerIn: parent; spacing: 1.5
         Repeater { model: 3
-          Rectangle { antialiasing: true; width: 2; height: 2; radius: 1; color: Theme.textMuted; opacity: 0.5 } }
+          SmoothRect { width: 2; height: 2; radius: 1; color: Theme.textMuted; opacity: 0.5 } }
       }
     }
   }
@@ -103,8 +102,7 @@ Item {
   Component.onCompleted: Qt.callLater(function () { root.ready = true })
   Behavior on headCx { enabled: root.ready && !IslandState.reducedMotion; SpringAnimation { spring: 6.5; damping: 0.42; epsilon: 0.05 } }
   Behavior on tailCx { enabled: root.ready && !IslandState.reducedMotion; SpringAnimation { spring: 3.6; damping: 0.50; epsilon: 0.05 } }
-  Rectangle {
-    antialiasing: true
+  SmoothRect {
     height: root.capH; radius: height / 2
     anchors.verticalCenter: parent.verticalCenter
     color: Theme.text
@@ -119,7 +117,8 @@ Item {
 
   // Click a slot to switch; scroll anywhere to step through workspaces.
   MouseArea {
-    anchors.fill: parent; anchors.margins: -4       // larger hit area than the 5px dots
+    anchors.fill: parent; anchors.margins: -4       // larger hit area than the 4px dots
+    acceptedButtons: Qt.LeftButton
     hoverEnabled: true; cursorShape: Qt.PointingHandCursor
     onClicked: function (m) {
       // m.x is in this area's coordinates, which start 4 px left of the item

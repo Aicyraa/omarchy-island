@@ -12,6 +12,7 @@ Item {
   property bool off: false
   property real size: Theme.iconMd
   property color color: Theme.text
+  property real strokeWidth: 1.8
   // matchBattery: shrink the glyph so its top and bottom line up with the battery glyph beside it in the
   // bar. The stroke keeps its weight (it is widened to compensate for the scale), so only the PATH height
   // matters: the battery body path is 8 grid units tall (y 8..16), the full Wi-Fi path is 14 (arc apex
@@ -20,7 +21,7 @@ Item {
   // measurement showed it still sat low, because a thin curve antialiases lighter than the battery's edge).
   property bool matchBattery: false
   readonly property real k: matchBattery ? 8 / 14 : 1.0
-  readonly property real sw: 1.8 / k
+  readonly property real sw: strokeWidth / k
   implicitWidth: size; implicitHeight: size
 
   function on(threshold) { return !off && level > threshold ? 1 : 0.28 }

@@ -24,9 +24,6 @@ Singleton {
 
   // ---- layers (each written only by its own functions below) ----
   property string widgetName: ""      // "" = no widget open
-  property string openingWidget: ""
-  property string openingKind: ""
-  property bool opening: false
   property bool hudActive: false
   property string hudKind: ""
   property real hudValue: 0           // percent, 0..100
@@ -57,6 +54,15 @@ Singleton {
     running: true
     stdout: StdioCollector { onStreamFinished: { var n = parseInt(text.trim()); if (!isNaN(n) && n >= 0) root.cornerRadius = n } }
   }
+  property int gapsOut: 10
+  Process {
+    command: ["bash", "-c", "hyprctl getoption general:gaps_out -j | jq -r '.css // .int // empty'"]
+    running: true
+    stdout: StdioCollector { onStreamFinished: {
+      var n = parseInt(String(text || "").trim().split(/\s+/)[0], 10)
+      if (!isNaN(n) && n >= 0) root.gapsOut = n
+    } }
+  }
   // ---- debug (UI checking only; nothing runs unless switched on) ----
   property bool debugLayout: false
   property bool debugTrace: false      // logs the reveal state every 16 ms (animation debugging)
@@ -66,7 +72,6 @@ Singleton {
 
   // ---- derived ----
   function currentMode() {
-    if (opening) return "opening"
     if (widgetName !== "") return "widget"
     if (hudActive) return "hud"
     if (notifActive) return "notification"
@@ -114,10 +119,7 @@ Singleton {
       else { pendingHoverScreen = screenName; openTimer.restart() }
     } else {
       if (hoverOpen) { if (screenName === hoverScreen) closeTimer.restart() }
-      else if (pendingHoverScreen === screenName) {
-        openTimer.stop()
-        if (opening && openingKind === "hover") cancelOpening()
-      }
+      else if (pendingHoverScreen === screenName) openTimer.stop()
     }
   }
 
@@ -133,67 +135,22 @@ Singleton {
   // this hole in its input region, so clicks on the island and on an open widget reach the island.
   property var zoneRects: ({})
   function setZone(name, r) { var z = Object.assign({}, zoneRects); z[name] = r; zoneRects = z }
-  function beginOpening(kind, name, screenName) {
-    openingKind = kind
-    openingWidget = name || ""
-    activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()
-    if (reducedMotion) {
-      opening = false
-      openingWidget = ""
-      openingKind = ""
-      if (kind === "hover") {
-        hoverScreen = activeScreen
-        hoverOpen = true
-      } else {
-        widgetName = name || ""
-      }
-      return
-    }
-    opening = true
-    openingTimer.restart()
-  }
-  function cancelOpening() {
-    if (!opening) return
-    opening = false
-    openingWidget = ""
-    openingKind = ""
-    openingTimer.stop()
-  }
   function openWidget(name, screenName, pin) {
     pinned = !!pin
-    if (widgetName === "" && name !== "") {
-      if (hoverOpen) {
-        // Hover preview is already detached and floating: morph straight into the widget.
-        activeScreen = (screenName && screenName !== "") ? screenName : (hoverScreen || focusedScreenName())
-        widgetName = name
-      } else if (opening) {
-        // Reuse the detached capsule already dropping; only retarget what it becomes.
-        openingKind = "widget"
-        openingWidget = name
-        activeScreen = (screenName && screenName !== "") ? screenName : activeScreen
-      } else {
-        beginOpening("widget", name, screenName)
-      }
-    } else {
-      activeScreen = (screenName && screenName !== "") ? screenName : focusedScreenName()
-      widgetName = name                    // A -> B swaps directly, never replays opening
-    }
+    activeScreen = (screenName && screenName !== "") ? screenName : (hoverOpen && hoverScreen ? hoverScreen : focusedScreenName())
+    widgetName = name
     openTimer.stop(); closeTimer.stop(); hoverOpen = false
     touch()
   }
   function toggleWidget(name, screenName, pin) {
-    if (widgetName === name || (opening && openingKind === "widget" && openingWidget === name)) closeWidget()
+    if (widgetName === name) closeWidget()
     else openWidget(name, screenName, pin)
   }
   function closeWidget(reason) {
-    if (widgetName === "" && !opening) return
+    if (widgetName === "") return
     pinned = false
     keyboardExclusive = false
-    console.warn("island: widget closed:", widgetName || openingWidget, reason || "(explicit)")
-    opening = false
-    openingWidget = ""
-    openingKind = ""
-    openingTimer.stop()
+    console.warn("island: widget closed:", widgetName, reason || "(explicit)")
     widgetName = ""
     idleTimer.stop()
     // Straight back to idle. Hover does not resume by itself, so the pill never flashes its expanded form
@@ -289,8 +246,10 @@ Singleton {
   // Timers exist but only RUN when started, so nothing ticks while idle.
   Timer { id: openTimer; interval: 170
     onTriggered: {
-      if (root.widgetName === "" && !root.hoverOpen && !root.opening)
-        root.beginOpening("hover", "", root.pendingHoverScreen)
+      if (root.widgetName === "" && !root.hoverOpen) {
+        root.hoverScreen = root.pendingHoverScreen
+        root.hoverOpen = true
+      }
     } }
   Timer { id: closeTimer; interval: 380
     // The pointer was reported gone. Confirm with the real cursor position before collapsing the hover form.
@@ -298,22 +257,6 @@ Singleton {
       if (inside) closeTimer.restart()
       else { console.warn("island: hover closed, cursor away (" + raw + ")"); root.hoverOpen = false } }) }
   Timer { id: hudTimer; interval: 1500; onTriggered: root.hudActive = false }
-  Timer { id: openingTimer; interval: 150
-    onTriggered: {
-      if (!root.opening) return
-      var kind = root.openingKind, name = root.openingWidget, screen = root.activeScreen
-      if (kind === "widget" && name === "") { root.cancelOpening(); return }
-      root.opening = false
-      root.openingWidget = ""
-      root.openingKind = ""
-      if (kind === "hover") {
-        root.hoverScreen = screen
-        root.hoverOpen = true
-      } else {
-        root.widgetName = name
-      }
-      root.touch()
-    } }
   Timer { id: idleTimer
     interval: root.timeoutFor(root.widgetName)
     onTriggered: {
