@@ -31,7 +31,7 @@ Item {
     var d = ((focusLon - spin + 540) % 360) - 180
     turn.stop(); turn.from = spin; turn.to = spin + d; turn.start()
   }
-  NumberAnimation { id: turn; target: root; property: "spin"; duration: IslandState.reducedMotion ? 0 : 800; easing.type: Easing.InOutCubic }
+  NumberAnimation { id: turn; target: root; property: "spin"; duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(360 * Tokens.motionScale); easing.type: Easing.OutCubic }
 
   FileView { path: Qt.resolvedUrl("../../../assets/world.json").toString().replace("file://", ""); printErrors: false
     onLoaded: { try { root.land = JSON.parse(text()); canvas.requestPaint() } catch (e) {} } }

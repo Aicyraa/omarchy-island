@@ -19,7 +19,7 @@ Item {
   Item {
     id: turntable
     anchors.fill: parent
-    NumberAnimation on rotation { running: root.spinning && !IslandState.reducedMotion; from: rotation; to: rotation + 360
+    NumberAnimation on rotation { running: root.spinning && root.visible && !Tokens.reducedMotion && !Tokens.gameMode; from: rotation; to: rotation + 360
       duration: 4200; loops: Animation.Infinite }
     Shape {
       anchors.fill: parent

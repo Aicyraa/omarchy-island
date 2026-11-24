@@ -15,9 +15,8 @@ import "../QuickshellDS/Primitives"
 import "../QuickshellDS/Components"
 import "WidgetRegistry.js" as Registry
 
-// IslandWindow: one per screen. Full-height transparent PanelWindow when detached
-// ScrollRail or centered Spotlight menu is needed, masked to exact pill + ScrollRail
-// Regions so everything else passes clicks straight through.
+// IslandWindow: one per screen. Full-screen transparent PanelWindow masked to exact
+// pill + detached ScrollRail Regions so everything else passes clicks straight through.
 PanelWindow {
   id: win
 
@@ -30,16 +29,28 @@ PanelWindow {
   readonly property string globalMode: IslandState.mode
   readonly property string myMode:
     globalMode === "idle" ? "idle" : (screenName === IslandState.activeScreen ? globalMode : "idle")
+  readonly property string myWidget: myMode === "widget" ? IslandState.widgetName : ""
 
+  readonly property bool isTop: ConfigStore.barPosition === "top"
   readonly property bool isBottom: ConfigStore.barPosition === "bottom"
+  readonly property bool isLeft: ConfigStore.barPosition === "left"
+  readonly property bool isRight: ConfigStore.barPosition === "right"
+  readonly property bool isVertical: isLeft || isRight
+
   readonly property bool isNotch: ConfigStore.barStyle === "notch"
   readonly property bool isFullBar: ConfigStore.barStyle === "full"
-  readonly property bool isSpotlightMenu: myMode === "widget" && IslandState.widgetName === "menu" && ConfigStore.menuPresentation === "spotlight"
+  readonly property bool isSpotlightMenu: myMode === "widget" && myWidget === "menu" && ConfigStore.menuPresentation === "spotlight"
 
-  readonly property bool detachedMode: myMode === "widget" || myMode === "hud" || myMode === "notification" || !isNotch
+  readonly property bool detachedMode: pill.shownMode === "widget" || pill.shownMode === "hud" || pill.shownMode === "notification" || !isNotch
   readonly property int topGap: 6
+  readonly property int notchMargin: 10
   readonly property int barHeight: 36
+  readonly property int vBarWidth: 44
   readonly property int ear: 12
+
+  function dur(ms) {
+    return (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(ms * Tokens.motionScale)
+  }
 
   function savedHeight(name) {
     var m = Cache.get("wsize")
@@ -54,26 +65,48 @@ PanelWindow {
     return Qt.size(Registry.width(name), saved > 0 ? saved : Registry.height(name))
   }
 
-  function sizeFor(m) {
+  function sizeFor(m, wName) {
     switch (m) {
-    case "widget":       return widgetSizeOf(IslandState.widgetName)
+    case "widget":       return widgetSizeOf(wName !== undefined ? wName : IslandState.widgetName)
     case "hud":          return Qt.size(300, 44)
     case "notification": return Qt.size(420, 68)
     default:
-      var w = isFullBar && win.screen ? Math.max(320, win.screen.width - 2 * Tokens.compositorGapsOut) : topBar.widthFor()
-      return Qt.size(w, win.barHeight)
+      if (win.isVertical) {
+        var vh = isFullBar && win.screen ? Math.max(240, win.screen.height - 2 * Tokens.compositorGapsOut) : topBar.heightFor()
+        return Qt.size(win.vBarWidth, vh)
+      }
+      var hw = isFullBar && win.screen ? Math.max(320, win.screen.width - 2 * Tokens.compositorGapsOut) : topBar.widthFor()
+      return Qt.size(hw, win.barHeight)
     }
   }
 
-  readonly property size target: sizeFor(myMode)
-  readonly property size shownSize: pill.shownMode === "widget" ? widgetSizeOf(pill.shownWidget) : sizeFor(pill.shownMode)
-  readonly property size idleSize: sizeFor("idle")
+  function calcY(mode, wName, h) {
+    if (mode === "widget" && wName === "menu" && ConfigStore.menuPresentation === "spotlight")
+      return Math.round((win.height - h) * 0.28)
+    if (win.isVertical)
+      return Math.round((win.height - h) / 2)
+    var edgeOffset = (win.isNotch && mode === "idle") ? 0 : win.topGap
+    return win.isBottom ? Math.round(win.height - h - edgeOffset) : edgeOffset
+  }
+
+  function calcBaseRadius(mode, w, h) {
+    return mode === "idle" ? Math.min(Tokens.radius.pill, Math.min(w, h) / 2) : Tokens.radius.lg
+  }
+  function calcTlR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isTop || win.isLeft)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcTrR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isTop || win.isRight)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcBlR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isBottom || win.isLeft)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcBrR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isBottom || win.isRight)) ? 0 : calcBaseRadius(mode, w, h) }
+
+  readonly property size target: sizeFor(myMode, myWidget)
+  readonly property size shownSize: pill.shownMode === "widget" ? widgetSizeOf(pill.shownWidget) : sizeFor(pill.shownMode, pill.shownWidget)
+  readonly property size idleSize: sizeFor("idle", "")
 
   function pillBox() {
     return Qt.size(target.width + 2 * ear, target.height + topGap)
   }
 
   Component.onCompleted: {
+    pill.applyImmediate(win.myMode, win.myWidget)
     IslandState.islands[screenName] = win
     IslandState.setZone(screenName, zoneRect)
   }
@@ -81,12 +114,16 @@ PanelWindow {
 
   color: "transparent"
   anchors.top: !win.isBottom
-  anchors.bottom: win.isBottom
-  anchors.left: true
-  anchors.right: true
+  anchors.bottom: !win.isTop
+  anchors.left: !win.isRight
+  anchors.right: !win.isLeft
+  implicitWidth: win.screen ? win.screen.width : 1920
   implicitHeight: win.screen ? win.screen.height : 1080
   exclusionMode: rig ? ExclusionMode.Ignore : ExclusionMode.Normal
-  exclusiveZone: win.rig ? 0 : Math.max(0, win.barHeight + win.topGap - Tokens.compositorGapsOut)
+
+  readonly property int barThickness: win.isVertical ? win.vBarWidth : win.barHeight
+  readonly property int barMarginTotal: win.isNotch ? win.notchMargin : (2 * win.topGap)
+  exclusiveZone: win.rig ? 0 : Math.max(0, win.barThickness + win.barMarginTotal - Tokens.compositorGapsOut)
 
   WlrLayershell.namespace: "aicyraa-island"
   WlrLayershell.layer: WlrLayer.Top
@@ -123,21 +160,25 @@ PanelWindow {
     }
   }
 
-  // ---- Input region: exact pill + detached ScrollRail ----
-  readonly property rect zoneRect: Qt.rect(
-    Math.round(Math.min(pill.x - (win.isNotch && !win.detachedMode ? win.ear : 0), rail.needed ? rail.inputRect.x : pill.x)),
-    Math.round(Math.min(pill.y, rail.needed ? rail.inputRect.y : pill.y)),
-    Math.round(Math.max(pill.x + pill.width + (win.isNotch && !win.detachedMode ? win.ear : 0), rail.needed ? rail.inputRect.x + rail.inputRect.width : pill.x + pill.width) - Math.min(pill.x - (win.isNotch && !win.detachedMode ? win.ear : 0), rail.needed ? rail.inputRect.x : pill.x)),
-    Math.round(Math.max(pill.y + pill.height, rail.needed ? rail.inputRect.y + rail.inputRect.height : pill.y + pill.height) - Math.min(pill.y, rail.needed ? rail.inputRect.y : pill.y))
-  )
+  // ---- Input region: pill + detached ScrollRail ----
+  readonly property real pillHitX: Math.round(pill.x - (!win.isVertical && win.isNotch && !win.detachedMode ? win.ear : 0))
+  readonly property real pillHitY: Math.round(pill.y - (win.isVertical && win.isNotch && !win.detachedMode ? win.ear : 0))
+  readonly property real pillHitW: Math.round(pill.width + (!win.isVertical && win.isNotch && !win.detachedMode ? 2 * win.ear : 0))
+  readonly property real pillHitH: Math.round(pill.height + (win.isVertical && win.isNotch && !win.detachedMode ? 2 * win.ear : 0))
+
+  readonly property real zoneMinX: Math.min(pillHitX, rail.needed ? rail.inputRect.x : pillHitX)
+  readonly property real zoneMinY: Math.min(pillHitY, rail.needed ? rail.inputRect.y : pillHitY)
+  readonly property real zoneMaxX: Math.max(pillHitX + pillHitW, rail.needed ? rail.inputRect.x + rail.inputRect.width : pillHitX + pillHitW)
+  readonly property real zoneMaxY: Math.max(pillHitY + pillHitH, rail.needed ? rail.inputRect.y + rail.inputRect.height : pillHitY + pillHitH)
+  readonly property rect zoneRect: Qt.rect(Math.round(zoneMinX), Math.round(zoneMinY), Math.round(zoneMaxX - zoneMinX), Math.round(zoneMaxY - zoneMinY))
   onZoneRectChanged: IslandState.setZone(screenName, zoneRect)
 
   mask: Region {
     Region {
-      x: Math.round(pill.x - (win.isNotch && !win.detachedMode ? win.ear : 0))
-      y: Math.round(pill.y)
-      width: Math.round(pill.width + (win.isNotch && !win.detachedMode ? 2 * win.ear : 0))
-      height: Math.round(pill.height)
+      x: win.pillHitX
+      y: win.pillHitY
+      width: win.pillHitW
+      height: win.pillHitH
     }
     Region {
       x: Math.round(rail.inputRect.x)
@@ -184,12 +225,14 @@ PanelWindow {
     return JSON.stringify({
       mode: myMode,
       widget: IslandState.widgetName,
+      position: ConfigStore.barPosition,
+      style: ConfigStore.barStyle,
       pill: { w: Math.round(pill.width), h: Math.round(pill.height), tw: Math.round(win.target.width), th: Math.round(win.target.height) },
       content: ink.length ? { l: Math.round(L), t: Math.round(T), r: Math.round(R), b: Math.round(B) } : null,
       pad: ink.length ? { top: Math.round(T), left: Math.round(L), right: Math.round(pill.width - R), bottom: Math.round(pill.height - B) } : null,
       overflowX: over.length,
       railNeeded: rail.needed,
-      reveal: { shown: pill.shownMode, fade: +content.fade.toFixed(2), fit: +pill.fit.toFixed(2), opacity: +content.opacity.toFixed(2) },
+      reveal: { shown: pill.shownMode, fade: +content.contentOpacity.toFixed(2), morphing: pill.transitioning, opacity: +content.opacity.toFixed(2) },
       clockDX: clock ? +((clock.x + clock.w / 2) - pill.width / 2).toFixed(1) : null,
       items: all.length
     })
@@ -203,10 +246,10 @@ PanelWindow {
     }
   }
 
-  // ---- Concave notch ears (only when barStyle === "notch" and in idle) ----
+  // ---- Concave notch ears (only when barStyle === "notch" and in idle on top/bottom) ----
   Shape {
     z: 3
-    opacity: win.isNotch && win.myMode === "idle" ? 1 : 0
+    opacity: !win.isVertical && win.isNotch && pill.shownMode === "idle" && !pill.transitioning ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
     x: pill.x - win.ear
@@ -224,7 +267,7 @@ PanelWindow {
 
   Shape {
     z: 3
-    opacity: win.isNotch && win.myMode === "idle" ? 1 : 0
+    opacity: !win.isVertical && win.isNotch && pill.shownMode === "idle" && !pill.transitioning ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
     x: pill.x + pill.width
@@ -240,62 +283,193 @@ PanelWindow {
     }
   }
 
-  // ---- Pill surface + shadow ----
+  // ---- Smooth SDF Drop Shadow (zero FBO allocation during morph) ----
+  RectangularShadow {
+    id: pillShadow
+    z: 0
+    visible: Tokens.elevation.shadowsActive && !(win.isNotch && pill.shownMode === "idle" && !pill.transitioning)
+    anchors.fill: pillSurface
+    cached: false
+    offset: Qt.vector2d(
+      win.isLeft ? 2 : (win.isRight ? -2 : 0),
+      win.isVertical ? 2 : (win.isBottom ? -3 : 4)
+    )
+    blur: pill.shownMode === "idle" ? 18 : 28
+    spread: 0
+    color: Qt.rgba(0, 0, 0, pill.shownMode === "idle" ? 0.36 : 0.48)
+    topLeftRadius: pill.animTlR
+    topRightRadius: pill.animTrR
+    bottomLeftRadius: pill.animBlR
+    bottomRightRadius: pill.animBrR
+  }
+
+  // ---- Pill surface ----
   Surface {
     id: pillSurface
     z: 1
     x: pill.x; y: pill.y; width: pill.width; height: pill.height
     role: "ground"
     material: Tokens.surfaceStyle
-    topLeftRadius: pill.tlRadius
-    topRightRadius: pill.trRadius
-    bottomLeftRadius: pill.blRadius
-    bottomRightRadius: pill.brRadius
-    showBorder: !(win.isNotch && win.myMode === "idle")
-
-    layer.enabled: Tokens.shadowsEnabled
-    layer.effect: MultiEffect {
-      shadowEnabled: Tokens.shadowsEnabled
-      blurMax: 20
-      shadowBlur: 0.72
-      shadowColor: Qt.rgba(0, 0, 0, 1)
-      shadowOpacity: win.myMode === "widget" ? 0.58 : 0.36
-      shadowHorizontalOffset: 0
-      shadowVerticalOffset: win.isBottom ? -4 : (win.myMode === "widget" ? 6 : 2)
-    }
+    topLeftRadius: pill.animTlR
+    topRightRadius: pill.animTrR
+    bottomLeftRadius: pill.animBlR
+    bottomRightRadius: pill.animBrR
+    showBorder: !(win.isNotch && pill.shownMode === "idle" && !pill.transitioning)
   }
 
   Item {
     id: pill
     z: 2
-    x: Math.round((win.width - width) / 2)
-    y: {
-      if (win.isSpotlightMenu)
-        return Math.round((win.height - height) * 0.28)
-      var edgeOffset = (win.isNotch && win.myMode === "idle") ? 0 : win.topGap
-      return win.isBottom ? Math.round(win.height - height - edgeOffset) : edgeOffset
-    }
-    Behavior on y {
-      enabled: !Tokens.reducedMotion && !Tokens.gameMode
-      SpringAnimation { spring: 5.2; damping: 0.58; epsilon: 0.25 }
+
+    property string shownMode: "idle"
+    property string shownWidget: ""
+    property string pendingMode: "idle"
+    property string pendingWidget: ""
+    readonly property bool transitioning: hideAnim.running || reshapeKick.running || reshapeAnim.running || revealTrigger.running || revealAnim.running
+
+    // High-velocity-contrast spring curves (2-segment cubic Bezier splines)
+    readonly property var curveGrow:      [0.18, 0.0, 0.20, 1.055, 0.50, 1.055, 0.66, 1.055, 0.76, 1.0, 1.0, 1.0]
+    readonly property var curveShrinkW:   [0.20, 0.0, 0.24, 1.028, 0.54, 1.028, 0.70, 1.028, 0.80, 1.0, 1.0, 1.0]
+    readonly property var curveShrinkH:   [0.20, 0.0, 0.24, 1.018, 0.54, 1.018, 0.70, 1.018, 0.80, 1.0, 1.0, 1.0]
+    readonly property var curveOutExpo:   [0.16, 1.0, 0.30, 1.0, 1.0, 1.0]
+    readonly property var curveRevealPop: [0.16, 0.0, 0.22, 1.024, 0.56, 1.024, 0.74, 1.024, 0.82, 1.0, 1.0, 1.0]
+
+    property real animW: 220
+    property real animH: 36
+    property real animY: 6
+    property real animTlR: 18
+    property real animTrR: 18
+    property real animBlR: 18
+    property real animBrR: 18
+
+    property real destW: 220
+    property real destH: 36
+    property real destY: 6
+    property real destTlR: 18
+    property real destTrR: 18
+    property real destBlR: 18
+    property real destBrR: 18
+
+    width: animW
+    height: animH
+    y: animY
+    x: {
+      if (win.isSpotlightMenu || !win.isVertical) return Math.round((win.width - width) / 2)
+      var edgeOffset = (win.isNotch && shownMode === "idle" && !transitioning) ? 0 : win.topGap
+      if (win.isLeft) return edgeOffset
+      return Math.round(win.width - width - edgeOffset)
     }
 
-    width: win.target.width
-    height: win.delayedH
-
-    readonly property real baseRadius: win.myMode === "idle" ? Math.min(Tokens.radius.pill, height / 2) : Tokens.radius.lg
-    property real tlRadius: (win.isNotch && win.myMode === "idle" && !win.isBottom) ? 0 : baseRadius
-    property real trRadius: (win.isNotch && win.myMode === "idle" && !win.isBottom) ? 0 : baseRadius
-    property real blRadius: (win.isNotch && win.myMode === "idle" && win.isBottom) ? 0 : baseRadius
-    property real brRadius: (win.isNotch && win.myMode === "idle" && win.isBottom) ? 0 : baseRadius
-
-    Behavior on width {
-      enabled: !Tokens.reducedMotion && !Tokens.gameMode
-      SpringAnimation { spring: win.shrinkW ? 6.0 : 3.4; damping: win.shrinkW ? 0.55 : 0.36; epsilon: 0.5 }
+    function computeDest(mode, wName) {
+      var sz = win.sizeFor(mode, wName)
+      destW = sz.width
+      destH = sz.height
+      destY = win.calcY(mode, wName, destH)
+      destTlR = win.calcTlR(mode, destW, destH)
+      destTrR = win.calcTrR(mode, destW, destH)
+      destBlR = win.calcBlR(mode, destW, destH)
+      destBrR = win.calcBrR(mode, destW, destH)
     }
-    Behavior on height {
-      enabled: !Tokens.reducedMotion && !Tokens.gameMode
-      SpringAnimation { spring: win.shrinkH ? 6.0 : 3.0; damping: win.shrinkH ? 0.55 : 0.38; epsilon: 0.5 }
+
+    function applyImmediate(mode, wName) {
+      shownMode = mode
+      shownWidget = wName
+      computeDest(mode, wName)
+      animW = destW
+      animH = destH
+      animY = destY
+      animTlR = destTlR
+      animTrR = destTrR
+      animBlR = destBlR
+      animBrR = destBrR
+      content.contentOpacity = 1
+      content.contentScale = 1
+      content.contentSlideY = 0
+    }
+
+    function stopAllTransitions() {
+      liveResizeAnim.stop()
+      hideAnim.stop()
+      reshapeKick.stop()
+      reshapeAnim.stop()
+      revealTrigger.stop()
+      revealAnim.stop()
+    }
+
+    function startTransition(nextMode, nextWidget) {
+      stopAllTransitions()
+      pendingMode = nextMode
+      pendingWidget = nextWidget
+      if (win.dur(1) === 0) {
+        applyImmediate(nextMode, nextWidget)
+        return
+      }
+      if (content.contentOpacity <= 0.05) {
+        beginSwapAndMeasure()
+      } else {
+        hideAnim.start()
+      }
+    }
+
+    function beginSwapAndMeasure() {
+      content.contentOpacity = 0
+      shownMode = pendingMode
+      shownWidget = pendingWidget
+      content.contentScale = 0.93
+      content.contentSlideY = (pendingMode === "idle") ? (win.isBottom ? 4 : -4) : (win.isBottom ? 10 : -10)
+      // Give Loader 1 event-loop tick to complete QML instantiation & layout before starting the reshape clock
+      reshapeKick.restart()
+    }
+
+    function startReshape() {
+      computeDest(shownMode, shownWidget)
+      var growingW = destW >= animW
+      var growingH = destH >= animH
+      var wDur = win.dur(growingW ? 380 : 320)
+      var hDelay = win.dur(24)
+      var hDur = win.dur(growingH ? 390 : 320)
+      var yDur = win.dur(growingH ? 375 : 320)
+      var rDur = win.dur(310)
+      morphWAnim.to = destW
+      morphWAnim.duration = wDur
+      morphWAnim.easing.bezierCurve = growingW ? pill.curveGrow : pill.curveShrinkW
+      morphHDelay.duration = hDelay
+      morphHAnim.to = destH
+      morphHAnim.duration = hDur
+      morphHAnim.easing.bezierCurve = growingH ? pill.curveGrow : pill.curveShrinkH
+      morphYAnim.to = destY
+      morphYAnim.duration = yDur
+      morphYAnim.easing.bezierCurve = growingH ? pill.curveGrow : pill.curveShrinkW
+      morphTlAnim.to = destTlR; morphTlAnim.duration = rDur
+      morphTrAnim.to = destTrR; morphTrAnim.duration = rDur
+      morphBlAnim.to = destBlR; morphBlAnim.duration = rDur
+      morphBrAnim.to = destBrR; morphBrAnim.duration = rDur
+      reshapeAnim.start()
+      var totalReshape = Math.max(wDur, hDelay + hDur)
+      revealTrigger.interval = Math.max(1, Math.round(totalReshape * 0.56))
+      revealTrigger.restart()
+    }
+
+    function syncLiveSize() {
+      if (transitioning) return
+      computeDest(shownMode, shownWidget)
+      if (Math.abs(animW - destW) < 0.5 && Math.abs(animH - destH) < 0.5 && Math.abs(animY - destY) < 0.5)
+        return
+      if (win.dur(1) === 0) {
+        animW = destW; animH = destH; animY = destY
+        animTlR = destTlR; animTrR = destTrR; animBlR = destBlR; animBrR = destBrR
+        return
+      }
+      var growingW = destW >= animW
+      var growingH = destH >= animH
+      liveWAnim.to = destW; liveWAnim.duration = win.dur(280); liveWAnim.easing.bezierCurve = growingW ? pill.curveGrow : pill.curveShrinkW
+      liveHAnim.to = destH; liveHAnim.duration = win.dur(280); liveHAnim.easing.bezierCurve = growingH ? pill.curveGrow : pill.curveShrinkH
+      liveYAnim.to = destY; liveYAnim.duration = win.dur(260)
+      liveTlAnim.to = destTlR; liveTlAnim.duration = win.dur(240)
+      liveTrAnim.to = destTrR; liveTrAnim.duration = win.dur(240)
+      liveBlAnim.to = destBlR; liveBlAnim.duration = win.dur(240)
+      liveBrAnim.to = destBrR; liveBrAnim.duration = win.dur(240)
+      liveResizeAnim.restart()
     }
 
     HoverHandler {
@@ -307,19 +481,79 @@ PanelWindow {
 
     clip: true
 
-    property string shownMode: "idle"
-    property string shownWidget: ""
-    property bool gating: false
-
-    readonly property real rawFit: {
-      function clamp(v) { return Math.max(0, Math.min(1, v)) }
-      function fw(r) { return r < 1 ? clamp((r - 0.45) / 0.35) : clamp((3.2 - r) / 1.7) }
-      function fh(r) { return r < 1 ? clamp((r - 0.10) / 0.45) : clamp((3.2 - r) / 1.7) }
-      return Math.min(fw(width / Math.max(1, content.width)), fh(height / Math.max(1, content.height)))
+    Timer {
+      id: reshapeKick
+      interval: 1
+      repeat: false
+      onTriggered: pill.startReshape()
     }
-    readonly property real fit: gating ? rawFit : 1
-    onRawFitChanged: if (gating && rawFit >= 0.98) gating = false
-    Timer { interval: 500; running: pill.gating; onTriggered: pill.gating = false }
+
+    Timer {
+      id: revealTrigger
+      interval: 1
+      repeat: false
+      onTriggered: revealAnim.start()
+    }
+
+    // Phase 1: Hide current content cleanly
+    ParallelAnimation {
+      id: hideAnim
+      NumberAnimation { target: content; property: "contentOpacity"; to: 0; duration: win.dur(55); easing.type: Easing.InQuart }
+      NumberAnimation { target: content; property: "contentScale"; to: 0.94; duration: win.dur(55); easing.type: Easing.InQuart }
+      NumberAnimation { target: content; property: "contentSlideY"; to: win.isBottom ? 5 : -5; duration: win.dur(55); easing.type: Easing.InQuart }
+      onFinished: pill.beginSwapAndMeasure()
+    }
+
+    // Phase 2: Spring-spline Dynamic-Island reshape (content stays hidden until overshoot crest)
+    ParallelAnimation {
+      id: reshapeAnim
+      NumberAnimation { id: morphWAnim; target: pill; property: "animW"; to: pill.destW; duration: win.dur(380); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveGrow }
+      SequentialAnimation {
+        PauseAnimation { id: morphHDelay; duration: win.dur(24) }
+        NumberAnimation { id: morphHAnim; target: pill; property: "animH"; to: pill.destH; duration: win.dur(390); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveGrow }
+      }
+      NumberAnimation { id: morphYAnim; target: pill; property: "animY"; to: pill.destY; duration: win.dur(375); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveGrow }
+      NumberAnimation { id: morphTlAnim; target: pill; property: "animTlR"; to: pill.destTlR; duration: win.dur(310); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: morphTrAnim; target: pill; property: "animTrR"; to: pill.destTrR; duration: win.dur(310); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: morphBlAnim; target: pill; property: "animBlR"; to: pill.destBlR; duration: win.dur(310); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: morphBrAnim; target: pill; property: "animBrR"; to: pill.destBrR; duration: win.dur(310); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      onFinished: {
+        if (!revealAnim.running && !revealTrigger.running && content.contentOpacity < 0.99)
+          revealAnim.start()
+        else if (!pill.transitioning)
+          pill.syncLiveSize()
+      }
+    }
+
+    // Phase 3: Pop-in new content seamlessly into the settling cushion
+    ParallelAnimation {
+      id: revealAnim
+      NumberAnimation { target: content; property: "contentOpacity"; to: 1; duration: win.dur(200); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { target: content; property: "contentScale"; to: 1.0; duration: win.dur(240); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveRevealPop }
+      NumberAnimation { target: content; property: "contentSlideY"; to: 0; duration: win.dur(240); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveRevealPop }
+      onFinished: if (!pill.transitioning) pill.syncLiveSize()
+    }
+
+    ParallelAnimation {
+      id: liveResizeAnim
+      NumberAnimation { id: liveWAnim; target: pill; property: "animW"; to: pill.destW; duration: win.dur(280); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveGrow }
+      NumberAnimation { id: liveHAnim; target: pill; property: "animH"; to: pill.destH; duration: win.dur(280); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveGrow }
+      NumberAnimation { id: liveYAnim; target: pill; property: "animY"; to: pill.destY; duration: win.dur(260); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: liveTlAnim; target: pill; property: "animTlR"; to: pill.destTlR; duration: win.dur(240); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: liveTrAnim; target: pill; property: "animTrR"; to: pill.destTrR; duration: win.dur(240); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: liveBlAnim; target: pill; property: "animBlR"; to: pill.destBlR; duration: win.dur(240); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+      NumberAnimation { id: liveBrAnim; target: pill; property: "animBrR"; to: pill.destBrR; duration: win.dur(240); easing.type: Easing.BezierSpline; easing.bezierCurve: pill.curveOutExpo }
+    }
+
+    Connections {
+      target: win
+      function onMyModeChanged() { pill.startTransition(win.myMode, win.myWidget) }
+      function onMyWidgetChanged() {
+        if (win.myMode === "widget" && pill.pendingWidget !== win.myWidget)
+          pill.startTransition(win.myMode, win.myWidget)
+      }
+      function onTargetChanged() { pill.syncLiveSize() }
+    }
 
     Item {
       id: content
@@ -327,8 +561,16 @@ PanelWindow {
       anchors.horizontalCenter: parent.horizontalCenter
       width: win.shownSize.width
       height: win.shownSize.height
-      property real fade: 1
-      opacity: fade * pill.fit
+
+      property real contentOpacity: 1
+      property real contentScale: 1
+      property real contentSlideY: 0
+
+      visible: contentOpacity > 0.005
+      opacity: contentOpacity
+      scale: contentScale
+      transformOrigin: Item.Top
+      transform: Translate { y: content.contentSlideY }
       focus: win.myMode === "widget"
 
       Keys.priority: Keys.BeforeItem
@@ -338,34 +580,6 @@ PanelWindow {
         if (e.key === Qt.Key_Escape && !claimed) {
           IslandState.closeWidget("Esc")
           e.accepted = true
-        }
-      }
-
-      SequentialAnimation {
-        id: swap
-        NumberAnimation {
-          target: content; property: "fade"; to: 0
-          duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : 80
-        }
-        ScriptAction {
-          script: {
-            pill.shownMode = win.myMode
-            pill.shownWidget = win.myMode === "widget" ? IslandState.widgetName : ""
-            pill.gating = !(Tokens.reducedMotion || Tokens.gameMode)
-          }
-        }
-        NumberAnimation {
-          target: content; property: "fade"; to: 1
-          duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : 200
-          easing.type: Easing.OutCubic
-        }
-      }
-
-      Connections { target: win; function onMyModeChanged() { swap.restart() } }
-      Connections {
-        target: IslandState
-        function onWidgetNameChanged() {
-          if (win.myMode === "widget" && pill.shownWidget !== IslandState.widgetName) swap.restart()
         }
       }
 
@@ -386,7 +600,7 @@ PanelWindow {
         property real shown: IslandState.hudValue
         Behavior on shown {
           enabled: !Tokens.reducedMotion && !Tokens.gameMode
-          NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+          NumberAnimation { duration: win.dur(120); easing.type: Easing.OutCubic }
         }
         Slider {
           visible: !hudBox.isText
@@ -442,18 +656,21 @@ PanelWindow {
           if (item.hasOwnProperty("initialFocus") && item.initialFocus) item.initialFocus.forceActiveFocus()
           else item.forceActiveFocus()
           if (item.hasOwnProperty("hostWindow")) item.hostWindow = win
+          pill.syncLiveSize()
         }
       }
     }
   }
 
-  // ---- Detached ScrollRail (sibling in same PanelWindow) ----
+  // ---- Detached ScrollRail (sibling in same PanelWindow; hidden during morph) ----
   ScrollRail {
     id: rail
     z: 3
-    target: (win.myMode === "widget" && widgetLoader.item && widgetLoader.item.scrollTarget) ? widgetLoader.item.scrollTarget : null
+    target: (win.myMode === "widget" && !pill.transitioning && widgetLoader.item)
+      ? (widgetLoader.item.effectiveScrollTarget || widgetLoader.item.scrollTarget || null)
+      : null
     anchorWidget: pill
-    side: ConfigStore.scrollRailSide
+    side: win.isRight ? "left" : (win.isLeft ? "right" : ConfigStore.scrollRailSide)
     variant: ConfigStore.scrollRailVariant
     revealPolicy: "auto"
   }
@@ -473,19 +690,6 @@ PanelWindow {
   Connections {
     target: widgetLoader.item
     ignoreUnknownSignals: true
-    function onImplicitHeightChanged() { sizeSave.restart() }
+    function onImplicitHeightChanged() { sizeSave.restart(); pill.syncLiveSize() }
   }
-
-  property real delayedH: target.height
-  property size prevTarget: Qt.size(0, 0)
-  property bool shrinkW: false
-  property bool shrinkH: false
-  onTargetChanged: {
-    shrinkW = target.width < prevTarget.width
-    shrinkH = target.height < prevTarget.height
-    prevTarget = target
-    if (Tokens.reducedMotion || Tokens.gameMode) delayedH = target.height
-    else heightGate.restart()
-  }
-  Timer { id: heightGate; interval: 40; onTriggered: win.delayedH = win.target.height }
 }

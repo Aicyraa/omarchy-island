@@ -46,7 +46,7 @@ Item {
       // mirror: grows up and down from the centre line; otherwise it grows up from the base
       y: root.mirror ? (root.height - height) / 2 : root.height - height
       color: root.color; opacity: ahead ? 0.28 : 0.55 + 0.45 * v
-      Behavior on height { enabled: !IslandState.reducedMotion; NumberAnimation { duration: 70 } }
+      Behavior on height { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 70 } }
     }
   }
 }

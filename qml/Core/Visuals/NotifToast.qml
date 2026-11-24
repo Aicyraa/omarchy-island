@@ -22,15 +22,11 @@ Item {
     function onNotifSerialChanged() { enter.restart() }
   }
 
-  ParallelAnimation {
+  NumberAnimation {
     id: enter
-    NumberAnimation { target: body; property: "y"; from: -Tokens.space.sm; to: 0; duration: 280 * toast.motion; easing.type: Easing.OutCubic }
-    NumberAnimation { target: body; property: "scale"; from: 0.96; to: 1; duration: 300 * toast.motion; easing.type: Easing.OutBack; easing.overshoot: 0.6 }
-    NumberAnimation { target: body; property: "opacity"; from: 0; to: 1; duration: 180 * toast.motion; easing.type: Easing.OutCubic }
-    SequentialAnimation {
-      PauseAnimation { duration: 70 * toast.motion }
-      NumberAnimation { target: thumb; property: "scale"; from: 0.6; to: 1; duration: 340 * toast.motion; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
-    }
+    target: thumb; property: "scale"; from: 0.78; to: 1
+    duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(220 * Tokens.motionScale)
+    easing.type: Easing.OutCubic
   }
 
   Item {

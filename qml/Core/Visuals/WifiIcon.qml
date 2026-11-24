@@ -29,9 +29,9 @@ Item {
   property real a1: on(0.0)
   property real a2: on(0.33)
   property real a3: on(0.66)
-  Behavior on a1 { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 220 } }
-  Behavior on a2 { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 220 } }
-  Behavior on a3 { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 220 } }
+  Behavior on a1 { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: Tokens.motion.normal } }
+  Behavior on a2 { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: Tokens.motion.normal } }
+  Behavior on a3 { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: Tokens.motion.normal } }
 
   Shape {
     width: 24; height: 24; scale: root.size / 24; transformOrigin: Item.TopLeft

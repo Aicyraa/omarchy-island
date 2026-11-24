@@ -18,8 +18,8 @@ Item {
 
   property real w1: (!muted && level > 0.1) ? 1 : 0
   property real w2: (!muted && level > 0.55) ? 1 : 0
-  Behavior on w1 { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 180 } }
-  Behavior on w2 { NumberAnimation { duration: IslandState.reducedMotion ? 0 : 180 } }
+  Behavior on w1 { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: Tokens.motion.fast } }
+  Behavior on w2 { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: Tokens.motion.fast } }
 
   Shape {
     width: 24; height: 24; scale: root.size / 24; transformOrigin: Item.TopLeft
