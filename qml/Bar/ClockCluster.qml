@@ -6,23 +6,24 @@ import "../Core"
 import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 
-// ClockCluster: stacked centered tabular monospace HH mm over compact uppercase ddd d MMM.
+// ClockCluster: time-only tabular monospace clock (day/date lives in the right status cluster).
 Item {
   id: root
 
   property string screenName: ""
+  property bool vertical: false
 
   SystemClock {
     id: clock
     precision: SystemClock.Minutes
   }
 
-  implicitWidth: Math.max(timeLabel.implicitWidth, dateLabel.implicitWidth) + Tokens.space.sm * 2
-  implicitHeight: 28
+  implicitWidth: root.vertical ? 32 : (hTimeLabel.implicitWidth + Tokens.space.sm * 2)
+  implicitHeight: root.vertical ? (vClockCol.implicitHeight + Tokens.space.xs * 2) : 28
 
   activeFocusOnTab: true
   Accessible.role: Accessible.Button
-  Accessible.name: qsTr("Clock: %1, %2").arg(timeLabel.text).arg(dateLabel.text)
+  Accessible.name: qsTr("Clock: %1").arg(Qt.formatDateTime(clock.date, "HH:mm"))
 
   Keys.onSpacePressed: function(e) {
     IslandState.toggleWidget("calendar", root.screenName)
@@ -49,29 +50,42 @@ Item {
     ringRadius: Tokens.radius.sm
   }
 
-  Column {
+  TextLabel {
+    id: hTimeLabel
+    visible: !root.vertical
+    objectName: root.vertical ? "" : "clockText"
     anchors.centerIn: parent
-    spacing: -1
+    role: "body"
+    font.family: Tokens.type.monoFamily
+    font.weight: Font.Medium
+    tabular: true
+    text: Qt.formatDateTime(clock.date, "HH:mm")
+  }
+
+  Column {
+    id: vClockCol
+    visible: root.vertical
+    anchors.centerIn: parent
+    spacing: -2
 
     TextLabel {
-      id: timeLabel
-      objectName: "clockText"
+      objectName: root.vertical ? "clockText" : ""
       anchors.horizontalCenter: parent.horizontalCenter
-      role: "body"
+      role: "sm"
       font.family: Tokens.type.monoFamily
       font.weight: Font.Medium
       tabular: true
-      text: Qt.formatDateTime(clock.date, "HH mm")
+      text: Qt.formatDateTime(clock.date, "HH")
     }
 
     TextLabel {
-      id: dateLabel
       anchors.horizontalCenter: parent.horizontalCenter
-      role: "caption"
-      tone: "muted"
-      font.pixelSize: 9
-      font.letterSpacing: 0.8
-      text: Qt.formatDateTime(clock.date, "ddd d MMM").toUpperCase()
+      role: "sm"
+      tone: "secondary"
+      font.family: Tokens.type.monoFamily
+      font.weight: Font.Medium
+      tabular: true
+      text: Qt.formatDateTime(clock.date, "mm")
     }
   }
 

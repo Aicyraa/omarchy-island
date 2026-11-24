@@ -42,7 +42,6 @@ Singleton {
   function defaultBarItems() {
     return {
       workspaces: true,
-      activeApps: true,
       clock: true,
       weather: true,
       visualizer: true,
@@ -165,7 +164,7 @@ Singleton {
         scrollRailVariant = j.scrollRailVariant
       if (j.scrollRailSide === "right" || j.scrollRailSide === "left")
         scrollRailSide = j.scrollRailSide
-      if (j.barPosition === "top" || j.barPosition === "bottom")
+      if (j.barPosition === "top" || j.barPosition === "bottom" || j.barPosition === "left" || j.barPosition === "right")
         barPosition = j.barPosition
       if (j.barStyle === "pill" || j.barStyle === "notch" || j.barStyle === "full")
         barStyle = j.barStyle

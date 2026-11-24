@@ -7,18 +7,21 @@ import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 import "../QuickshellDS/Components"
 
-// TopBar: Image-1-inspired horizontal bar inside the idle pill.
+// TopBar: workspaces | grouped widget icons | time + weather + battery + audio visualizer.
 Item {
   id: root
 
   property var win: null
   readonly property string screenName: win ? win.screenName : ""
+  readonly property bool vertical: win ? win.isVertical : false
   readonly property real edgePad: 14
 
-  height: 36
-
   function widthFor() {
-    return Math.ceil(row.implicitWidth + 2 * edgePad)
+    return Math.ceil(barGrid.implicitWidth + 2 * edgePad)
+  }
+
+  function heightFor() {
+    return Math.ceil(barGrid.implicitHeight + 2 * edgePad)
   }
 
   function mapWeatherIcon(name) {
@@ -35,134 +38,33 @@ Item {
   }
 
   component BarDivider: Rectangle {
-    width: Tokens.hairlineWidth
-    height: 14
-    anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+    width: root.vertical ? 16 : Tokens.hairlineWidth
+    height: root.vertical ? Tokens.hairlineWidth : 14
     color: Tokens.color.hairline
   }
 
-  Row {
-    id: row
+  Grid {
+    id: barGrid
     anchors.centerIn: parent
-    spacing: Tokens.space.xs
+    columns: root.vertical ? 1 : 40
+    columnSpacing: Tokens.space.xs
+    rowSpacing: Tokens.space.xs
+    horizontalItemAlignment: Grid.AlignHCenter
+    verticalItemAlignment: Grid.AlignVCenter
 
     WorkspaceStrip {
       id: workspaceStrip
-      anchors.verticalCenter: parent.verticalCenter
+      vertical: root.vertical
       visible: ConfigStore.barItemVisible("workspaces")
     }
 
     BarDivider {
       visible: ConfigStore.barItemVisible("workspaces")
-        && ConfigStore.barItemVisible("activeApps")
-        && activeAppsStrip.visible
-    }
-
-    ActiveAppsStrip {
-      id: activeAppsStrip
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("activeApps") && implicitWidth > 0.5
-    }
-
-    BarDivider {
-      visible: (ConfigStore.barItemVisible("workspaces")
-        || (ConfigStore.barItemVisible("activeApps") && activeAppsStrip.visible))
-        && ConfigStore.barItemVisible("clock")
-    }
-
-    ClockCluster {
-      id: clockCluster
-      anchors.verticalCenter: parent.verticalCenter
-      screenName: root.screenName
-      visible: ConfigStore.barItemVisible("clock")
-    }
-
-    BarDivider {
-      visible: ConfigStore.barItemVisible("clock")
-        && ((ConfigStore.barItemVisible("weather") && WeatherData.hasData)
-            || (ConfigStore.barItemVisible("visualizer") && vizSlot.visible)
-            || recBadge.visible)
-    }
-
-    // Weather chip
-    Item {
-      id: weatherChip
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("weather") && WeatherData.hasData
-      implicitWidth: weatherRow.implicitWidth + Tokens.space.sm * 2
-      implicitHeight: Tokens.size.hitMin
-
-      activeFocusOnTab: visible
-      Accessible.role: Accessible.Button
-      Accessible.name: qsTr("Weather: %1 degrees").arg(WeatherData.w.temp)
-
-      Keys.onSpacePressed: function(e) {
-        IslandState.toggleWidget("weather", root.screenName)
-        e.accepted = true
-      }
-      Keys.onReturnPressed: function(e) {
-        IslandState.toggleWidget("weather", root.screenName)
-        e.accepted = true
-      }
-
-      Rectangle {
-        anchors.fill: parent
-        radius: Tokens.radius.sm
-        color: weatherMouse.containsMouse ? Tokens.veilHoverOf(Tokens.surfaceStyle) : "transparent"
-
-        Behavior on color {
-          enabled: !Tokens.reducedMotion && !Tokens.gameMode
-          ColorAnimation { duration: Tokens.motion.fast }
-        }
-      }
-
-      FocusRing {
-        active: weatherChip.activeFocus
-        ringRadius: Tokens.radius.sm
-      }
-
-      Row {
-        id: weatherRow
-        anchors.centerIn: parent
-        spacing: Tokens.space.xs
-
-        Icon {
-          anchors.verticalCenter: parent.verticalCenter
-          name: root.mapWeatherIcon(WeatherData.w.icon)
-          size: 14
-          tone: "secondary"
-        }
-
-        TextLabel {
-          anchors.verticalCenter: parent.verticalCenter
-          role: "sm"
-          tone: "primary"
-          tabular: true
-          font.weight: Font.Medium
-          text: WeatherData.w.temp + "°"
-        }
-      }
-
-      MouseArea {
-        id: weatherMouse
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: IslandState.toggleWidget("weather", root.screenName)
-      }
-    }
-
-    AudioVizSlot {
-      id: vizSlot
-      anchors.verticalCenter: parent.verticalCenter
-      screenName: root.screenName
-      visible: ConfigStore.barItemVisible("visualizer") && implicitWidth > 0.5
     }
 
     // Recording / Dictation badge
     Item {
       id: recBadge
-      anchors.verticalCenter: parent.verticalCenter
       visible: ConfigStore.barItemVisible("recording") && (Indicators.recording || Indicators.dictation !== "idle")
       implicitWidth: recRow.implicitWidth + Tokens.space.sm * 2
       implicitHeight: 24
@@ -228,9 +130,8 @@ Item {
       }
     }
 
-    // Connectivity & Battery cluster
+    // ---- Grouped Widget Icons ----
     BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
       visible: ConfigStore.barItemVisible("wifi") && Net.hasWifi
       name: Net.enabled ? "wifi" : "wifi-off"
       tone: Net.connected ? "primary" : "muted"
@@ -239,7 +140,6 @@ Item {
     }
 
     BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
       visible: ConfigStore.barItemVisible("bluetooth") && Bt.hasAdapter
       name: Bt.enabled ? "bluetooth" : "bluetooth-off"
       tone: Bt.connectedDevices.length > 0 ? "accent" : (Bt.enabled ? "primary" : "muted")
@@ -252,13 +152,163 @@ Item {
       onClicked: IslandState.toggleWidget("bluetooth", root.screenName)
     }
 
-    // Battery chip
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("notifications")
+      name: Indicators.dnd ? "bell-off" : "bell"
+      tone: Indicators.dnd ? "muted" : "primary"
+      badgeDot: Notifs.liveCount > 0
+      badgeTone: "accent"
+      badgePosition: "topRight"
+      accessibleName: qsTr("Notifications")
+      onClicked: IslandState.toggleWidget("notifications", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("audio")
+      name: Audio.muted ? "volume-mute" : "volume"
+      tone: Audio.muted ? "muted" : "primary"
+      accessibleName: qsTr("Audio")
+      onClicked: IslandState.toggleWidget("audio", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("system")
+      name: "activity"
+      accessibleName: qsTr("System monitor")
+      onClicked: IslandState.toggleWidget("system", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("capture")
+      name: "camera"
+      accessibleName: qsTr("Screen capture")
+      onClicked: IslandState.toggleWidget("capture", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("look")
+      name: "sparkles"
+      accessibleName: qsTr("Appearance")
+      onClicked: IslandState.toggleWidget("look", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("clipboard")
+      name: "clipboard"
+      accessibleName: qsTr("Clipboard")
+      onClicked: Cmd.run(["omarchy-shell", "shell", "summon", "omarchy.clipboard"])
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("theme")
+      name: "palette"
+      accessibleName: qsTr("Theme")
+      onClicked: IslandState.toggleWidget("theme", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("settings")
+      name: "settings"
+      accessibleName: qsTr("Settings")
+      onClicked: IslandState.toggleWidget("settings", root.screenName)
+    }
+
+    BarIconButton {
+      visible: ConfigStore.barItemVisible("power")
+      name: "power"
+      tone: "danger"
+      accessibleName: qsTr("Power")
+      onClicked: IslandState.toggleWidget("power", root.screenName)
+    }
+
+    BarDivider {
+      visible: ConfigStore.barItemVisible("clock")
+        || (ConfigStore.barItemVisible("weather") && WeatherData.hasData)
+        || (ConfigStore.barItemVisible("battery") && Power.present)
+        || (ConfigStore.barItemVisible("visualizer") && vizSlot.visible)
+    }
+
+    // ---- Right Status Cluster: Time + Weather + Battery + Audio Visualizer ----
+    ClockCluster {
+      id: clockCluster
+      vertical: root.vertical
+      screenName: root.screenName
+      visible: ConfigStore.barItemVisible("clock")
+    }
+
+    Item {
+      id: weatherChip
+      visible: ConfigStore.barItemVisible("weather") && WeatherData.hasData
+      implicitWidth: root.vertical ? 34 : (weatherGrid.implicitWidth + Tokens.space.xs * 2)
+      implicitHeight: root.vertical ? (weatherGrid.implicitHeight + Tokens.space.xs * 2) : Tokens.size.hitMin
+
+      activeFocusOnTab: visible
+      Accessible.role: Accessible.Button
+      Accessible.name: qsTr("Weather: %1 degrees").arg(WeatherData.w.temp)
+
+      Keys.onSpacePressed: function(e) {
+        IslandState.toggleWidget("weather", root.screenName)
+        e.accepted = true
+      }
+      Keys.onReturnPressed: function(e) {
+        IslandState.toggleWidget("weather", root.screenName)
+        e.accepted = true
+      }
+
+      Rectangle {
+        anchors.fill: parent
+        radius: Tokens.radius.sm
+        color: weatherMouse.containsMouse ? Tokens.veilHoverOf(Tokens.surfaceStyle) : "transparent"
+
+        Behavior on color {
+          enabled: !Tokens.reducedMotion && !Tokens.gameMode
+          ColorAnimation { duration: Tokens.motion.fast }
+        }
+      }
+
+      FocusRing {
+        active: weatherChip.activeFocus
+        ringRadius: Tokens.radius.sm
+      }
+
+      Grid {
+        id: weatherGrid
+        anchors.centerIn: parent
+        columns: root.vertical ? 1 : 2
+        columnSpacing: Tokens.space.xxs
+        rowSpacing: 1
+        horizontalItemAlignment: Grid.AlignHCenter
+        verticalItemAlignment: Grid.AlignVCenter
+
+        Icon {
+          name: root.mapWeatherIcon(WeatherData.w.icon)
+          size: 14
+          tone: "secondary"
+        }
+
+        TextLabel {
+          role: "sm"
+          tone: "primary"
+          tabular: true
+          font.weight: Font.Medium
+          text: WeatherData.w.temp + "°"
+        }
+      }
+
+      MouseArea {
+        id: weatherMouse
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: IslandState.toggleWidget("weather", root.screenName)
+      }
+    }
+
     Item {
       id: batteryChip
-      anchors.verticalCenter: parent.verticalCenter
       visible: ConfigStore.barItemVisible("battery") && Power.present
-      implicitWidth: batteryRow.implicitWidth + Tokens.space.xs * 2
-      implicitHeight: Tokens.size.hitMin
+      implicitWidth: root.vertical ? 34 : (batteryGrid.implicitWidth + Tokens.space.xs * 2)
+      implicitHeight: root.vertical ? (batteryGrid.implicitHeight + Tokens.space.xs * 2) : Tokens.size.hitMin
 
       readonly property string batteryTone: Power.low ? "danger" : (Power.charging ? "success" : "primary")
 
@@ -291,20 +341,22 @@ Item {
         ringRadius: Tokens.radius.sm
       }
 
-      Row {
-        id: batteryRow
+      Grid {
+        id: batteryGrid
         anchors.centerIn: parent
-        spacing: Tokens.space.xxs
+        columns: root.vertical ? 1 : 2
+        columnSpacing: Tokens.space.xxs
+        rowSpacing: 1
+        horizontalItemAlignment: Grid.AlignHCenter
+        verticalItemAlignment: Grid.AlignVCenter
 
         Icon {
-          anchors.verticalCenter: parent.verticalCenter
           name: Power.charging ? "battery-charging" : "battery"
           size: 14
           tone: batteryChip.batteryTone
         }
 
         TextLabel {
-          anchors.verticalCenter: parent.verticalCenter
           role: "sm"
           tone: batteryChip.batteryTone
           tabular: true
@@ -322,93 +374,13 @@ Item {
       }
     }
 
-    BarDivider {
-      visible: (ConfigStore.barItemVisible("wifi") && Net.hasWifi)
-        || (ConfigStore.barItemVisible("bluetooth") && Bt.hasAdapter)
-        || (ConfigStore.barItemVisible("battery") && Power.present)
-    }
-
-    // Widget Icon Strip
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("notifications")
-      name: Indicators.dnd ? "bell-off" : "bell"
-      tone: Indicators.dnd ? "muted" : "primary"
-      badgeDot: Notifs.liveCount > 0
-      badgeTone: "accent"
-      badgePosition: "topRight"
-      accessibleName: qsTr("Notifications")
-      onClicked: IslandState.toggleWidget("notifications", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("audio")
-      name: Audio.muted ? "volume-mute" : "volume"
-      tone: Audio.muted ? "muted" : "primary"
-      accessibleName: qsTr("Audio")
-      onClicked: IslandState.toggleWidget("audio", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("system")
-      name: "activity"
-      accessibleName: qsTr("System monitor")
-      onClicked: IslandState.toggleWidget("system", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("capture")
-      name: "camera"
-      accessibleName: qsTr("Screen capture")
-      onClicked: IslandState.toggleWidget("capture", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("look")
-      name: "sparkles"
-      accessibleName: qsTr("Appearance")
-      onClicked: IslandState.toggleWidget("look", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("clipboard")
-      name: "clipboard"
-      accessibleName: qsTr("Clipboard")
-      onClicked: Cmd.run(["omarchy-shell", "shell", "summon", "omarchy.clipboard"])
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("theme")
-      name: "palette"
-      accessibleName: qsTr("Theme")
-      onClicked: IslandState.toggleWidget("theme", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("settings")
-      name: "settings"
-      accessibleName: qsTr("Settings")
-      onClicked: IslandState.toggleWidget("settings", root.screenName)
-    }
-
-    BarIconButton {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: ConfigStore.barItemVisible("power")
-      name: "power"
-      tone: "danger"
-      accessibleName: qsTr("Power")
-      onClicked: IslandState.toggleWidget("power", root.screenName)
+    AudioVizSlot {
+      id: vizSlot
+      screenName: root.screenName
+      visible: ConfigStore.barItemVisible("visualizer") && implicitWidth > 0.5
     }
 
     StatusEar {
-      anchors.verticalCenter: parent.verticalCenter
       screenName: root.screenName
     }
   }

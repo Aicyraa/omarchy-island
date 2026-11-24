@@ -28,7 +28,7 @@ Item {
 
   property var levels: [0, 0, 0, 0, 0]
 
-  implicitWidth: playing ? 34 : 0
+  implicitWidth: playing ? 28 : 0
   implicitHeight: 24
   visible: implicitWidth > 0.5
   clip: true
@@ -53,7 +53,7 @@ Item {
 
   Process {
     id: cava
-    running: root.playing
+    running: root.playing && root.visible
     command: ["cava", "-p", Qt.resolvedUrl("../../assets/viz-bar.conf").toString().replace("file://", "")]
     stdout: SplitParser {
       onRead: function(line) {
@@ -68,11 +68,11 @@ Item {
 
   onPlayingChanged: if (!playing) levels = [0, 0, 0, 0, 0]
 
-  // Soft accent pill veil + hover highlight
+  // Hover-only background (no permanent highlight when active)
   Rectangle {
     anchors.fill: parent
-    radius: Tokens.radius.pill
-    color: Qt.rgba(Tokens.color.accent.r, Tokens.color.accent.g, Tokens.color.accent.b, mouse.containsMouse ? 0.22 : 0.12)
+    radius: Tokens.radius.sm
+    color: mouse.containsMouse ? Tokens.veilHoverOf(Tokens.surfaceStyle) : "transparent"
 
     Behavior on color {
       enabled: !Tokens.reducedMotion && !Tokens.gameMode
@@ -82,7 +82,7 @@ Item {
 
   FocusRing {
     active: root.activeFocus
-    ringRadius: Tokens.radius.pill
+    ringRadius: Tokens.radius.sm
   }
 
   Row {

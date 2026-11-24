@@ -15,4 +15,3 @@ singleton AgentUsage 1.0 AgentUsage.qml
 singleton WeatherData 1.0 WeatherData.qml
 singleton Prefetch 1.0 Prefetch.qml
 singleton MenuData 1.0 MenuData.qml
-singleton ActiveApps 1.0 ActiveApps.qml

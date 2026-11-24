@@ -12,6 +12,8 @@ import "../QuickshellDS/Primitives"
 Item {
   id: root
 
+  property bool vertical: false
+
   readonly property real dotSlotW: 16
   readonly property real gapSlotW: 12
   readonly property real slotH: 24
@@ -83,8 +85,8 @@ Item {
     SpringAnimation { spring: 3.8; damping: 0.62; epsilon: 0.25 }
   }
 
-  implicitWidth: totalWidth
-  implicitHeight: slotH
+  implicitWidth: root.vertical ? slotH : totalWidth
+  implicitHeight: root.vertical ? totalWidth : slotH
 
   function switchWorkspace(wsId) {
     if (Hyprland.usingLua)
@@ -122,10 +124,10 @@ Item {
       required property var modelData
       required property int index
 
-      x: modelData.x
-      y: 0
-      width: modelData.w
-      height: root.slotH
+      x: root.vertical ? 0 : modelData.x
+      y: root.vertical ? modelData.x : 0
+      width: root.vertical ? root.slotH : modelData.w
+      height: root.vertical ? modelData.w : root.slotH
 
       readonly property bool hovered: slotMouse.containsMouse
 
@@ -218,10 +220,10 @@ Item {
   Rectangle {
     id: activePill
     z: 2
-    y: (root.slotH - root.pillH) / 2
-    x: Math.min(root.headCx, root.tailCx) - root.pillBaseW / 2
-    width: Math.abs(root.headCx - root.tailCx) + root.pillBaseW
-    height: root.pillH
+    x: root.vertical ? (root.slotH - root.pillH) / 2 : (Math.min(root.headCx, root.tailCx) - root.pillBaseW / 2)
+    y: root.vertical ? (Math.min(root.headCx, root.tailCx) - root.pillBaseW / 2) : ((root.slotH - root.pillH) / 2)
+    width: root.vertical ? root.pillH : (Math.abs(root.headCx - root.tailCx) + root.pillBaseW)
+    height: root.vertical ? (Math.abs(root.headCx - root.tailCx) + root.pillBaseW) : root.pillH
     radius: root.pillH / 2
     color: Tokens.color.accent
     Accessible.ignored: true
