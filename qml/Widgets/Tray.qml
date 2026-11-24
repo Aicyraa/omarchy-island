@@ -11,7 +11,7 @@ WidgetSurface {
     id: root
 
     preferredWidth: 260
-    compact: entries.length === 0
+    compact: true
     hint: qsTr("Arrows select · Enter activate · M menu · Esc close")
 
     property var hostWindow: null

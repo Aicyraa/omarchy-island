@@ -29,7 +29,7 @@ Item {
   readonly property int pad: Math.round(vPad)
 
   readonly property real maxWidth: Math.min(Tokens.px(940), 940)
-  readonly property real maxHeight: Math.min(Tokens.px(520), 520)
+  readonly property real maxHeight: Math.min(Tokens.px(560), 560)
   readonly property real minHeight: compact ? Tokens.px(64) : Tokens.px(120)
 
   property bool dataLoading: false
@@ -40,6 +40,7 @@ Item {
 
   readonly property real contentH: col.implicitHeight + 2 * vPad
   readonly property bool scrollable: scrollTarget === null && contentH > height + 1
+  readonly property Flickable effectiveScrollTarget: panel.scrollTarget || (panel.scrollable ? innerFlick : null)
 
   focus: true
   implicitWidth: Math.min(maxWidth, preferredWidth)

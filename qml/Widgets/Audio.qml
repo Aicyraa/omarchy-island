@@ -220,7 +220,20 @@ WidgetSurface {
             { id: "inputs",  label: qsTr("Inputs") },
             { id: "apps",    label: qsTr("Apps") }
         ]
-        onPicked: id => root.currentTab = id
+        onPicked: id => {
+            root.currentTab = id
+            audioListFade.restart()
+        }
+    }
+
+    NumberAnimation {
+        id: audioListFade
+        target: audioList
+        property: "opacity"
+        from: 0.25
+        to: 1.0
+        duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(120 * Tokens.motionScale)
+        easing.type: Easing.OutCubic
     }
 
     // ── DEVICES / STREAMS LIST ──────────────────────────────────────────────────

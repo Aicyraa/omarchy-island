@@ -12,7 +12,7 @@ import "../QuickshellDS/Components"
 WidgetSurface {
     id: root
 
-    preferredWidth: 680
+    preferredWidth: 740
     hint: qsTr("1-7 pick · ←/→ move · Enter confirm · Esc close")
 
     property int sel: 0

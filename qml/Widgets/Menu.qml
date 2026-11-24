@@ -207,13 +207,14 @@ WidgetSurface {
   readonly property var debugState: ({ route: route, activeTab: activeTab, query: query, sel: sel, rows: rows.length })
 
   function navigable(e) { return !!e && (e.kind === "menu" || e.kind === "link" || e.provider !== "") }
-  function enter(id) { route = id; sel = 0; query = "" }
+  function enter(id) { route = id; sel = 0; query = ""; listFade.restart() }
   function up() {
     var cur = MenuData.item(route)
-    if (!cur) { route = "root"; sel = 0; return }
+    if (!cur) { route = "root"; sel = 0; listFade.restart(); return }
     route = cur.parent || "root"
     if (route === "root") activeTab = tabForTopId(cur.id)
     sel = 0
+    listFade.restart()
   }
 
   function stepMainTab(delta) {
@@ -224,6 +225,17 @@ WidgetSurface {
     query = ""
     sel = 0
     MenuData.setLastRail(activeTab)
+    listFade.restart()
+  }
+
+  NumberAnimation {
+    id: listFade
+    target: list
+    property: "opacity"
+    from: 0.25
+    to: 1.0
+    duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(120 * Tokens.motionScale)
+    easing.type: Easing.OutCubic
   }
 
   function accept(e) {

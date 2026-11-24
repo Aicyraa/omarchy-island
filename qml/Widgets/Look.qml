@@ -172,8 +172,21 @@ WidgetSurface {
             ]
             current: root.sec === 0 ? "backgrounds" : "fonts"
             accessibleLabel: qsTr("Look sections")
-            onPicked: id => root.sec = (id === "fonts" ? 1 : 0)
+            onPicked: id => {
+                root.sec = (id === "fonts" ? 1 : 0)
+                bgSectionFade.restart()
+            }
         }
+    }
+
+    NumberAnimation {
+        id: bgSectionFade
+        target: root.sec === 0 ? bgList : fontList
+        property: "opacity"
+        from: 0.25
+        to: 1.0
+        duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(120 * Tokens.motionScale)
+        easing.type: Easing.OutCubic
     }
 
     // Backgrounds Tab

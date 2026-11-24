@@ -116,7 +116,7 @@ WidgetSurface {
 
             Sparkline {
                 width: parent.width
-                height: Tokens.px(92)
+                height: Tokens.px(64)
                 values: Stats.cpuHist
                 minValue: 0
                 maxValue: 1
@@ -146,7 +146,7 @@ WidgetSurface {
                     spacing: Tokens.space.md
 
                     UsageRing {
-                        size: Tokens.px(48)
+                        size: Tokens.px(42)
                         thickness: Tokens.px(5)
                         values: [1]
                         fill: Stats.mem
@@ -181,7 +181,7 @@ WidgetSurface {
                     spacing: Tokens.space.md
 
                     RadialGauge {
-                        size: Tokens.px(60)
+                        size: Tokens.px(52)
                         thickness: Tokens.px(5)
                         value: Stats.temp > 0 ? Stats.temp : Math.round(root.loadRatio * 100)
                         from: 0

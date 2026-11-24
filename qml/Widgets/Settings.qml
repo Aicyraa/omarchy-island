@@ -15,7 +15,6 @@ WidgetSurface {
 
     readonly property var barItemCatalog: [
         { key: "workspaces",    label: qsTr("Workspaces") },
-        { key: "activeApps",    label: qsTr("Active Apps") },
         { key: "clock",         label: qsTr("Clock") },
         { key: "weather",       label: qsTr("Weather") },
         { key: "visualizer",    label: qsTr("Visualizer") },
@@ -132,7 +131,21 @@ WidgetSurface {
             { id: "behavior",   label: qsTr("Behavior") },
             { id: "presets",    label: qsTr("Presets") }
         ]
-        onPicked: id => root.currentTab = id
+        onPicked: id => {
+            root.currentTab = id
+            settingsFlick.contentY = 0
+            tabFade.restart()
+        }
+    }
+
+    NumberAnimation {
+        id: tabFade
+        target: tabContent
+        property: "opacity"
+        from: 0.25
+        to: 1.0
+        duration: (Tokens.reducedMotion || Tokens.gameMode) ? 0 : Math.round(120 * Tokens.motionScale)
+        easing.type: Easing.OutCubic
     }
 
     Flickable {
@@ -287,7 +300,7 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Screen Edge")
-                        description: qsTr("Anchor the bar to the top or bottom edge")
+                        description: qsTr("Anchor the bar to any screen edge")
                         showDivider: false
 
                         SegmentedControl {
@@ -295,7 +308,9 @@ WidgetSurface {
                             current: ConfigStore.barPosition
                             options: [
                                 { id: "top",    label: qsTr("Top") },
-                                { id: "bottom", label: qsTr("Bottom") }
+                                { id: "bottom", label: qsTr("Bottom") },
+                                { id: "left",   label: qsTr("Left") },
+                                { id: "right",  label: qsTr("Right") }
                             ]
                             onSelected: id => ConfigStore.barPosition = id
                         }

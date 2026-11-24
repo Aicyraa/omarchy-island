@@ -13,7 +13,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 480
+    preferredWidth: 540
     hint: qsTr("1-3 screenshot · R record · Esc close")
 
     property string delayId: "0"
