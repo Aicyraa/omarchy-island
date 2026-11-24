@@ -13,7 +13,7 @@ import shutil, sys
 
 src = Path(__file__).resolve().parent
 plugins = Path.home() / ".config/omarchy/plugins"
-SKIP = {"deploy.py", "README.md", "LICENSE", "rig.qml", "tools", "osd", "menu-shim", "notifications-shim", "plan.md", ".git", "__pycache__", ".opencode", ".codex", "graphify-out"}
+SKIP = {"deploy.py", "README.md", "LICENSE", "rig.qml", "tools", "shims", "osd", "menu-shim", "notifications-shim", "components", "widgets", "services", "ipc", "menu-core", "Island.qml", "State.qml", "Theme.qml", "qmldir", "plan.md", ".git", "__pycache__", ".opencode", ".codex", "graphify-out"}
 
 def copy_tree(source: Path, target: Path, skip=frozenset()):
     # Replace the plugin's OWN directory so deleted files don't linger.
@@ -31,11 +31,11 @@ def copy_tree(source: Path, target: Path, skip=frozenset()):
 copy_tree(src, plugins / "io.github.aicyraa.island", SKIP)
 print("Updated", plugins / "io.github.aicyraa.island")
 if "--no-osd" not in sys.argv:
-    copy_tree(src / "osd", plugins / "io.github.aicyraa.island-osd")
+    copy_tree(src / "shims" / "osd", plugins / "io.github.aicyraa.island-osd")
     print("Updated", plugins / "io.github.aicyraa.island-osd")
 if "--no-menu" not in sys.argv:
-    copy_tree(src / "menu-shim", plugins / "io.github.aicyraa.island-menu")
+    copy_tree(src / "shims" / "menu", plugins / "io.github.aicyraa.island-menu")
     print("Updated", plugins / "io.github.aicyraa.island-menu")
 if "--no-notifications" not in sys.argv:
-    copy_tree(src / "notifications-shim", plugins / "io.github.aicyraa.island-notifications")
+    copy_tree(src / "shims" / "notifications", plugins / "io.github.aicyraa.island-notifications")
     print("Updated", plugins / "io.github.aicyraa.island-notifications")
