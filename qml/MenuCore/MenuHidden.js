@@ -6,12 +6,15 @@
 // redirect: route -> island widget, used only when the route is hidden: a binding that asks the menu for a hidden
 //           section opens the widget instead. Routes that are still in the menu (root, background, capture, share)
 //           have no entry.
-var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr", "update.hardware.wifi", "update.hardware.bluetooth", "update.hardware.audio", "trigger.hardware.laptop-display-on", "trigger.hardware.laptop-display-off", "trigger.hardware.mirror-display-on", "trigger.hardware.mirror-display-off", "trigger.hardware.touchpad-on", "trigger.hardware.touchpad-off", "trigger.hardware.touchscreen-on", "trigger.hardware.touchscreen-off", "appearance.theme", "appearance.background", "appearance.font"]
+var hide = ["system", "trigger.toggle", "trigger.reminder", "setup.network.qr", "update.hardware.wifi", "update.hardware.bluetooth", "update.hardware.audio", "trigger.hardware.laptop-display-on", "trigger.hardware.laptop-display-off", "trigger.hardware.mirror-display-on", "trigger.hardware.mirror-display-off", "trigger.hardware.touchpad-on", "trigger.hardware.touchpad-off", "trigger.hardware.touchscreen-on", "trigger.hardware.touchscreen-off", "appearance.theme", "appearance.background", "appearance.font", "appearance.top-bar", "appearance.animations-on", "appearance.animations-off"]
 
 var redirect = {
   "system": "power",
   "power-menu": "power",
-  "toggle": "home",
+  "toggle": "settings",
+  "top-bar": "settings",
+  "bar": "settings",
+  "appearance.top-bar": "settings",
   "hardware": "display",
   "reminder-set": "calendar",
   "reminder": "calendar",
@@ -42,6 +45,9 @@ var sourceId = {
   "system": "system",
   "power-menu": "system",
   "toggle": "trigger.toggle",
+  "top-bar": "appearance.top-bar",
+  "bar": "appearance.top-bar",
+  "appearance.top-bar": "appearance.top-bar",
   "hardware": "trigger.hardware",
   "reminder-set": "trigger.reminder",
   "reminder": "trigger.reminder",

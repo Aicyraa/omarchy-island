@@ -104,7 +104,7 @@ assert.equal(H.redirectFor("system", []), "", "still in the menu: no redirect")
 assert.equal(H.redirectFor("system", ["system"]), "power", "hidden: opens the island widget")
 assert.equal(H.redirectFor("root", ["root"]), "", "root has no widget")
 assert.equal(H.redirectFor("toggle", []), "", "toggle: section still in the menu")
-assert.equal(H.redirectFor("toggle", ["trigger.toggle"]), "home", "toggle: hidden section opens Home")
+assert.equal(H.redirectFor("toggle", ["trigger.toggle"]), "settings", "toggle: hidden section opens Settings")
 assert.equal(H.redirectFor("power-menu", ["system"]), "power", "the power-menu alias follows its section")
 assert.equal(H.redirectFor("nope", ["nope"]), "", "unknown routes have no redirect")
 
