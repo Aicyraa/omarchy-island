@@ -13,9 +13,8 @@ qml/
                            and 96 uniform 24x24 Lucide SVG icons in Assets/icons/)
   Core/                    ConfigStore (~/.config/omarchy/island-config.json), IslandState,
                            WidgetRegistry.js, WidgetSurface, IslandWindow, ClickCatcher, Visuals/
-  Bar/                     TopBar, WorkspaceStrip, ActiveAppsStrip (event-driven, auto-hiding),
-                           ClockCluster, AudioVizSlot (cava), BarIconButton, StatusEar
-  Services/                ActiveApps, Audio, Brightness, Bt, Net, Power, Indicators, Notifs, Stats,
+  Bar/                     TopBar, WorkspaceStrip, ClockCluster, AudioVizSlot (cava), BarIconButton, StatusEar
+  Services/                Audio, Brightness, Bt, Net, Power, Indicators, Notifs, Stats,
                            SysInfo, Themes, WeatherData, AgentUsage, ArtLookup, Cache, Cmd, MenuData
   Widgets/                 Settings (replaces Home), Media, Capture, Menu (6-tab Command Hub),
                            Wifi, Bluetooth, Audio, Display, System, Battery, Agent, Power,
@@ -30,7 +29,7 @@ rig.qml                    standalone preview/test rig: `qs -p rig.qml`
 ```
 
 ### TopBar, Island Settings & Widget Suite
-- **TopBar**: Floating `36 px` obsidian capsule (`Tokens.color.islandGround`) with workspace dots & gliding accent pill, auto-hiding animated active-workspace app strip (`ActiveAppsStrip`), stacked tabular clock/date (`HH mm` / `ddd d MMM`), weather chip, live `cava` audio visualizer slot (opens **Media**), connectivity/battery indicators, uniform 24×24 SVG widget strip (including **Capture** and **Clipboard**), and right-edge **StatusEar**.
+- **TopBar**: Floating `36 px` obsidian capsule (`Tokens.color.islandGround`) with workspace dots & gliding accent pill, grouped widget strip (Wi-Fi, Bluetooth, Notifications, Audio, System, Capture, Look, Clipboard, Theme, Settings, Power), and right-aligned time, weather, battery, and live `cava` audio visualizer slot (opens **Media**).
 - **Island Settings (`settings`)**: Replaces `home` (`home` remains an alias) with live-persisted `~/.config/omarchy/island-config.json` controls for surface material (`classic` / `glass` / `liquid`), corner radius strategy, density, UI scale, detached `ScrollRail` variant & side, bar edge (`top` / `bottom`) & pattern (`pill` / `notch` / `full`), topbar item visibility, menu mode (`morphed` / `spotlight`), and one-click presets.
 - **Standalone Media (`media`) & Capture (`capture`)**: Dedicated MPRIS player with album art / spinning vinyl, scrub timeline, mirrored `cava` spectrum, and volume; plus screenshot delay/region/fullscreen/annotate, screen recording, OCR, QR, and color picker tools.
 - **Omarchy Menu (`Super + Space`)**: Streamlined 6-tab Command Hub (`Home`, `Apps`, `Actions`, `Packages`, `Setup`, `Docs`) with fuzzy search, `/`-scoped filtering, `Keycap` hints, pins, and full `dmenu` compatibility.
