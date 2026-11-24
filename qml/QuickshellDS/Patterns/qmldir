@@ -1,0 +1,10 @@
+module QuickshellDS.Patterns
+Card 1.0 Card.qml
+ModuleCard 1.0 ModuleCard.qml
+DetailHeader 1.0 DetailHeader.qml
+DetailSection 1.0 DetailSection.qml
+SettingGroup 1.0 SettingGroup.qml
+SettingRow 1.0 SettingRow.qml
+MetricCard 1.0 MetricCard.qml
+NotificationCard 1.0 NotificationCard.qml
+CommandPalette 1.0 CommandPalette.qml

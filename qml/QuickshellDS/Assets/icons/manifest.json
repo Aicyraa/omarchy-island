@@ -1,0 +1,484 @@
+{
+  "icons": {
+    "activity": {
+      "mode": "stroke",
+      "source": "iconify:lucide/activity",
+      "strokeWidth": 1.85
+    },
+    "alert-triangle": {
+      "mode": "stroke",
+      "source": "iconify:lucide/alert-triangle",
+      "strokeWidth": 1.85
+    },
+    "app-window": {
+      "mode": "stroke",
+      "source": "iconify:lucide/app-window",
+      "strokeWidth": 1.85
+    },
+    "arrow-left": {
+      "mode": "stroke",
+      "source": "iconify:lucide/arrow-left",
+      "strokeWidth": 1.85
+    },
+    "battery": {
+      "mode": "stroke",
+      "source": "iconify:lucide/battery-charging",
+      "strokeWidth": 1.85
+    },
+    "battery-charging": {
+      "mode": "stroke",
+      "source": "iconify:lucide/battery-charging",
+      "strokeWidth": 1.85
+    },
+    "bell": {
+      "mode": "stroke",
+      "source": "iconify:lucide/bell",
+      "strokeWidth": 1.85
+    },
+    "bell-off": {
+      "mode": "stroke",
+      "source": "iconify:lucide/bell-off",
+      "strokeWidth": 1.85
+    },
+    "bluetooth": {
+      "mode": "stroke",
+      "source": "iconify:lucide/bluetooth",
+      "strokeWidth": 1.85
+    },
+    "bluetooth-off": {
+      "mode": "stroke",
+      "source": "iconify:lucide/bluetooth-off",
+      "strokeWidth": 1.85
+    },
+    "book-open": {
+      "mode": "stroke",
+      "source": "iconify:lucide/book-open",
+      "strokeWidth": 1.85
+    },
+    "brightness": {
+      "mode": "stroke",
+      "source": "iconify:lucide/sun",
+      "strokeWidth": 1.85
+    },
+    "calendar": {
+      "mode": "stroke",
+      "source": "iconify:lucide/calendar",
+      "strokeWidth": 1.85
+    },
+    "camera": {
+      "mode": "stroke",
+      "source": "iconify:lucide/camera",
+      "strokeWidth": 1.85
+    },
+    "check": {
+      "mode": "stroke",
+      "source": "iconify:lucide/check",
+      "strokeWidth": 1.85
+    },
+    "check-circle": {
+      "mode": "stroke",
+      "source": "iconify:lucide/check-circle",
+      "strokeWidth": 1.85
+    },
+    "chevron-left": {
+      "mode": "stroke",
+      "source": "iconify:lucide/chevron-left",
+      "strokeWidth": 1.85
+    },
+    "chevron-right": {
+      "mode": "stroke",
+      "source": "iconify:lucide/chevron-right",
+      "strokeWidth": 1.85
+    },
+    "circle": {
+      "mode": "stroke",
+      "source": "iconify:lucide/circle",
+      "strokeWidth": 1.85
+    },
+    "clipboard": {
+      "mode": "stroke",
+      "source": "iconify:lucide/clipboard",
+      "strokeWidth": 1.85
+    },
+    "clock": {
+      "mode": "stroke",
+      "source": "iconify:lucide/clock",
+      "strokeWidth": 1.85
+    },
+    "close": {
+      "mode": "stroke",
+      "source": "iconify:lucide/x",
+      "strokeWidth": 1.85
+    },
+    "cloud": {
+      "mode": "stroke",
+      "source": "iconify:lucide/cloud",
+      "strokeWidth": 1.85
+    },
+    "cloud-lightning": {
+      "mode": "stroke",
+      "source": "iconify:lucide/cloud-lightning",
+      "strokeWidth": 1.85
+    },
+    "cloud-rain": {
+      "mode": "stroke",
+      "source": "iconify:lucide/cloud-rain",
+      "strokeWidth": 1.85
+    },
+    "cloud-snow": {
+      "mode": "stroke",
+      "source": "iconify:lucide/cloud-snow",
+      "strokeWidth": 1.85
+    },
+    "cloud-sun": {
+      "mode": "stroke",
+      "source": "iconify:lucide/cloud-sun",
+      "strokeWidth": 1.85
+    },
+    "coffee": {
+      "mode": "stroke",
+      "source": "iconify:lucide/coffee",
+      "strokeWidth": 1.85
+    },
+    "copy": {
+      "mode": "stroke",
+      "source": "iconify:lucide/copy",
+      "strokeWidth": 1.85
+    },
+    "cpu": {
+      "mode": "stroke",
+      "source": "iconify:lucide/cpu",
+      "strokeWidth": 1.85
+    },
+    "crop": {
+      "mode": "stroke",
+      "source": "iconify:lucide/crop",
+      "strokeWidth": 1.85
+    },
+    "disc": {
+      "mode": "stroke",
+      "source": "iconify:lucide/disc",
+      "strokeWidth": 1.85
+    },
+    "download": {
+      "mode": "stroke",
+      "source": "iconify:lucide/download",
+      "strokeWidth": 1.85
+    },
+    "droplets": {
+      "mode": "stroke",
+      "source": "iconify:lucide/droplets",
+      "strokeWidth": 1.85
+    },
+    "external-link": {
+      "mode": "stroke",
+      "source": "iconify:lucide/external-link",
+      "strokeWidth": 1.85
+    },
+    "eye": {
+      "mode": "stroke",
+      "source": "iconify:lucide/eye",
+      "strokeWidth": 1.85
+    },
+    "flame": {
+      "mode": "stroke",
+      "source": "iconify:lucide/flame",
+      "strokeWidth": 1.85
+    },
+    "folder": {
+      "mode": "stroke",
+      "source": "iconify:lucide/folder",
+      "strokeWidth": 1.85
+    },
+    "gauge": {
+      "mode": "stroke",
+      "source": "iconify:lucide/gauge",
+      "strokeWidth": 1.85
+    },
+    "globe": {
+      "mode": "stroke",
+      "source": "iconify:lucide/globe",
+      "strokeWidth": 1.85
+    },
+    "hard-drive": {
+      "mode": "stroke",
+      "source": "iconify:lucide/hard-drive",
+      "strokeWidth": 1.85
+    },
+    "headphones": {
+      "mode": "stroke",
+      "source": "iconify:lucide/headphones",
+      "strokeWidth": 1.85
+    },
+    "image": {
+      "mode": "stroke",
+      "source": "iconify:lucide/image",
+      "strokeWidth": 1.85
+    },
+    "info": {
+      "mode": "stroke",
+      "source": "iconify:lucide/info",
+      "strokeWidth": 1.85
+    },
+    "key": {
+      "mode": "stroke",
+      "source": "iconify:lucide/key",
+      "strokeWidth": 1.85
+    },
+    "layers": {
+      "mode": "stroke",
+      "source": "iconify:lucide/layers",
+      "strokeWidth": 1.85
+    },
+    "layout-grid": {
+      "mode": "stroke",
+      "source": "iconify:lucide/layout-grid",
+      "strokeWidth": 1.85
+    },
+    "lock": {
+      "mode": "stroke",
+      "source": "iconify:lucide/lock",
+      "strokeWidth": 1.85
+    },
+    "log-out": {
+      "mode": "stroke",
+      "source": "iconify:lucide/log-out",
+      "strokeWidth": 1.85
+    },
+    "maximize": {
+      "mode": "stroke",
+      "source": "iconify:lucide/maximize",
+      "strokeWidth": 1.85
+    },
+    "memory": {
+      "mode": "stroke",
+      "source": "iconify:lucide/memory-stick",
+      "strokeWidth": 1.85
+    },
+    "mic": {
+      "mode": "stroke",
+      "source": "iconify:lucide/mic",
+      "strokeWidth": 1.85
+    },
+    "mic-off": {
+      "mode": "stroke",
+      "source": "iconify:lucide/mic-off",
+      "strokeWidth": 1.85
+    },
+    "minus": {
+      "mode": "stroke",
+      "source": "iconify:lucide/minus",
+      "strokeWidth": 1.85
+    },
+    "monitor": {
+      "mode": "stroke",
+      "source": "iconify:lucide/monitor",
+      "strokeWidth": 1.85
+    },
+    "moon": {
+      "mode": "stroke",
+      "source": "iconify:lucide/moon",
+      "strokeWidth": 1.85
+    },
+    "music": {
+      "mode": "stroke",
+      "source": "iconify:lucide/music",
+      "strokeWidth": 1.85
+    },
+    "package": {
+      "mode": "stroke",
+      "source": "iconify:lucide/package",
+      "strokeWidth": 1.85
+    },
+    "palette": {
+      "mode": "stroke",
+      "source": "iconify:lucide/palette",
+      "strokeWidth": 1.85
+    },
+    "pause": {
+      "mode": "stroke",
+      "source": "iconify:lucide/pause",
+      "strokeWidth": 1.85
+    },
+    "pin": {
+      "mode": "stroke",
+      "source": "iconify:lucide/pin",
+      "strokeWidth": 1.85
+    },
+    "pipette": {
+      "mode": "stroke",
+      "source": "iconify:lucide/pipette",
+      "strokeWidth": 1.85
+    },
+    "play": {
+      "mode": "stroke",
+      "source": "iconify:lucide/play",
+      "strokeWidth": 1.85
+    },
+    "plus": {
+      "mode": "stroke",
+      "source": "iconify:lucide/plus",
+      "strokeWidth": 1.85
+    },
+    "power": {
+      "mode": "stroke",
+      "source": "iconify:lucide/power",
+      "strokeWidth": 1.85
+    },
+    "qr-code": {
+      "mode": "stroke",
+      "source": "iconify:lucide/qr-code",
+      "strokeWidth": 1.85
+    },
+    "quickshell-mark": {
+      "mode": "stroke",
+      "source": "custom:quickshellds",
+      "strokeWidth": 1.85
+    },
+    "refresh-cw": {
+      "mode": "stroke",
+      "source": "iconify:lucide/refresh-cw",
+      "strokeWidth": 1.85
+    },
+    "repeat": {
+      "mode": "stroke",
+      "source": "iconify:lucide/repeat",
+      "strokeWidth": 1.85
+    },
+    "rotate-ccw": {
+      "mode": "stroke",
+      "source": "iconify:lucide/rotate-ccw",
+      "strokeWidth": 1.85
+    },
+    "scan-text": {
+      "mode": "stroke",
+      "source": "iconify:lucide/scan-text",
+      "strokeWidth": 1.85
+    },
+    "scissors": {
+      "mode": "stroke",
+      "source": "iconify:lucide/scissors",
+      "strokeWidth": 1.85
+    },
+    "search": {
+      "mode": "stroke",
+      "source": "iconify:lucide/search",
+      "strokeWidth": 1.85
+    },
+    "settings": {
+      "mode": "stroke",
+      "source": "iconify:lucide/settings",
+      "strokeWidth": 1.85
+    },
+    "shield": {
+      "mode": "stroke",
+      "source": "iconify:lucide/shield",
+      "strokeWidth": 1.85
+    },
+    "shuffle": {
+      "mode": "stroke",
+      "source": "iconify:lucide/shuffle",
+      "strokeWidth": 1.85
+    },
+    "skip-back": {
+      "mode": "stroke",
+      "source": "iconify:lucide/skip-back",
+      "strokeWidth": 1.85
+    },
+    "skip-forward": {
+      "mode": "stroke",
+      "source": "iconify:lucide/skip-forward",
+      "strokeWidth": 1.85
+    },
+    "sliders-horizontal": {
+      "mode": "stroke",
+      "source": "iconify:lucide/sliders-horizontal",
+      "strokeWidth": 1.85
+    },
+    "sparkles": {
+      "mode": "stroke",
+      "source": "iconify:lucide/sparkles",
+      "strokeWidth": 1.85
+    },
+    "speaker": {
+      "mode": "stroke",
+      "source": "iconify:lucide/speaker",
+      "strokeWidth": 1.85
+    },
+    "square": {
+      "mode": "stroke",
+      "source": "iconify:lucide/square",
+      "strokeWidth": 1.85
+    },
+    "star": {
+      "mode": "stroke",
+      "source": "iconify:lucide/star",
+      "strokeWidth": 1.85
+    },
+    "sun": {
+      "mode": "stroke",
+      "source": "iconify:lucide/sun",
+      "strokeWidth": 1.85
+    },
+    "terminal": {
+      "mode": "stroke",
+      "source": "iconify:lucide/terminal",
+      "strokeWidth": 1.85
+    },
+    "thermometer": {
+      "mode": "stroke",
+      "source": "iconify:lucide/thermometer",
+      "strokeWidth": 1.85
+    },
+    "trash-2": {
+      "mode": "stroke",
+      "source": "iconify:lucide/trash-2",
+      "strokeWidth": 1.85
+    },
+    "upload": {
+      "mode": "stroke",
+      "source": "iconify:lucide/upload",
+      "strokeWidth": 1.85
+    },
+    "video": {
+      "mode": "stroke",
+      "source": "iconify:lucide/video",
+      "strokeWidth": 1.85
+    },
+    "volume": {
+      "mode": "stroke",
+      "source": "iconify:lucide/volume-2",
+      "strokeWidth": 1.85
+    },
+    "volume-mute": {
+      "mode": "stroke",
+      "source": "iconify:lucide/volume-x",
+      "strokeWidth": 1.85
+    },
+    "wifi": {
+      "mode": "stroke",
+      "source": "iconify:lucide/wifi",
+      "strokeWidth": 1.85
+    },
+    "wifi-off": {
+      "mode": "stroke",
+      "source": "iconify:lucide/wifi-off",
+      "strokeWidth": 1.85
+    },
+    "wind": {
+      "mode": "stroke",
+      "source": "iconify:lucide/wind",
+      "strokeWidth": 1.85
+    },
+    "wrench": {
+      "mode": "stroke",
+      "source": "iconify:lucide/wrench",
+      "strokeWidth": 1.85
+    },
+    "zap": {
+      "mode": "stroke",
+      "source": "iconify:lucide/zap",
+      "strokeWidth": 1.85
+    }
+  }
+}

@@ -1,0 +1,4 @@
+module QuickshellDS.Theme
+singleton Tokens 1.0 Tokens.qml
+singleton Palettes 1.0 Palettes.qml
+singleton OmarchyAdapter 1.0 OmarchyAdapter.qml

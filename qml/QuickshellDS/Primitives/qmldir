@@ -1,0 +1,12 @@
+module QuickshellDS.Primitives
+Surface 1.0 Surface.qml
+Icon 1.0 Icon.qml
+GlassSheen 1.0 GlassSheen.qml
+LitEdge 1.0 LitEdge.qml
+FocusRing 1.0 FocusRing.qml
+HoverIntent 1.0 HoverIntent.qml
+TextLabel 1.0 TextLabel.qml
+NotchFillet 1.0 NotchFillet.qml
+NotchOutline 1.0 NotchOutline.qml
+BezelShape 1.0 BezelShape.qml
+BezelOutline 1.0 BezelOutline.qml
