@@ -129,15 +129,23 @@ WidgetSurface {
         }
     }
 
-    // Header: search + current badge + counter
+    // Header: DetailHeader + search + counter
     RowLayout {
         width: parent.width
-        spacing: Tokens.space.sm
+        spacing: Tokens.space.md
+
+        DetailHeader {
+            Layout.fillWidth: true
+            backable: false
+            icon: "palette"
+            title: qsTr("Themes")
+            detail: root.applying !== "" ? qsTr("Applying %1…").arg(root.applying) : ""
+        }
 
         TextField {
             id: searchInput
 
-            Layout.preferredWidth: Tokens.px(280)
+            Layout.preferredWidth: Tokens.px(250)
             icon: "search"
             placeholderText: qsTr("Search themes…")
             accessibleLabel: qsTr("Search themes")
@@ -146,21 +154,14 @@ WidgetSurface {
             onCleared: root.clearSearch()
         }
 
-        Item { Layout.fillWidth: true }
-
-        Badge {
-            visible: root.current !== "" && root.applying === ""
-            text: root.current
-            tone: "accent"
-        }
-
         TextLabel {
+            visible: searchInput.text !== ""
             role: "sm"
-            tabular: root.applying === ""
-            tone: root.applying !== "" ? "accent" : "muted"
-            text: root.applying !== ""
-                ? qsTr("Applying %1…").arg(root.applying)
-                : (root.themes.length > 0 ? (root.sel + 1) + " / " + root.themes.length : "0 / " + root.all.length)
+            tabular: true
+            tone: "muted"
+            text: root.themes.length > 0
+                ? (root.sel + 1) + " / " + root.themes.length
+                : "0 / " + root.all.length
         }
     }
 
@@ -186,12 +187,14 @@ WidgetSurface {
     GridView {
         id: themeList
 
+        readonly property int rowCount: Math.ceil(root.themes.length / 3)
+
         visible: !root.loading && root.themes.length > 0
         width: parent.width
-        implicitHeight: Math.min(Tokens.px(320), Math.ceil(root.themes.length / 3) * cellHeight)
+        implicitHeight: Math.max(0, Math.min(2 * cellHeight, rowCount * cellHeight) - Tokens.space.sm)
         cellWidth: Math.floor(width / 3)
-        cellHeight: Tokens.px(124)
-        clip: true
+        cellHeight: Tokens.px(132)
+        clip: rowCount > 2
         boundsBehavior: Flickable.StopAtBounds
         model: root.themes
 
@@ -208,85 +211,116 @@ WidgetSurface {
             width: themeList.cellWidth
             height: themeList.cellHeight
 
-            Card {
+            Surface {
+                id: cardSurface
+
                 anchors.fill: parent
-                anchors.margins: Tokens.space.xs
-                horizontalPadding: Tokens.space.md
-                verticalPadding: Tokens.space.md
+                anchors.leftMargin: Tokens.px(6)
+                anchors.rightMargin: Tokens.px(6)
+                anchors.topMargin: 0
+                anchors.bottomMargin: Tokens.space.sm
+                role: "card"
+                horizontalPadding: 0
+                verticalPadding: 0
+                clip: true
                 hovered: cardHover.hovered
+                activeFocusOnTab: true
+                Accessible.role: Accessible.Button
+                Accessible.name: slot.modelData.name ?? qsTr("Theme")
                 border.color: slot.isCurrent
                     ? Tokens.color.accent
                     : (slot.selected ? Tokens.color.borderStrong : Tokens.veilBorderOf(Tokens.surfaceStyle))
 
-                ClippingRectangle {
-                    visible: slot.hasImage
-                    anchors.fill: parent
-                    anchors.margins: -Tokens.px(1)
-                    radius: Tokens.radius.md
-                    opacity: 0.28
-                    color: "transparent"
-
-                    Image {
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        sourceSize: Qt.size(320, 216)
-                        source: slot.hasImage ? "file://" + slot.modelData.preview : ""
-                    }
+                FocusRing {
+                    active: cardSurface.activeFocus
+                    ringRadius: cardSurface.radius
                 }
 
-                ColumnLayout {
+                ClippingRectangle {
                     anchors.fill: parent
-                    spacing: Tokens.space.sm
+                    anchors.margins: Tokens.hairlineWidth
+                    radius: Math.max(0, cardSurface.radius - Tokens.hairlineWidth)
+                    color: "transparent"
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Tokens.space.xs
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 0
 
-                        Icon {
-                            icon: slot.modelData.mode === "light" ? "sun" : "moon"
-                            size: Tokens.size.iconSm
-                            tone: "muted"
-                        }
-
-                        Item { Layout.fillWidth: true }
-
-                        Badge {
-                            visible: slot.isCurrent
-                            text: "✓"
-                            tone: "accent"
-                        }
-                    }
-
-                    Item { Layout.fillHeight: true }
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "body"
-                        font.weight: Font.Medium
-                        text: slot.modelData.name ?? ""
-                    }
-
-                    Row {
-                        spacing: Tokens.space.xs
-
-                        Repeater {
-                            model: [
-                                slot.modelData.bg ?? "",
-                                slot.modelData.fg ?? "",
-                                slot.modelData.accent ?? "",
-                                slot.modelData.red ?? ""
-                            ]
+                        // Full-bleed top 62 px preview strip
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: Tokens.px(62)
+                            clip: true
 
                             Rectangle {
-                                required property string modelData
+                                anchors.fill: parent
+                                visible: !slot.hasImage
+                                color: slot.modelData.bg || Tokens.color.surfaceRaised
+                            }
 
-                                width: Tokens.px(10)
-                                height: Tokens.px(10)
-                                radius: Tokens.radius.pill
-                                color: modelData !== "" ? modelData : Tokens.color.surfaceRaised
-                                border.width: Tokens.hairlineWidth
-                                border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
+                            Image {
+                                visible: slot.hasImage
+                                anchors.fill: parent
+                                opacity: 0.9
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                sourceSize: Qt.size(320, 124)
+                                source: slot.hasImage ? "file://" + slot.modelData.preview : ""
+                            }
+                        }
+
+                        // Bottom metadata strip
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.leftMargin: Tokens.px(14)
+                            Layout.rightMargin: Tokens.px(14)
+                            Layout.topMargin: Tokens.px(10)
+                            Layout.bottomMargin: Tokens.px(10)
+                            spacing: Tokens.space.xs
+
+                            TextLabel {
+                                Layout.fillWidth: true
+                                role: "body"
+                                font.weight: Font.Medium
+                                text: slot.modelData.name ?? ""
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Tokens.space.xs
+
+                                Row {
+                                    spacing: Tokens.space.xs
+
+                                    Repeater {
+                                        model: [
+                                            slot.modelData.bg ?? "",
+                                            slot.modelData.fg ?? "",
+                                            slot.modelData.accent ?? "",
+                                            slot.modelData.red ?? ""
+                                        ]
+
+                                        Rectangle {
+                                            required property string modelData
+
+                                            width: Tokens.px(10)
+                                            height: Tokens.px(10)
+                                            radius: Tokens.radius.pill
+                                            color: modelData !== "" ? modelData : Tokens.color.surfaceRaised
+                                            border.width: Tokens.hairlineWidth
+                                            border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
+                                        }
+                                    }
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Badge {
+                                    visible: slot.isCurrent
+                                    text: qsTr("Active")
+                                    tone: "accent"
+                                }
                             }
                         }
                     }
@@ -294,16 +328,21 @@ WidgetSurface {
 
                 HoverHandler {
                     id: cardHover
+
                     cursorShape: Qt.PointingHandCursor
                 }
 
                 TapHandler {
                     onTapped: {
+                        Tokens.keyboardNavigation = false
                         root.moved = true
                         root.sel = slot.index
                         root.apply(slot.modelData)
                     }
                 }
+
+                Keys.onSpacePressed: root.apply(slot.modelData)
+                Keys.onReturnPressed: root.apply(slot.modelData)
             }
         }
     }

@@ -22,6 +22,7 @@ WidgetSurface {
         ? qsTr("Type to search · ↑/↓ choose · Enter add · Esc cancel")
         : qsTr("↑/↓ select · A add · D remove · Esc close")
 
+    readonly property real cityRowHeight: Tokens.px(52)
     readonly property string file: Quickshell.env("HOME") + "/.local/state/island/world-clock.json"
     property var zones: ["Local", "UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Sydney"]
     property var rows: []
@@ -274,10 +275,12 @@ WidgetSurface {
             } else if (event.key === Qt.Key_Down) {
                 IslandState.touch(true)
                 root.pick = Math.min(root.pick + 1, Math.max(0, root.matches.length - 1))
+                cityList.positionViewAtIndex(root.pick, ListView.Contain)
                 event.accepted = true
             } else if (event.key === Qt.Key_Up) {
                 IslandState.touch(true)
                 root.pick = Math.max(root.pick - 1, 0)
+                cityList.positionViewAtIndex(root.pick, ListView.Contain)
                 event.accepted = true
             } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                 IslandState.touch(true)
@@ -290,10 +293,12 @@ WidgetSurface {
         if (event.key === Qt.Key_Down) {
             IslandState.touch(true)
             root.sel = Math.min(root.sel + 1, Math.max(0, root.rows.length - 1))
+            cityList.positionViewAtIndex(root.sel, ListView.Contain)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             IslandState.touch(true)
             root.sel = Math.max(root.sel - 1, 0)
+            cityList.positionViewAtIndex(root.sel, ListView.Contain)
             event.accepted = true
         } else if (event.key === Qt.Key_A) {
             IslandState.touch(true)
@@ -312,7 +317,7 @@ WidgetSurface {
         width: parent.width
         spacing: Tokens.space.lg
 
-        // Left: Globe hero + sun/moon context
+        // Left: Globe hero + selected city time
         Card {
             Layout.preferredWidth: Tokens.px(208)
             Layout.alignment: Qt.AlignVCenter
@@ -324,7 +329,7 @@ WidgetSurface {
                 id: globeCol
 
                 width: parent.width
-                spacing: Tokens.space.sm
+                spacing: Tokens.space.xs
 
                 GlobeView {
                     Layout.alignment: Qt.AlignHCenter
@@ -336,8 +341,18 @@ WidgetSurface {
 
                 TextLabel {
                     Layout.fillWidth: true
+                    Layout.topMargin: Tokens.space.xxs
                     horizontalAlignment: Text.AlignHCenter
-                    role: "subtitle"
+                    role: "h2"
+                    tabular: true
+                    font.weight: Font.Medium
+                    text: root.rows[root.sel] ? root.rows[root.sel].time : ""
+                }
+
+                TextLabel {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    role: "body"
                     font.weight: Font.Medium
                     text: root.rows[root.sel] ? root.rows[root.sel].city : ""
                 }
@@ -357,21 +372,13 @@ WidgetSurface {
                         role: "sm"
                         tabular: true
                         tone: "muted"
-                        text: root.rows[root.sel]
-                            ? (root.rows[root.sel].time + (root.rows[root.sel].night ? qsTr(" · Night") : qsTr(" · Day")))
-                            : ""
+                        text: {
+                            const r = root.rows[root.sel]
+                            if (!r)
+                                return ""
+                            return (r.night ? qsTr("Night") : qsTr("Day")) + " · " + r.offset
+                        }
                     }
-                }
-
-                Button {
-                    Layout.fillWidth: true
-                    visible: !root.searching
-                    text: qsTr("Add city")
-                    icon: "plus"
-                    size: "sm"
-                    variant: "secondary"
-                    accessibleLabel: qsTr("Add city timezone")
-                    onClicked: root.openSearch()
                 }
             }
         }
@@ -382,144 +389,203 @@ WidgetSurface {
             Layout.alignment: Qt.AlignVCenter
             spacing: Tokens.space.sm
 
-            RowLayout {
+            TextField {
+                id: tzInput
+
                 Layout.fillWidth: true
-                spacing: Tokens.space.xs
-
-                TextField {
-                    id: tzInput
-
-                    Layout.fillWidth: true
-                    icon: "search"
-                    placeholderText: qsTr("Search time zones…")
-                    accessibleLabel: qsTr("Search time zones")
-                    onTextChanged: {
-                        root.query = text
-                        root.pick = 0
-                        if (text !== "" && !root.searching) {
-                            root.searching = true
-                            if (root.allZones.length === 0)
-                                tzList.running = true
-                        }
+                icon: "search"
+                clearable: true
+                placeholderText: qsTr("Search time zones…")
+                accessibleLabel: qsTr("Search time zones")
+                onTextChanged: {
+                    root.query = text
+                    root.pick = 0
+                    if (text !== "" && !root.searching) {
+                        root.searching = true
+                        if (root.allZones.length === 0)
+                            tzList.running = true
+                    } else if (text === "" && root.searching) {
+                        root.searching = false
                     }
-                    onAccepted: {
-                        if (root.searching && root.matches[root.pick])
-                            root.addZone(root.matches[root.pick])
-                    }
-                    onCleared: root.closeSearch()
                 }
-
-                Button {
-                    visible: root.searching
-                    icon: "close"
-                    size: "md"
-                    variant: "ghost"
-                    accessibleLabel: qsTr("Cancel search")
-                    onClicked: root.closeSearch()
+                onAccepted: {
+                    if (root.searching && root.matches[root.pick])
+                        root.addZone(root.matches[root.pick])
                 }
+                onCleared: root.closeSearch()
             }
 
-            ListView {
-                id: cityList
-
+            EmptyState {
+                visible: root.searching && root.query !== "" && root.matches.length === 0
                 Layout.fillWidth: true
-                Layout.preferredHeight: Tokens.px(250)
-                clip: true
-                spacing: Tokens.space.xs
-                boundsBehavior: Flickable.StopAtBounds
-                model: root.searching && root.query !== "" ? root.matches : root.rows
+                Layout.preferredHeight: Tokens.px(160)
+                icon: "globe"
+                title: qsTr("No matching time zones")
+                description: qsTr("Try another city or region name")
+            }
 
-                delegate: Component {
-                    Loader {
-                        required property var modelData
-                        required property int index
+            Surface {
+                visible: !cityList.showSearch || root.matches.length > 0
+                Layout.fillWidth: true
+                role: "card"
+                horizontalPadding: Tokens.space.sm
+                verticalPadding: Tokens.space.sm
+                radius: Tokens.radius.md
+                implicitHeight: cityList.height + verticalPadding * 2
 
-                        width: cityList.width
-                        sourceComponent: root.searching && root.query !== "" ? searchRowComp : pinnedRowComp
+                ListView {
+                    id: cityList
 
-                        Component {
-                            id: searchRowComp
+                    readonly property bool showSearch: root.searching && root.query !== ""
 
-                            ListRow {
-                                width: cityList.width
-                                icon: "globe"
-                                title: String(modelData)
-                                selected: root.pick === index
-                                onClicked: root.addZone(String(modelData))
-                            }
-                        }
+                    width: parent.width
+                    height: showSearch
+                        ? Math.min(Tokens.px(250), Math.max(Tokens.px(96), contentHeight))
+                        : Math.min(4 * root.cityRowHeight, contentHeight)
+                    clip: true
+                    spacing: showSearch ? Tokens.space.xs : 0
+                    boundsBehavior: Flickable.StopAtBounds
+                    currentIndex: showSearch ? root.pick : root.sel
+                    model: showSearch ? root.matches : root.rows
 
-                        Component {
-                            id: pinnedRowComp
+                    delegate: Component {
+                        Loader {
+                            required property var modelData
+                            required property int index
 
-                            Surface {
-                                readonly property var row: modelData
-                                readonly property bool isSel: root.sel === index
+                            width: cityList.width
+                            sourceComponent: cityList.showSearch ? searchRowComp : pinnedRowComp
 
-                                width: cityList.width
-                                role: isSel ? "elevated" : "card"
-                                radius: Tokens.radius.sm
-                                horizontalPadding: Tokens.space.md
-                                verticalPadding: Tokens.space.sm
-                                implicitHeight: cityRow.implicitHeight + verticalPadding * 2
-                                border.color: isSel ? Tokens.color.accent : Tokens.veilBorderOf(Tokens.surfaceStyle)
+                            Component {
+                                id: searchRowComp
 
-                                RowLayout {
-                                    id: cityRow
-
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    spacing: Tokens.space.sm
-
-                                    Icon {
-                                        icon: row.night ? "moon" : "sun"
-                                        size: Tokens.size.iconMd
-                                        tone: row.night ? "muted" : "warning"
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 0
-
-                                        TextLabel {
-                                            Layout.fillWidth: true
-                                            role: "body"
-                                            font.weight: Font.Medium
-                                            text: row.city ?? ""
-                                        }
-
-                                        TextLabel {
-                                            visible: (row.day ?? "") !== ""
-                                            role: "caption"
-                                            tone: "muted"
-                                            text: row.day ?? ""
-                                        }
-                                    }
-
-                                    Badge {
-                                        text: row.offset ?? ""
-                                        tone: "neutral"
-                                    }
-
-                                    TextLabel {
-                                        role: "subtitle"
-                                        tabular: true
-                                        font.weight: Font.Medium
-                                        text: row.time ?? ""
-                                    }
-
-                                    Button {
-                                        visible: (row.zone ?? "Local") !== "Local"
-                                        icon: "close"
-                                        size: "sm"
-                                        variant: "ghost"
-                                        accessibleLabel: qsTr("Remove city")
-                                        onClicked: root.removeZone(row.zone)
-                                    }
+                                ListRow {
+                                    width: cityList.width
+                                    icon: "globe"
+                                    title: String(modelData)
+                                    selected: root.pick === index
+                                    onClicked: root.addZone(String(modelData))
                                 }
+                            }
 
-                                TapHandler {
-                                    onTapped: root.sel = index
+                            Component {
+                                id: pinnedRowComp
+
+                                Item {
+                                    id: cityCard
+
+                                    readonly property var row: modelData
+                                    readonly property bool isSel: root.sel === index
+
+                                    width: cityList.width
+                                    height: root.cityRowHeight
+                                    activeFocusOnTab: true
+                                    Accessible.role: Accessible.ListItem
+                                    Accessible.name: (row.city ?? "") + " " + (row.time ?? "")
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: Tokens.radius.sm
+                                        color: cityCard.isSel
+                                            ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+                                            : (cityHover.hovered ? Tokens.veilOf(Tokens.surfaceStyle) : "transparent")
+
+                                        Behavior on color {
+                                            enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                            ColorAnimation { duration: Tokens.motion.fast }
+                                        }
+                                    }
+
+                                    FocusRing {
+                                        active: cityCard.activeFocus
+                                        ringRadius: Tokens.radius.sm
+                                    }
+
+                                    RowLayout {
+                                        id: cityRow
+
+                                        anchors.fill: parent
+                                        anchors.leftMargin: Tokens.space.md
+                                        anchors.rightMargin: Tokens.space.md
+                                        anchors.topMargin: Tokens.space.sm
+                                        anchors.bottomMargin: Tokens.space.sm
+                                        spacing: Tokens.space.sm
+
+                                        Icon {
+                                            icon: row.night ? "moon" : "sun"
+                                            size: Tokens.size.iconMd
+                                            tone: row.night ? "muted" : "warning"
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: Tokens.space.xxs
+
+                                            TextLabel {
+                                                Layout.fillWidth: true
+                                                role: "body"
+                                                font.weight: Font.Medium
+                                                text: row.city ?? ""
+                                            }
+
+                                            TextLabel {
+                                                visible: (row.day ?? "") !== ""
+                                                role: "caption"
+                                                tone: "muted"
+                                                text: row.day ?? ""
+                                            }
+                                        }
+
+                                        Badge {
+                                            text: row.offset ?? ""
+                                            tone: "neutral"
+                                        }
+
+                                        TextLabel {
+                                            role: "subtitle"
+                                            tabular: true
+                                            font.weight: Font.Medium
+                                            text: row.time ?? ""
+                                        }
+
+                                        Item {
+                                            Layout.preferredWidth: Tokens.size.controlSm
+                                            Layout.preferredHeight: Tokens.size.controlSm
+
+                                            Button {
+                                                anchors.centerIn: parent
+                                                visible: (row.zone ?? "Local") !== "Local"
+                                                icon: "close"
+                                                size: "sm"
+                                                variant: "ghost"
+                                                accessibleLabel: qsTr("Remove city")
+                                                onClicked: root.removeZone(row.zone)
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        visible: index < cityList.count - 1
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        anchors.leftMargin: Tokens.space.md
+                                        anchors.rightMargin: Tokens.space.md
+                                        height: Tokens.hairlineWidth
+                                        color: Tokens.color.hairline
+                                    }
+
+                                    HoverHandler {
+                                        id: cityHover
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    TapHandler {
+                                        onTapped: root.sel = index
+                                    }
+
+                                    Keys.onReturnPressed: root.sel = index
+                                    Keys.onSpacePressed: root.sel = index
                                 }
                             }
                         }

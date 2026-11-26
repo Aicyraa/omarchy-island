@@ -13,9 +13,9 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 500
+    preferredWidth: 540
     scrollTarget: notifList
-    hint: qsTr("↑/↓ select · Del remove · D focus · C clear all · Esc close")
+    hint: qsTr("↑/↓ select · Del remove · D DND · C clear all · Esc close")
 
     property int sel: 0
     readonly property int count: Notifs.history.length
@@ -41,11 +41,13 @@ WidgetSurface {
         if (event.key === Qt.Key_Down) {
             IslandState.touch(true)
             root.sel = Math.min(root.sel + 1, Math.max(0, Notifs.history.length - 1))
+            notifList.positionViewAtIndex(root.sel, ListView.Contain)
             root.reveal(notifList.currentItem)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             IslandState.touch(true)
             root.sel = Math.max(root.sel - 1, 0)
+            notifList.positionViewAtIndex(root.sel, ListView.Contain)
             root.reveal(notifList.currentItem)
             event.accepted = true
         } else if (event.key === Qt.Key_D) {
@@ -71,14 +73,9 @@ WidgetSurface {
         DetailHeader {
             Layout.fillWidth: true
             backable: false
+            icon: Indicators.dnd ? "bell-off" : "bell"
             title: qsTr("Notifications")
-            detail: Notifs.summary
-        }
-
-        Badge {
-            visible: root.count > 0
-            text: String(root.count)
-            tone: "neutral"
+            detail: root.count > 0 ? qsTr("%1 in history").arg(root.count) : ""
         }
 
         RowLayout {
@@ -102,117 +99,173 @@ WidgetSurface {
             text: qsTr("Clear All")
             icon: "trash-2"
             size: "sm"
-            variant: "danger"
+            variant: "ghost"
             accessibleLabel: qsTr("Clear all notifications")
             onClicked: root.clearEverything()
         }
     }
 
     // Notification list
-    ListView {
-        id: notifList
-
+    Surface {
         visible: root.count > 0
         width: parent.width
-        implicitHeight: Math.min(Tokens.px(360), contentHeight)
-        clip: true
-        spacing: Tokens.space.sm
-        boundsBehavior: Flickable.StopAtBounds
-        currentIndex: root.sel
-        model: Notifs.history
+        role: "card"
+        horizontalPadding: Tokens.space.sm
+        verticalPadding: Tokens.space.sm
+        radius: Tokens.radius.md
+        implicitHeight: notifList.height + verticalPadding * 2
 
-        delegate: Card {
-            id: nCard
+        ListView {
+            id: notifList
 
-            required property var modelData
-            required property int index
+            readonly property real rowHeight: Tokens.px(88)
 
-            readonly property bool selected: root.sel === index
-            readonly property string preview: Notifs.previewOf(modelData)
-            readonly property string iconName: Notifs.iconNameOf(modelData)
+            width: parent.width
+            height: Math.min(3 * rowHeight, contentHeight)
+            clip: true
+            spacing: 0
+            boundsBehavior: Flickable.StopAtBounds
+            currentIndex: root.sel
+            model: Notifs.history
 
-            width: notifList.width
-            horizontalPadding: Tokens.space.lg
-            verticalPadding: Tokens.space.md
-            implicitHeight: cardRow.implicitHeight + verticalPadding * 2
-            border.color: selected ? Tokens.color.accent : Tokens.veilBorderOf(Tokens.surfaceStyle)
+            delegate: Item {
+                id: nCard
 
-            RowLayout {
-                id: cardRow
+                required property var modelData
+                required property int index
 
-                anchors.left: parent.left
-                anchors.right: parent.right
-                spacing: Tokens.space.md
+                readonly property bool selected: root.sel === index
+                readonly property string preview: Notifs.previewOf(modelData)
+                readonly property string iconName: Notifs.iconNameOf(modelData)
+                readonly property string appName: modelData.app || qsTr("Notification")
+                readonly property string summaryText: (modelData.summary ?? "").trim()
+                readonly property bool hasSummary: summaryText !== ""
 
-                NotifThumb {
-                    Layout.alignment: Qt.AlignTop
-                    size: Tokens.px(40)
-                    badge: true
-                    preview: nCard.preview
-                    iconName: nCard.iconName
+                width: notifList.width
+                height: notifList.rowHeight
+                activeFocusOnTab: true
+                Accessible.role: Accessible.ListItem
+                Accessible.name: hasSummary ? (appName + ": " + summaryText) : appName
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Tokens.radius.sm
+                    color: nCard.selected
+                        ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+                        : (rowHover.hovered ? Tokens.veilOf(Tokens.surfaceStyle) : "transparent")
+
+                    Behavior on color {
+                        enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                        ColorAnimation { duration: Tokens.motion.fast }
+                    }
                 }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: Tokens.space.xxs
+                FocusRing {
+                    active: nCard.activeFocus
+                    ringRadius: Tokens.radius.sm
+                }
 
-                    RowLayout {
+                RowLayout {
+                    id: cardRow
+
+                    anchors.fill: parent
+                    anchors.leftMargin: Tokens.space.lg
+                    anchors.rightMargin: Tokens.space.lg
+                    anchors.topMargin: Tokens.space.md
+                    anchors.bottomMargin: Tokens.space.md
+                    spacing: Tokens.space.md
+
+                    NotifThumb {
+                        Layout.alignment: Qt.AlignTop
+                        size: Tokens.px(40)
+                        badge: true
+                        preview: nCard.preview
+                        iconName: nCard.iconName
+                    }
+
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: Tokens.space.xs
+                        spacing: Tokens.space.xxs
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Tokens.space.xs
+
+                            TextLabel {
+                                visible: nCard.hasSummary
+                                role: "caption"
+                                tone: "accent"
+                                font.weight: Font.Medium
+                                text: nCard.appName
+                            }
+
+                            TextLabel {
+                                visible: nCard.hasSummary
+                                role: "caption"
+                                tone: "muted"
+                                text: "·"
+                            }
+
+                            TextLabel {
+                                role: "caption"
+                                tone: "muted"
+                                tabular: true
+                                text: Notifs.ago(nCard.modelData.ts)
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
 
                         TextLabel {
-                            role: "caption"
-                            tone: "accent"
+                            Layout.fillWidth: true
+                            role: "subtitle"
                             font.weight: Font.Medium
-                            text: nCard.modelData.app || qsTr("Notification")
+                            text: nCard.hasSummary ? nCard.summaryText : nCard.appName
                         }
 
                         TextLabel {
-                            role: "caption"
+                            Layout.fillWidth: true
+                            visible: text !== ""
+                            singleLine: false
+                            maximumLineCount: 2
+                            role: "sm"
                             tone: "muted"
-                            text: "·"
+                            text: nCard.modelData.body || ""
                         }
-
-                        TextLabel {
-                            role: "caption"
-                            tone: "muted"
-                            tabular: true
-                            text: Notifs.ago(nCard.modelData.ts)
-                        }
-
-                        Item { Layout.fillWidth: true }
                     }
 
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "subtitle"
-                        font.weight: Font.Medium
-                        text: nCard.modelData.summary || nCard.modelData.app || ""
-                    }
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        visible: text !== ""
-                        singleLine: false
-                        maximumLineCount: 2
-                        role: "sm"
-                        tone: "muted"
-                        text: nCard.modelData.body || ""
+                    Button {
+                        Layout.alignment: Qt.AlignTop
+                        icon: "close"
+                        size: "sm"
+                        variant: "ghost"
+                        accessibleLabel: qsTr("Dismiss notification")
+                        onClicked: root.removeAt(nCard.index)
                     }
                 }
 
-                Button {
-                    Layout.alignment: Qt.AlignTop
-                    icon: "close"
-                    size: "sm"
-                    variant: "ghost"
-                    accessibleLabel: qsTr("Dismiss notification")
-                    onClicked: root.removeAt(nCard.index)
+                Rectangle {
+                    visible: nCard.index < notifList.count - 1
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.leftMargin: Tokens.space.lg
+                    anchors.rightMargin: Tokens.space.lg
+                    height: Tokens.hairlineWidth
+                    color: Tokens.color.hairline
                 }
-            }
 
-            TapHandler {
-                onTapped: root.sel = nCard.index
+                HoverHandler {
+                    id: rowHover
+                    cursorShape: Qt.PointingHandCursor
+                }
+
+                TapHandler {
+                    onTapped: root.sel = nCard.index
+                }
+
+                Keys.onReturnPressed: root.sel = nCard.index
+                Keys.onSpacePressed: root.sel = nCard.index
             }
         }
     }
@@ -224,7 +277,7 @@ WidgetSurface {
         icon: Indicators.dnd ? "bell-off" : "bell"
         title: qsTr("All caught up")
         description: Indicators.dnd
-            ? qsTr("Focus is on — new notifications stay quiet")
+            ? qsTr("Do Not Disturb is on — new notifications stay quiet")
             : qsTr("Nothing new right now")
     }
 }

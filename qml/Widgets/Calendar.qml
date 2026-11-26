@@ -14,7 +14,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 600
+    preferredWidth: 660
     scrollTarget: remList
     hint: qsTr("←/→ month · PgUp/Dn year · ↑/↓ week · T today · N weeks · Esc close")
 
@@ -27,6 +27,7 @@ WidgetSurface {
     property string dayEvents: ""
     property var reminders: []
 
+    readonly property real remRowHeight: Tokens.px(48)
     readonly property var loc: Qt.locale()
     readonly property int firstDow: loc.firstDayOfWeek % 7
     readonly property var monthNames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(m => loc.monthName(m, Locale.LongFormat))
@@ -230,13 +231,13 @@ WidgetSurface {
 
     RowLayout {
         width: parent.width
-        spacing: Tokens.space.md
+        spacing: Tokens.space.sm
 
         // Left dominant column: month grid
         Card {
             Layout.fillWidth: true
-            Layout.preferredWidth: Tokens.px(320)
-            Layout.alignment: Qt.AlignTop
+            Layout.preferredWidth: Tokens.px(352)
+            Layout.fillHeight: true
             horizontalPadding: Tokens.space.lg
             verticalPadding: Tokens.space.lg
             implicitHeight: calCol.implicitHeight + verticalPadding * 2
@@ -254,17 +255,9 @@ WidgetSurface {
 
                     TextLabel {
                         Layout.fillWidth: true
-                        role: "subtitle"
+                        role: "title"
                         font.weight: Font.Medium
                         text: root.monthNames[root.month] + " " + root.year
-                    }
-
-                    Button {
-                        icon: "chevron-left"
-                        size: "sm"
-                        variant: "secondary"
-                        accessibleLabel: qsTr("Previous month")
-                        onClicked: root.shiftMonth(-1)
                     }
 
                     Button {
@@ -273,6 +266,14 @@ WidgetSurface {
                         variant: "secondary"
                         accessibleLabel: qsTr("Jump to today")
                         onClicked: root.goToday()
+                    }
+
+                    Button {
+                        icon: "chevron-left"
+                        size: "sm"
+                        variant: "secondary"
+                        accessibleLabel: qsTr("Previous month")
+                        onClicked: root.shiftMonth(-1)
                     }
 
                     Button {
@@ -336,7 +337,7 @@ WidgetSurface {
                             TextLabel {
                                 required property int index
 
-                                Layout.preferredHeight: Tokens.px(34)
+                                Layout.preferredHeight: Tokens.px(38)
                                 Layout.fillWidth: true
                                 verticalAlignment: Text.AlignVCenter
                                 role: "caption"
@@ -370,13 +371,17 @@ WidgetSurface {
                                     || (isToday && root.reminders.length > 0)
 
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: Tokens.px(34)
+                                Layout.preferredHeight: Tokens.px(38)
                                 activeFocusOnTab: modelData.inMonth
                                 Accessible.role: Accessible.Button
                                 Accessible.name: Qt.formatDate(modelData.date, "dddd d MMMM yyyy")
 
                                 Rectangle {
-                                    anchors.centerIn: parent
+                                    id: dayCircle
+
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.verticalCenterOffset: -Tokens.px(2)
                                     width: Tokens.px(28)
                                     height: Tokens.px(28)
                                     radius: Tokens.radius.pill
@@ -394,7 +399,7 @@ WidgetSurface {
                                 }
 
                                 TextLabel {
-                                    anchors.centerIn: parent
+                                    anchors.centerIn: dayCircle
                                     role: "body"
                                     tabular: true
                                     font.weight: dayCell.isToday || dayCell.isSel ? Font.Medium : Font.Normal
@@ -407,7 +412,7 @@ WidgetSurface {
                                     visible: dayCell.hasDot
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: Tokens.px(1)
+                                    anchors.bottomMargin: Tokens.px(2)
                                     width: Tokens.px(4)
                                     height: Tokens.px(4)
                                     radius: Tokens.radius.pill
@@ -437,48 +442,31 @@ WidgetSurface {
             }
         }
 
-        // Right column: Selected Day + Omarchy Reminders
-        ColumnLayout {
-            Layout.preferredWidth: Tokens.px(228)
+        // Right column: Selected Day header + Omarchy Reminders
+        Card {
+            Layout.preferredWidth: Tokens.px(252)
             Layout.fillHeight: true
-            spacing: Tokens.space.sm
+            horizontalPadding: Tokens.space.lg
+            verticalPadding: Tokens.space.lg
+            implicitHeight: remCol.implicitHeight + verticalPadding * 2
 
-            Card {
-                Layout.fillWidth: true
-                horizontalPadding: Tokens.space.lg
-                verticalPadding: Tokens.space.md
-                implicitHeight: daySummaryCol.implicitHeight + verticalPadding * 2
+            ColumnLayout {
+                id: remCol
 
+                anchors.fill: parent
+                spacing: Tokens.space.sm
+
+                // Selected Day single-line header
                 ColumnLayout {
-                    id: daySummaryCol
-
-                    width: parent.width
+                    Layout.fillWidth: true
                     spacing: Tokens.space.xxs
 
                     TextLabel {
-                        role: "caption"
-                        tone: "accent"
+                        Layout.fillWidth: true
+                        role: "subtitle"
                         font.weight: Font.Medium
-                        font.capitalization: Font.AllUppercase
-                        text: Qt.formatDate(root.selected, "dddd")
-                    }
-
-                    RowLayout {
-                        spacing: Tokens.space.sm
-
-                        TextLabel {
-                            role: "h1"
-                            tabular: true
-                            text: String(root.selected.getDate())
-                        }
-
-                        TextLabel {
-                            Layout.alignment: Qt.AlignBottom
-                            Layout.bottomMargin: Tokens.space.xxs
-                            role: "sm"
-                            tone: "muted"
-                            text: root.monthNames[root.selected.getMonth()].slice(0, 3) + " " + root.selected.getFullYear()
-                        }
+                        tone: "accent"
+                        text: Qt.formatDate(root.selected, "ddd, MMM d")
                     }
 
                     TextLabel {
@@ -489,114 +477,127 @@ WidgetSurface {
                         text: root.dayEvents !== "" ? root.dayEvents : qsTr("No events scheduled")
                     }
                 }
-            }
 
-            Card {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                horizontalPadding: Tokens.space.lg
-                verticalPadding: Tokens.space.md
-                implicitHeight: remCol.implicitHeight + verticalPadding * 2
+                Separator {
+                    Layout.fillWidth: true
+                }
 
-                ColumnLayout {
-                    id: remCol
+                TextField {
+                    id: quickInput
 
-                    width: parent.width
-                    spacing: Tokens.space.sm
+                    Layout.fillWidth: true
+                    icon: "plus"
+                    placeholderText: qsTr("Add a reminder…")
+                    accessibleLabel: qsTr("Add reminder")
+                    onAccepted: root.submitQuickReminder()
+                }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Tokens.space.xs
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 2
+                    columnSpacing: Tokens.space.xs
+                    rowSpacing: Tokens.space.xs
 
-                        TextLabel {
-                            role: "sm"
-                            font.weight: Font.Medium
-                            tone: "secondary"
-                            text: qsTr("Reminders")
-                        }
-
-                        Badge {
-                            visible: root.reminders.length > 0
-                            text: String(root.reminders.length)
-                            tone: "accent"
-                        }
-
-                        Item { Layout.fillWidth: true }
+                    Repeater {
+                        model: [
+                            { l: "+5m", m: 5 },
+                            { l: "+15m", m: 15 },
+                            { l: "+30m", m: 30 },
+                            { l: "+1h", m: 60 }
+                        ]
 
                         Button {
-                            visible: root.reminders.length > 0
-                            text: qsTr("Clear")
+                            required property var modelData
+
+                            Layout.fillWidth: true
+                            text: modelData.l
                             size: "sm"
-                            variant: "ghost"
-                            accessibleLabel: qsTr("Clear all reminders")
-                            onClicked: root.clearReminders()
+                            variant: "secondary"
+                            onClicked: root.addReminder(modelData.m, "")
                         }
                     }
+                }
 
-                    TextField {
-                        id: quickInput
+                RowLayout {
+                    visible: root.reminders.length > 0
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.xs
 
-                        Layout.fillWidth: true
-                        icon: "plus"
-                        placeholderText: qsTr("15m Take a break…")
-                        accessibleLabel: qsTr("Add reminder")
-                        onAccepted: root.submitQuickReminder()
+                    Badge {
+                        text: String(root.reminders.length)
+                        tone: "accent"
                     }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Tokens.space.xs
+                    Item { Layout.fillWidth: true }
 
-                        Repeater {
-                            model: [
-                                { l: "+5m", m: 5 },
-                                { l: "+15m", m: 15 },
-                                { l: "+30m", m: 30 },
-                                { l: "+1h", m: 60 }
-                            ]
-
-                            Button {
-                                required property var modelData
-
-                                Layout.fillWidth: true
-                                text: modelData.l
-                                size: "sm"
-                                variant: "secondary"
-                                onClicked: root.addReminder(modelData.m, "")
-                            }
-                        }
+                    Button {
+                        text: qsTr("Clear")
+                        size: "sm"
+                        variant: "ghost"
+                        accessibleLabel: qsTr("Clear all reminders")
+                        onClicked: root.clearReminders()
                     }
+                }
+
+                Item {
+                    id: remListSlot
+
+                    visible: root.reminders.length > 0
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: root.reminders.length > 0 ? root.remRowHeight : 0
 
                     ListView {
                         id: remList
 
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.reminders.length > 0
-                            ? Math.min(Tokens.px(124), contentHeight)
-                            : 0
-                        visible: root.reminders.length > 0
+                        readonly property int fitRows: Math.max(1, Math.floor((remListSlot.height + spacing) / (root.remRowHeight + spacing)))
+
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: Math.min(contentHeight, fitRows * root.remRowHeight + Math.max(0, fitRows - 1) * spacing)
                         clip: true
                         spacing: Tokens.space.xs
                         boundsBehavior: Flickable.StopAtBounds
                         model: root.reminders
 
-                        delegate: Surface {
+                        delegate: Item {
                             id: remCard
 
                             required property var modelData
 
                             width: remList.width
-                            role: "elevated"
-                            radius: Tokens.radius.sm
-                            horizontalPadding: Tokens.space.sm
-                            verticalPadding: Tokens.space.xs
-                            implicitHeight: remRow.implicitHeight + verticalPadding * 2
+                            height: root.remRowHeight
+                            activeFocusOnTab: true
+                            Accessible.role: Accessible.ListItem
+                            Accessible.name: (modelData.label ?? "") + " " + (modelData.remaining ?? "")
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: Tokens.radius.sm
+                                color: remHover.hovered
+                                    ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+                                    : Tokens.veilOf(Tokens.surfaceStyle)
+
+                                Behavior on color {
+                                    enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                    ColorAnimation { duration: Tokens.motion.fast }
+                                }
+                            }
+
+                            FocusRing {
+                                active: remCard.activeFocus
+                                ringRadius: Tokens.radius.sm
+                            }
 
                             RowLayout {
                                 id: remRow
 
-                                anchors.left: parent.left
-                                anchors.right: parent.right
+                                anchors.fill: parent
+                                anchors.leftMargin: Tokens.space.md
+                                anchors.rightMargin: Tokens.space.md
+                                anchors.topMargin: Tokens.space.sm
+                                anchors.bottomMargin: Tokens.space.sm
                                 spacing: Tokens.space.sm
 
                                 Icon {
@@ -633,17 +634,23 @@ WidgetSurface {
                                     onClicked: root.cancelReminder(remCard.modelData.timer ?? "")
                                 }
                             }
+
+                            HoverHandler {
+                                id: remHover
+                            }
                         }
                     }
+                }
 
-                    TextLabel {
-                        visible: root.reminders.length === 0
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignHCenter
-                        role: "caption"
-                        tone: "muted"
-                        text: qsTr("No active reminders")
-                    }
+                TextLabel {
+                    visible: root.reminders.length === 0
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    role: "caption"
+                    tone: "muted"
+                    text: qsTr("No active reminders")
                 }
             }
         }
