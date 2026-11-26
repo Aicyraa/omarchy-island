@@ -26,3 +26,4 @@ NotificationBadge 1.0 NotificationBadge.qml
 Keycap 1.0 Keycap.qml
 BarChart 1.0 BarChart.qml
 RadialGauge 1.0 RadialGauge.qml
+BezierCurveEditor 1.0 BezierCurveEditor.qml

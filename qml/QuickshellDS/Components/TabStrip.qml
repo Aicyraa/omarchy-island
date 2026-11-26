@@ -1,22 +1,32 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Layouts
 import "../Theme"
 import "../Primitives"
 
-Item {
+Rectangle {
     id: root
 
     property var tabs: [] // [{ id, label }]
     property string current: ""
+    property bool stretch: true
     property string accessibleLabel: qsTr("Tabs")
 
     signal picked(string id)
 
-    implicitWidth: row.implicitWidth + Tokens.space.xs
-    implicitHeight: root.tabs.length > 1 ? Tokens.size.controlSm + Tokens.space.xxs : 0
+    property Item activeTabItem: null
+
+    implicitWidth: row.implicitWidth + Tokens.space.xxs * 2
+    implicitHeight: root.tabs.length > 1 ? Tokens.size.controlSm + Tokens.space.xxs * 2 : 0
     visible: root.tabs.length > 1
+    radius: Tokens.radius.md
+    opacity: root.enabled ? 1.0 : 0.45
     activeFocusOnTab: root.enabled && root.visible
+
+    color: Tokens.veilOf(Tokens.surfaceStyle)
+    border.width: Tokens.hairlineWidth
+    border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
 
     Accessible.role: Accessible.PageTabList
     Accessible.name: root.accessibleLabel
@@ -31,15 +41,38 @@ Item {
 
     FocusRing {
         active: root.activeFocus
-        ringRadius: Tokens.radius.pill
+        ringRadius: root.radius
     }
 
-    Row {
+    Rectangle {
+        id: activePill
+
+        visible: root.activeTabItem !== null && root.activeTabItem.width > 0
+        x: root.activeTabItem ? row.x + root.activeTabItem.x : 0
+        y: row.y
+        width: root.activeTabItem ? root.activeTabItem.width : 0
+        height: root.activeTabItem ? root.activeTabItem.height : 0
+        radius: Tokens.innerRadius(root.radius, Tokens.space.xxs)
+        color: Tokens.color.accent
+
+        Behavior on x {
+            enabled: !Tokens.reducedMotion && !Tokens.gameMode
+            NumberAnimation { duration: Tokens.motion.fast; easing.type: Tokens.motion.easeOut }
+        }
+        Behavior on width {
+            enabled: !Tokens.reducedMotion && !Tokens.gameMode
+            NumberAnimation { duration: Tokens.motion.fast; easing.type: Tokens.motion.easeOut }
+        }
+    }
+
+    RowLayout {
         id: row
 
-        anchors.left: parent.left
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: Tokens.space.xs
+        x: Tokens.space.xxs
+        y: Tokens.space.xxs
+        width: root.stretch ? Math.max(0, root.width - Tokens.space.xxs * 2) : implicitWidth
+        height: Math.max(0, root.height - Tokens.space.xxs * 2)
+        spacing: Tokens.space.xxs
 
         Repeater {
             model: root.tabs
@@ -50,14 +83,24 @@ Item {
                 required property var modelData
                 readonly property bool isActive: tabPill.modelData.id === root.current
 
-                width: tabLabel.implicitWidth + Tokens.space.lg * 1.5
-                height: Tokens.size.controlSm - Tokens.space.xxs
-                radius: Tokens.radius.pill
+                onIsActiveChanged: {
+                    if (tabPill.isActive)
+                        root.activeTabItem = tabPill
+                    else if (root.activeTabItem === tabPill)
+                        root.activeTabItem = null
+                }
+                Component.onCompleted: {
+                    if (tabPill.isActive)
+                        root.activeTabItem = tabPill
+                }
+
+                Layout.fillHeight: true
+                Layout.fillWidth: root.stretch
+                Layout.preferredWidth: root.stretch ? 1 : (tabLabel.implicitWidth + Tokens.space.lg * 1.5)
+                radius: Tokens.innerRadius(root.radius, Tokens.space.xxs)
                 color: tabPill.isActive
-                    ? Tokens.color.accent
-                    : (tabHover.hovered ? Tokens.veilHoverOf(Tokens.surfaceStyle) : Tokens.veilOf(Tokens.surfaceStyle))
-                border.width: Tokens.hairlineWidth
-                border.color: tabPill.isActive ? Tokens.color.accent : Tokens.veilBorderOf(Tokens.surfaceStyle)
+                    ? "transparent"
+                    : (tabHover.hovered ? Tokens.veilHoverOf(Tokens.surfaceStyle) : "transparent")
 
                 Behavior on color {
                     enabled: !Tokens.reducedMotion && !Tokens.gameMode
@@ -68,10 +111,13 @@ Item {
                     id: tabLabel
 
                     anchors.centerIn: parent
+                    width: Math.min(implicitWidth, Math.max(0, parent.width - Tokens.space.sm * 2))
+                    horizontalAlignment: Text.AlignHCenter
                     role: "sm"
-                    tone: tabPill.isActive ? "onAccent" : "muted"
+                    tone: tabPill.isActive ? "onAccent" : (tabHover.hovered ? "primary" : "muted")
                     font.weight: tabPill.isActive ? Font.Medium : Font.Normal
                     text: tabPill.modelData.label ?? ""
+                    textFormat: Text.PlainText
                 }
 
                 HoverHandler {
