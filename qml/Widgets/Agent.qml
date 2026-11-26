@@ -12,7 +12,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 620
+    preferredWidth: 640
     scrollTarget: agentList
     hint: qsTr("R refresh · Esc close")
     dataLoading: !AgentUsage.loaded
@@ -22,6 +22,7 @@ WidgetSurface {
     readonly property bool loading: !AgentUsage.loaded
     readonly property real todayTokens: agents.reduce(function (s, a) { return s + (Number(a.today) || 0) }, 0)
     readonly property int activeCount: agents.filter(function (a) { return !!a.isRunning }).length
+    readonly property int gridRows: Math.ceil(agents.length / 2)
     property real now: Date.now()
 
     readonly property string headerDetail: {
@@ -29,9 +30,9 @@ WidgetSurface {
             return qsTr("Reading harness usage…")
         if (root.agents.length === 0)
             return qsTr("No active harnesses")
-        const parts = [root.fmt(root.todayTokens) + " tokens today"]
+        const parts = [root.fmt(root.todayTokens) + " " + qsTr("tokens today")]
         if (root.activeCount > 0)
-            parts.push(root.activeCount + " active")
+            parts.push(qsTr("%1 active").arg(root.activeCount))
         if (AgentUsage.fetchedAt > 0)
             parts.push(root.ago(AgentUsage.fetchedAt))
         return parts.join(" · ")
@@ -78,6 +79,10 @@ WidgetSurface {
         return String(Math.round(v))
     }
 
+    function fmtTokens(n: real): string {
+        return root.fmt(n)
+    }
+
     function mainLimit(agent: var): var {
         if (agent && agent.limits && agent.limits.length > 0)
             return agent.limits[0]
@@ -101,12 +106,12 @@ WidgetSurface {
 
     function cardUnit(agent: var): string {
         if (hasQuota(agent))
-            return "% quota"
+            return "%"
         if ((Number(agent.today) || 0) > 0)
-            return "tokens today"
+            return qsTr("tokens")
         if ((Number(agent.totalPrompts) || 0) > 0)
-            return "prompts"
-        return "tokens"
+            return qsTr("prompts")
+        return qsTr("tokens")
     }
 
     function barProgress(agent: var): real {
@@ -122,39 +127,41 @@ WidgetSurface {
     function barLeftText(agent: var): string {
         if (hasQuota(agent)) {
             const lim = mainLimit(agent)
-            const lbl = String(lim.label || qsTr("Quota"))
-            const st = String(agent.status || "")
-            return st !== "" ? (lbl + " · " + st) : lbl
+            return String(lim.label || qsTr("Window"))
         }
         const m = String(agent.topModel || "")
         if (m !== "")
-            return m.replace(/^claude-/, "").replace(/^gpt-/, "GPT-").slice(0, 28)
-        return agent.isDefault ? qsTr("Configured default harness") : qsTr("Local harness")
+            return m.replace(/^claude-/, "").replace(/^gpt-/, "GPT-").slice(0, 22)
+        return agent.isDefault ? qsTr("Default harness") : qsTr("Local harness")
     }
 
     function barRightText(agent: var): string {
         if (hasQuota(agent)) {
             const lim = mainLimit(agent)
             const r = resets(String(lim.resetsAt || ""))
-            return r !== "" ? r : qsTr("Active window")
+            if (r !== "")
+                return r
+            if ((Number(agent.today) || 0) > 0)
+                return fmtTokens(agent.today) + " " + qsTr("today")
+            return ""
         }
         const inT = Number(agent.inT) || 0
         const outT = Number(agent.outT) || 0
         if (inT + outT > 0)
-            return fmt(outT) + " out · " + fmt(inT) + " in"
+            return fmtTokens(outT) + " out · " + fmtTokens(inT) + " in"
         if ((Number(agent.sessions) || 0) > 0)
-            return agent.sessions + " sessions"
+            return qsTr("%1 sessions").arg(agent.sessions)
         return ""
     }
 
     function cardSubtext(agent: var): string {
         const parts = []
         if ((Number(agent.today) || 0) > 0 && hasQuota(agent))
-            parts.push(fmt(agent.today) + " tokens today")
+            parts.push(fmtTokens(agent.today) + " " + qsTr("today"))
         if ((Number(agent.week) || 0) > 0)
-            parts.push(agent.week + " msgs / 7d")
+            parts.push(fmtTokens(agent.week) + " / 7d")
         if ((Number(agent.cacheT) || 0) > 0)
-            parts.push(fmt(agent.cacheT) + " cached")
+            parts.push(fmtTokens(agent.cacheT) + " " + qsTr("cached"))
         return parts.join(" · ")
     }
 
@@ -185,7 +192,8 @@ WidgetSurface {
 
         DetailHeader {
             Layout.fillWidth: true
-            title: qsTr("AI Usage")
+            title: qsTr("AI Agents")
+            icon: "sparkles"
             detail: root.headerDetail
             backable: false
         }
@@ -199,6 +207,28 @@ WidgetSurface {
         }
     }
 
+    Card {
+        visible: root.loading && root.agents.length === 0
+        width: parent.width
+        implicitHeight: Tokens.px(88)
+
+        RowLayout {
+            anchors.centerIn: parent
+            spacing: Tokens.space.md
+
+            LoadingSpinner {
+                size: Tokens.size.iconMd
+                running: root.loading
+            }
+
+            TextLabel {
+                role: "sm"
+                tone: "muted"
+                text: qsTr("Reading harness usage…")
+            }
+        }
+    }
+
     EmptyState {
         visible: !root.loading && root.agents.length === 0
         width: parent.width
@@ -207,60 +237,72 @@ WidgetSurface {
         description: qsTr("Usage and quota metrics appear once an AI coding harness is active.")
     }
 
-    ListView {
+    GridView {
         id: agentList
 
         visible: root.agents.length > 0
         width: parent.width
-        height: Math.min(Tokens.px(390), Math.max(Tokens.px(120), contentHeight))
+        height: Math.min(Tokens.px(320), root.gridRows * cellHeight)
+        cellWidth: Tokens.px(294)
+        cellHeight: Tokens.px(154)
         clip: true
-        spacing: Tokens.space.sm
         boundsBehavior: Flickable.StopAtBounds
         model: root.agents
 
-        delegate: MetricCard {
-            id: agentCard
+        delegate: Item {
+            id: agentSlot
 
             required property var modelData
 
-            width: agentList.width
-            icon: root.glyph(String(agentCard.modelData.id ?? ""))
-            label: String(agentCard.modelData.name ?? "")
-                + (String(agentCard.modelData.tier ?? "") !== "" ? (" · " + agentCard.modelData.tier) : "")
-            value: root.cardValue(agentCard.modelData)
-            unit: root.cardUnit(agentCard.modelData)
-            delta: agentCard.modelData.isRunning ? qsTr("Running") : (agentCard.modelData.isDefault ? qsTr("Default") : "")
-            deltaTone: agentCard.modelData.isRunning ? "success" : "accent"
-            subtext: root.cardSubtext(agentCard.modelData)
+            width: agentList.cellWidth
+            height: agentList.cellHeight
 
-            ColumnLayout {
-                width: parent.width
-                spacing: Tokens.space.xs
+            MetricCard {
+                id: agentCard
 
-                UsageBar {
-                    Layout.fillWidth: true
-                    segmented: true
-                    segments: 16
-                    autoThreshold: true
-                    progress: root.barProgress(agentCard.modelData)
-                }
+                width: agentSlot.width - Tokens.space.sm
+                height: agentSlot.height - Tokens.space.sm
+                horizontalPadding: Tokens.space.lg
+                verticalPadding: Tokens.space.md
+                compact: true
+                icon: root.glyph(String(agentSlot.modelData.id ?? ""))
+                label: String(agentSlot.modelData.name ?? "")
+                    + (String(agentSlot.modelData.tier ?? "") !== "" ? (" · " + agentSlot.modelData.tier) : "")
+                value: root.cardValue(agentSlot.modelData)
+                unit: root.cardUnit(agentSlot.modelData)
+                delta: agentSlot.modelData.isRunning ? qsTr("Running") : (agentSlot.modelData.isDefault ? qsTr("Default") : "")
+                deltaTone: agentSlot.modelData.isRunning ? "success" : "accent"
+                subtext: root.cardSubtext(agentSlot.modelData)
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Tokens.space.sm
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Tokens.space.xs
 
-                    TextLabel {
+                    UsageBar {
                         Layout.fillWidth: true
-                        role: "caption"
-                        tone: "muted"
-                        text: root.barLeftText(agentCard.modelData)
+                        segmented: true
+                        segments: 14
+                        autoThreshold: true
+                        progress: root.barProgress(agentSlot.modelData)
                     }
 
-                    TextLabel {
-                        role: "caption"
-                        tone: "secondary"
-                        tabular: true
-                        text: root.barRightText(agentCard.modelData)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Tokens.space.xs
+
+                        TextLabel {
+                            Layout.fillWidth: true
+                            role: "sm"
+                            tone: "muted"
+                            text: root.barLeftText(agentSlot.modelData)
+                        }
+
+                        TextLabel {
+                            role: "sm"
+                            tone: "secondary"
+                            tabular: true
+                            text: root.barRightText(agentSlot.modelData)
+                        }
                     }
                 }
             }

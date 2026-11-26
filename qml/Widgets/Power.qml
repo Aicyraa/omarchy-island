@@ -8,56 +8,78 @@ import "../Services"
 import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 import "../QuickshellDS/Components"
+import "../QuickshellDS/Patterns"
 
 WidgetSurface {
     id: root
 
-    preferredWidth: 740
-    hint: qsTr("1-7 pick · ←/→ move · Enter confirm · Esc close")
+    preferredWidth: 600
+    readonly property bool capturesEscape: root.pendingIndex >= 0
+    hint: root.pendingIndex >= 0
+        ? qsTr("Enter confirm · Esc cancel")
+        : qsTr("1-%1 pick · ←/→ move · Enter confirm · Esc close").arg(root.visibleActions.length)
 
     property int sel: 0
     property int pendingIndex: -1
     property bool hibernateAvailable: false
     property bool restartNeeded: false
 
-    readonly property var actions: [
-        { icon: "lock",       title: qsTr("Lock"),        destructive: false, available: true,                    cmd: ["omarchy-system-lock"] },
-        { icon: "eye",        title: qsTr("Screensaver"), destructive: false, available: true,                    cmd: ["omarchy-launch-screensaver", "force"] },
-        { icon: "moon",       title: qsTr("Suspend"),     destructive: false, available: true,                    cmd: ["bash", "-c", "omarchy-system-lock; systemctl suspend"] },
-        { icon: "hard-drive", title: qsTr("Hibernate"),   destructive: false, available: root.hibernateAvailable, cmd: ["bash", "-c", "omarchy-system-lock; systemctl hibernate"] },
-        { icon: "log-out",    title: qsTr("Logout"),      destructive: false, available: true,                    cmd: ["omarchy-system", "logout"] },
-        { icon: "rotate-ccw", title: qsTr("Reboot"),      destructive: true,  available: true,                    cmd: ["omarchy-system", "reboot"] },
-        { icon: "power",      title: qsTr("Shutdown"),    destructive: true,  available: true,                    cmd: ["omarchy-system", "shutdown"] }
+    readonly property var sessionActions: {
+        const list = [
+            { icon: "lock",       title: qsTr("Lock"),        destructive: false, cmd: ["omarchy-system-lock"] },
+            { icon: "moon",       title: qsTr("Suspend"),     destructive: false, cmd: ["bash", "-c", "omarchy-system-lock; systemctl suspend"] }
+        ]
+        if (root.hibernateAvailable)
+            list.push({ icon: "hard-drive", title: qsTr("Hibernate"), destructive: false, cmd: ["bash", "-c", "omarchy-system-lock; systemctl hibernate"] })
+        list.push(
+            { icon: "log-out",    title: qsTr("Logout"),      destructive: false, cmd: ["omarchy-system", "logout"] },
+            { icon: "eye",        title: qsTr("Screensaver"), destructive: false, cmd: ["omarchy-launch-screensaver", "force"] }
+        )
+        return list
+    }
+
+    readonly property var destructiveActions: [
+        { icon: "rotate-ccw", title: qsTr("Reboot"),   destructive: true, cmd: ["omarchy-system", "reboot"] },
+        { icon: "power",      title: qsTr("Shutdown"), destructive: true, cmd: ["omarchy-system", "shutdown"] }
     ]
 
+    readonly property var visibleActions: root.sessionActions.concat(root.destructiveActions)
+
     function executeAction(idx: int): void {
-        if (idx < 0 || idx >= root.actions.length)
+        if (idx < 0 || idx >= root.visibleActions.length)
             return
-        const act = root.actions[idx]
-        if (!act.available)
-            return
+        const act = root.visibleActions[idx]
         root.pendingIndex = -1
         Cmd.run(act.cmd)
         IslandState.closeWidget()
     }
 
     function triggerAction(idx: int): void {
-        if (idx < 0 || idx >= root.actions.length)
+        if (idx < 0 || idx >= root.visibleActions.length)
             return
-        const act = root.actions[idx]
-        if (!act.available)
-            return
+        const act = root.visibleActions[idx]
         root.sel = idx
-        if (act.destructive)
+        if (act.destructive) {
             root.pendingIndex = idx
-        else
+            Qt.callLater(function () { confirmBtn.forceActiveFocus() })
+        } else {
             root.executeAction(idx)
+        }
     }
 
     Keys.onPressed: function (e) {
-        if (root.pendingIndex >= 0)
+        if (root.pendingIndex >= 0) {
+            if (e.key === Qt.Key_Escape) {
+                root.pendingIndex = -1
+                root.forceActiveFocus()
+                e.accepted = true
+            } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
+                root.executeAction(root.pendingIndex)
+                e.accepted = true
+            }
             return
-        const n = root.actions.length
+        }
+        const n = root.visibleActions.length
         if (e.key >= Qt.Key_1 && e.key < Qt.Key_1 + n) {
             root.triggerAction(e.key - Qt.Key_1)
             e.accepted = true
@@ -73,22 +95,124 @@ WidgetSurface {
         }
     }
 
+    component ActionTile: Surface {
+        id: tile
+
+        required property var actionData
+        required property int globalIndex
+
+        readonly property bool isSelected: root.sel === tile.globalIndex
+        readonly property bool isDestructive: !!tile.actionData.destructive
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: tile.isDestructive ? Tokens.px(88) : Tokens.px(92)
+        verticalPadding: Tokens.space.md
+        role: "card"
+        radius: Tokens.radius.md
+        hovered: tileHover.hovered
+        activeFocusOnTab: true
+        Accessible.role: Accessible.Button
+        Accessible.name: String(tile.actionData.title ?? "")
+
+        border.color: {
+            if (tile.isSelected)
+                return tile.isDestructive ? Tokens.color.danger : Tokens.color.accent
+            return Tokens.veilBorderOf(Tokens.surfaceStyle)
+        }
+
+        onActiveFocusChanged: {
+            if (tile.activeFocus)
+                root.sel = tile.globalIndex
+        }
+
+        Keys.onReturnPressed: root.triggerAction(tile.globalIndex)
+        Keys.onSpacePressed: root.triggerAction(tile.globalIndex)
+
+        FocusRing {
+            active: tile.activeFocus
+            ringRadius: tile.radius
+        }
+
+        Keycap {
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.topMargin: Tokens.space.sm
+            anchors.rightMargin: Tokens.space.sm
+            text: String(tile.globalIndex + 1)
+            size: "sm"
+        }
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            width: parent.width - Tokens.space.sm * 2
+            spacing: Tokens.space.xs
+
+            Icon {
+                Layout.alignment: Qt.AlignHCenter
+                icon: String(tile.actionData.icon ?? "")
+                size: Tokens.size.iconLg
+                framed: true
+                tone: tile.isDestructive
+                    ? "danger"
+                    : (tile.isSelected ? "accent" : "primary")
+            }
+
+            TextLabel {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                role: "sm"
+                font.weight: Font.Medium
+                tone: tile.isDestructive ? "danger" : "primary"
+                text: String(tile.actionData.title ?? "")
+            }
+        }
+
+        HoverHandler {
+            id: tileHover
+
+            cursorShape: Qt.PointingHandCursor
+        }
+
+        TapHandler {
+            onTapped: root.triggerAction(tile.globalIndex)
+        }
+    }
+
     Item {
         id: stage
 
         width: parent.width
-        implicitHeight: Math.max(mainCol.implicitHeight, confirmDialog.open ? Tokens.px(210) : 0)
+        implicitHeight: root.pendingIndex >= 0 ? confirmCard.implicitHeight : mainCol.implicitHeight
 
         ColumnLayout {
             id: mainCol
 
             width: parent.width
             spacing: Tokens.space.md
+            visible: opacity > 0
+            opacity: root.pendingIndex < 0 ? 1.0 : 0.0
 
-            Badge {
-                visible: root.restartNeeded
-                text: qsTr("Restart needed")
-                tone: "warning"
+            Behavior on opacity {
+                enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                NumberAnimation { duration: Tokens.motion.fast; easing.type: Tokens.motion.easeOut }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.space.sm
+
+                DetailHeader {
+                    Layout.fillWidth: true
+                    title: qsTr("Power")
+                    icon: "power"
+                    backable: false
+                }
+
+                Badge {
+                    visible: root.restartNeeded
+                    text: qsTr("Restart needed")
+                    tone: "warning"
+                }
             }
 
             RowLayout {
@@ -96,102 +220,132 @@ WidgetSurface {
                 spacing: Tokens.space.sm
 
                 Repeater {
-                    model: root.actions
+                    model: root.sessionActions
 
-                    delegate: Surface {
-                        id: tile
-
+                    delegate: ActionTile {
                         required property var modelData
                         required property int index
 
-                        readonly property bool isSelected: root.sel === tile.index
-                        readonly property bool isDestructive: !!tile.modelData.destructive
-                        readonly property bool isAvailable: !!tile.modelData.available
+                        actionData: modelData
+                        globalIndex: index
+                    }
+                }
+            }
 
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Tokens.px(102)
-                        role: "card"
-                        radius: Tokens.radius.md
-                        hovered: tileHover.hovered
-                        opacity: tile.isAvailable ? 1.0 : 0.42
-                        border.color: {
-                            if (tile.isSelected)
-                                return tile.isDestructive ? Tokens.color.danger : Tokens.color.accent
-                            return Tokens.veilBorderOf(Tokens.surfaceStyle)
-                        }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.space.sm
 
-                        FocusRing {
-                            active: tile.activeFocus
-                            ringRadius: tile.radius
-                        }
+                TextLabel {
+                    role: "caption"
+                    tone: "muted"
+                    font.weight: Font.Medium
+                    font.capitalization: Font.AllUppercase
+                    text: qsTr("System")
+                }
 
-                        Keycap {
-                            anchors.top: parent.top
-                            anchors.right: parent.right
-                            anchors.topMargin: Tokens.space.xs
-                            anchors.rightMargin: Tokens.space.xs
-                            text: String(tile.index + 1)
-                            size: "sm"
-                        }
+                Separator {
+                    Layout.fillWidth: true
+                }
+            }
 
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            width: parent.width - Tokens.space.sm * 2
-                            spacing: Tokens.space.xs
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.space.sm
 
-                            Icon {
-                                Layout.alignment: Qt.AlignHCenter
-                                icon: String(tile.modelData.icon ?? "")
-                                size: Tokens.size.iconLg
-                                framed: true
-                                tone: tile.isDestructive
-                                    ? "danger"
-                                    : (tile.isSelected ? "accent" : "primary")
-                            }
+                Repeater {
+                    model: root.destructiveActions
 
-                            TextLabel {
-                                Layout.fillWidth: true
-                                horizontalAlignment: Text.AlignHCenter
-                                role: "sm"
-                                font.weight: Font.Medium
-                                tone: tile.isDestructive ? "danger" : "primary"
-                                text: String(tile.modelData.title ?? "")
-                            }
-                        }
+                    delegate: ActionTile {
+                        required property var modelData
+                        required property int index
 
-                        HoverHandler {
-                            id: tileHover
-
-                            enabled: tile.isAvailable
-                            cursorShape: tile.isAvailable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        }
-
-                        TapHandler {
-                            enabled: tile.isAvailable
-                            onTapped: root.triggerAction(tile.index)
-                        }
+                        actionData: modelData
+                        globalIndex: root.sessionActions.length + index
                     }
                 }
             }
         }
 
-        ConfirmDialog {
-            id: confirmDialog
+        Card {
+            id: confirmCard
 
-            open: root.pendingIndex >= 0
-            destructive: true
-            title: root.pendingIndex >= 0
-                ? qsTr("%1 now?").arg(String(root.actions[root.pendingIndex].title))
-                : qsTr("Confirm")
-            message: root.pendingIndex >= 0
-                ? qsTr("This will immediately %1 the machine.").arg(String(root.actions[root.pendingIndex].title).toLowerCase())
-                : ""
-            confirmText: root.pendingIndex >= 0
-                ? String(root.actions[root.pendingIndex].title)
-                : qsTr("Confirm")
-            cancelText: qsTr("Cancel")
-            onConfirmed: root.executeAction(root.pendingIndex)
-            onCancelled: root.pendingIndex = -1
+            width: parent.width
+            implicitHeight: confirmBody.implicitHeight + verticalPadding * 2
+            visible: opacity > 0
+            opacity: root.pendingIndex >= 0 ? 1.0 : 0.0
+
+            Behavior on opacity {
+                enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                NumberAnimation { duration: Tokens.motion.fast; easing.type: Tokens.motion.easeOut }
+            }
+
+            ColumnLayout {
+                id: confirmBody
+
+                width: parent.width
+                spacing: Tokens.space.md
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.md
+
+                    Icon {
+                        icon: root.pendingIndex >= 0 ? String(root.visibleActions[root.pendingIndex].icon ?? "power") : "power"
+                        size: Tokens.size.iconLg
+                        tone: "danger"
+                        framed: true
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: Tokens.space.xxs
+
+                        TextLabel {
+                            Layout.fillWidth: true
+                            role: "title"
+                            font.weight: Font.Medium
+                            text: root.pendingIndex >= 0
+                                ? qsTr("%1 now?").arg(String(root.visibleActions[root.pendingIndex].title))
+                                : ""
+                        }
+
+                        TextLabel {
+                            Layout.fillWidth: true
+                            singleLine: false
+                            role: "sm"
+                            tone: "muted"
+                            text: qsTr("Unsaved work in open apps may be lost.")
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.sm
+
+                    Item { Layout.fillWidth: true }
+
+                    Button {
+                        text: qsTr("Cancel")
+                        variant: "secondary"
+                        onClicked: {
+                            root.pendingIndex = -1
+                            root.forceActiveFocus()
+                        }
+                    }
+
+                    Button {
+                        id: confirmBtn
+
+                        text: root.pendingIndex >= 0
+                            ? String(root.visibleActions[root.pendingIndex].title)
+                            : qsTr("Confirm")
+                        variant: "danger"
+                        onClicked: root.executeAction(root.pendingIndex)
+                    }
+                }
+            }
         }
     }
 
