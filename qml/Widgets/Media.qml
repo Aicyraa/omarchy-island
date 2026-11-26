@@ -15,7 +15,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 480
+    preferredWidth: 540
     hint: qsTr("Space play/pause · ←/→ seek · ↑/↓ volume · Esc close")
 
     property int selectedIndex: 0
@@ -62,8 +62,6 @@ WidgetSurface {
             parts.push(trackArtist)
         if (rawAlbum !== "")
             parts.push(rawAlbum)
-        if (parts.length === 0 && player && player.identity)
-            parts.push(String(player.identity))
         return parts.join(" · ")
     }
 
@@ -83,6 +81,8 @@ WidgetSurface {
     }
 
     readonly property bool hasLength: player !== null && player.lengthSupported && player.length > 0
+    readonly property bool playing: player !== null && player.isPlaying
+    readonly property real duration: hasLength ? player.length : 0
     readonly property bool seekable: hasLength && player.canSeek
 
     function fmtTime(sec: real): string {
@@ -159,9 +159,18 @@ WidgetSurface {
         event.accepted = true
     }
 
-    // Multi-player switcher pills
-    Row {
-        visible: root.players.length > 1
+    // Empty state when no MPRIS player is active
+    EmptyState {
+        visible: root.player === null
+        width: parent.width
+        icon: "music"
+        title: qsTr("Nothing playing")
+        description: qsTr("Start music or video to control playback here")
+    }
+
+    // Multi-player switcher pills (wrapping Flow)
+    Flow {
+        visible: root.player !== null && root.players.length > 1
         width: parent.width
         spacing: Tokens.space.xs
 
@@ -177,43 +186,88 @@ WidgetSurface {
                 variant: "secondary"
                 active: index === root.clampedIndex
                 text: modelData.identity || qsTr("Player %1").arg(index + 1)
+                accessibleLabel: qsTr("Switch to %1").arg(text)
                 onClicked: root.selectedIndex = index
             }
         }
     }
 
-    // Empty state when no MPRIS player is active
-    EmptyState {
-        visible: root.player === null
-        width: parent.width
-        icon: "music"
-        title: qsTr("Nothing playing")
-        description: qsTr("Start audio or media in any app")
+    // Quiet single-line source pill when only one player is active
+    Rectangle {
+        visible: root.player !== null && root.players.length === 1 && (root.player.identity || "") !== ""
+        implicitWidth: sourcePillRow.implicitWidth + Tokens.space.md * 2
+        implicitHeight: Tokens.px(24)
+        radius: Tokens.radius.pill
+        color: Tokens.veilOf(Tokens.surfaceStyle)
+        border.width: Tokens.hairlineWidth
+        border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
+
+        RowLayout {
+            id: sourcePillRow
+
+            anchors.centerIn: parent
+            spacing: Tokens.space.xs
+
+            Icon {
+                icon: "music"
+                size: Tokens.size.iconXs
+                tone: "muted"
+            }
+
+            TextLabel {
+                role: "caption"
+                tone: "muted"
+                text: root.player ? (root.player.identity || "") : ""
+            }
+        }
     }
 
     // Active player hero card
     Card {
+        id: heroCard
+
         visible: root.player !== null
         width: parent.width
-        horizontalPadding: Tokens.space.lg
-        verticalPadding: Tokens.space.lg
-        implicitHeight: heroCol.implicitHeight + verticalPadding * 2
+        horizontalPadding: 0
+        verticalPadding: 0
+        implicitHeight: heroCol.implicitHeight + Tokens.space.lg * 2
+
+        // Subtle tinted album-art ambient backdrop scrim
+        ClippingRectangle {
+            anchors.fill: parent
+            radius: heroCard.radius
+            color: "transparent"
+            visible: coverImg.status === Image.Ready
+
+            Image {
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                sourceSize: Qt.size(Tokens.px(64), Tokens.px(64))
+                source: root.artUrl
+                opacity: 0.14
+            }
+        }
 
         ColumnLayout {
             id: heroCol
 
-            width: parent.width
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: Tokens.space.lg
             spacing: Tokens.space.md
 
+            // Top row: 84x84 cover art + 2-line title/subtitle + compact non-progress Visualizer
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Tokens.space.lg
 
-                // 96x96 rounded album art with Vinyl spinning fallback
                 Item {
-                    Layout.preferredWidth: Tokens.px(96)
-                    Layout.preferredHeight: Tokens.px(96)
-                    Layout.alignment: Qt.AlignTop
+                    Layout.preferredWidth: Tokens.px(84)
+                    Layout.preferredHeight: Tokens.px(84)
+                    Layout.alignment: Qt.AlignVCenter
 
                     ClippingRectangle {
                         anchors.fill: parent
@@ -228,7 +282,7 @@ WidgetSurface {
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
                             cache: true
-                            sourceSize: Qt.size(Tokens.px(192), Tokens.px(192))
+                            sourceSize: Qt.size(Tokens.px(168), Tokens.px(168))
                             source: root.artUrl
                         }
                     }
@@ -240,7 +294,6 @@ WidgetSurface {
                     }
                 }
 
-                // Track metadata + transport controls
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
@@ -250,6 +303,9 @@ WidgetSurface {
                         Layout.fillWidth: true
                         role: "title"
                         font.weight: Font.Medium
+                        singleLine: false
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
                         text: root.trackTitle !== "" ? root.trackTitle : qsTr("Unknown track")
                     }
 
@@ -260,100 +316,117 @@ WidgetSurface {
                         tone: "muted"
                         text: root.trackSubtitle
                     }
+                }
 
-                    RowLayout {
-                        Layout.topMargin: Tokens.space.xs
-                        spacing: Tokens.space.xs
-
-                        Button {
-                            icon: "shuffle"
-                            variant: "ghost"
-                            shape: "circle"
-                            size: "sm"
-                            active: root.player !== null && root.player.shuffle
-                            enabled: root.player !== null && root.player.shuffleSupported
-                            accessibleLabel: qsTr("Shuffle")
-                            onClicked: {
-                                if (root.player && root.player.shuffleSupported)
-                                    root.player.shuffle = !root.player.shuffle
-                            }
-                        }
-
-                        Button {
-                            icon: "skip-back"
-                            variant: "ghost"
-                            shape: "circle"
-                            size: "md"
-                            enabled: root.player !== null && root.player.canGoPrevious
-                            accessibleLabel: qsTr("Previous track")
-                            onClicked: {
-                                if (root.player)
-                                    root.player.previous()
-                            }
-                        }
-
-                        Button {
-                            icon: root.player !== null && root.player.isPlaying ? "pause" : "play"
-                            variant: "primary"
-                            shape: "circle"
-                            size: "lg"
-                            enabled: root.player !== null && (root.player.canPlay || root.player.canPause)
-                            accessibleLabel: root.player !== null && root.player.isPlaying ? qsTr("Pause") : qsTr("Play")
-                            onClicked: {
-                                if (root.player)
-                                    root.player.togglePlaying()
-                            }
-                        }
-
-                        Button {
-                            icon: "skip-forward"
-                            variant: "ghost"
-                            shape: "circle"
-                            size: "md"
-                            enabled: root.player !== null && root.player.canGoNext
-                            accessibleLabel: qsTr("Next track")
-                            onClicked: {
-                                if (root.player)
-                                    root.player.next()
-                            }
-                        }
-
-                        Button {
-                            icon: "repeat"
-                            variant: "ghost"
-                            shape: "circle"
-                            size: "sm"
-                            active: root.player !== null && root.player.loopState !== MprisLoopState.None
-                            enabled: root.player !== null && root.player.loopSupported
-                            accessibleLabel: qsTr("Repeat")
-                            onClicked: root.cycleLoop()
-                        }
-                    }
+                Visualizer {
+                    visible: root.playing
+                    Layout.preferredWidth: Tokens.px(64)
+                    Layout.preferredHeight: Tokens.px(28)
+                    Layout.alignment: Qt.AlignVCenter
+                    bars: 12
+                    mirror: true
+                    progress: -1
+                    active: root.playing && root.visible
                 }
             }
 
-            // Live mirrored visualizer
-            Visualizer {
+            // Full-width centered 5-control transport bar
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Tokens.px(28)
-                active: root.player !== null && root.player.isPlaying && root.visible
-                mirror: true
-                progress: root.hasLength ? Math.max(0, Math.min(1, root.player.position / root.player.length)) : -1
+                spacing: Tokens.space.md
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    icon: "shuffle"
+                    variant: "ghost"
+                    shape: "circle"
+                    size: "sm"
+                    active: root.player !== null && root.player.shuffle
+                    enabled: root.player !== null && root.player.shuffleSupported
+                    accessibleLabel: qsTr("Shuffle")
+                    onClicked: {
+                        if (root.player && root.player.shuffleSupported)
+                            root.player.shuffle = !root.player.shuffle
+                    }
+                }
+
+                Button {
+                    icon: "skip-back"
+                    variant: "ghost"
+                    shape: "circle"
+                    size: "md"
+                    enabled: root.player !== null && root.player.canGoPrevious
+                    accessibleLabel: qsTr("Previous track")
+                    onClicked: {
+                        if (root.player)
+                            root.player.previous()
+                    }
+                }
+
+                Button {
+                    icon: root.player !== null && root.player.isPlaying ? "pause" : "play"
+                    variant: "primary"
+                    shape: "circle"
+                    size: "lg"
+                    enabled: root.player !== null && (root.player.canPlay || root.player.canPause)
+                    accessibleLabel: root.player !== null && root.player.isPlaying ? qsTr("Pause") : qsTr("Play")
+                    onClicked: {
+                        if (root.player)
+                            root.player.togglePlaying()
+                    }
+                }
+
+                Button {
+                    icon: "skip-forward"
+                    variant: "ghost"
+                    shape: "circle"
+                    size: "md"
+                    enabled: root.player !== null && root.player.canGoNext
+                    accessibleLabel: qsTr("Next track")
+                    onClicked: {
+                        if (root.player)
+                            root.player.next()
+                    }
+                }
+
+                Button {
+                    icon: "repeat"
+                    variant: "ghost"
+                    shape: "circle"
+                    size: "sm"
+                    active: root.player !== null && root.player.loopState !== MprisLoopState.None
+                    enabled: root.player !== null && root.player.loopSupported
+                    accessibleLabel: qsTr("Repeat")
+                    onClicked: root.cycleLoop()
+                }
+
+                Item { Layout.fillWidth: true }
             }
 
-            // Scrubbing slider + tabular elapsed & total time
-            ColumnLayout {
+            // Thin scrubbing slider with 48 px tabular elapsed/total timestamps
+            RowLayout {
+                visible: root.duration > 0
                 Layout.fillWidth: true
-                spacing: Tokens.space.xxs
+                spacing: Tokens.space.sm
+
+                TextLabel {
+                    Layout.preferredWidth: Tokens.px(48)
+                    horizontalAlignment: Text.AlignLeft
+                    role: "mono"
+                    tabular: true
+                    tone: "muted"
+                    text: root.fmtTime(root.player ? root.player.position : 0)
+                }
 
                 Slider {
                     Layout.fillWidth: true
                     style: "thin"
                     showReadout: false
                     from: 0
-                    to: root.hasLength ? root.player.length : 1
+                    to: root.duration > 0 ? root.duration : 1
                     stepSize: 1
-                    value: root.hasLength ? Math.min(root.player.length, Math.max(0, root.player.position)) : 0
+                    value: root.duration > 0 ? Math.min(root.duration, Math.max(0, root.player.position)) : 0
                     enabled: root.seekable
                     accessibleLabel: qsTr("Playback position")
                     onMoved: val => {
@@ -362,72 +435,15 @@ WidgetSurface {
                     }
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-
-                    TextLabel {
-                        role: "mono"
-                        tabular: true
-                        tone: "muted"
-                        text: root.fmtTime(root.player ? root.player.position : 0)
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    TextLabel {
-                        role: "mono"
-                        tabular: true
-                        tone: "muted"
-                        text: root.hasLength ? root.fmtTime(root.player.length) : "--:--"
-                    }
+                TextLabel {
+                    Layout.preferredWidth: Tokens.px(48)
+                    horizontalAlignment: Text.AlignRight
+                    role: "mono"
+                    tabular: true
+                    tone: "muted"
+                    text: root.duration > 0 ? root.fmtTime(root.duration) : "--:--"
                 }
             }
-        }
-    }
-
-    // Bottom master output volume row + Mixer button
-    RowLayout {
-        width: parent.width
-        spacing: Tokens.space.sm
-
-        VolumeIcon {
-            Layout.alignment: Qt.AlignVCenter
-            level: Audio.volume
-            muted: Audio.muted
-            size: Tokens.size.iconMd
-        }
-
-        Slider {
-            Layout.fillWidth: true
-            style: "pill"
-            from: 0
-            to: 1.5
-            stepSize: 0.05
-            showReadout: false
-            dimmed: Audio.muted || !Audio.hasSink
-            enabled: Audio.hasSink
-            value: Audio.volume
-            accessibleLabel: qsTr("Master output volume")
-            onMoved: val => Audio.setVolume(val)
-        }
-
-        TextLabel {
-            Layout.alignment: Qt.AlignVCenter
-            Layout.preferredWidth: Tokens.px(38)
-            horizontalAlignment: Text.AlignRight
-            role: "mono"
-            tabular: true
-            tone: Audio.muted ? "muted" : "secondary"
-            text: Math.round(Audio.volume * 100) + "%"
-        }
-
-        Button {
-            text: qsTr("Mixer")
-            icon: "sliders-horizontal"
-            variant: "ghost"
-            size: "sm"
-            accessibleLabel: qsTr("Open audio mixer")
-            onClicked: IslandState.openWidget("audio")
         }
     }
 }

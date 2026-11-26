@@ -15,9 +15,9 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 500
+    preferredWidth: 560
     useReserve: false
-    scrollTarget: (!root.sharing && Net.hasWifi && Net.enabled && root.nets.length > 0) ? netList : null
+    scrollTarget: (!root.sharing && Net.hasWifi && Net.enabled && root.availNets.length > 0) ? netList : null
     hint: qsTr("↑/↓ select · Enter connect · D disconnect · W radio · R rescan · Q share · Esc close")
     readonly property bool capturesEscape: root.sharing || root.passwordSsid !== ""
 
@@ -29,6 +29,9 @@ WidgetSurface {
     property string passwordError: ""
     property var qr: ({ rows: [], size: 0, ssid: "", error: "" })
     readonly property var nets: Net.networks
+    readonly property var availNets: (Net.hasWifi && Net.enabled && Net.connected)
+        ? root.nets.filter(n => !n.connected)
+        : root.nets
 
     function band(f: var): string {
         const n = parseFloat(f)
@@ -46,9 +49,7 @@ WidgetSurface {
     }
 
     function subtitleOf(n: var): string {
-        if (!n) return ""
-        return n.connected ? qsTr("Connected")
-            : (n.known ? qsTr("Saved") : (secured(n) ? qsTr("Secured") : qsTr("Open")))
+        return (n && n.known) ? qsTr("Saved") : ""
     }
 
     function connectNetwork(n: var): void {
@@ -60,9 +61,6 @@ WidgetSurface {
         } else {
             passwordSsid = (passwordSsid === n.name) ? "" : n.name
             passwordError = ""
-            passwordField.text = ""
-            if (passwordSsid !== "")
-                passwordTimer.restart()
         }
     }
 
@@ -71,10 +69,14 @@ WidgetSurface {
             passwordError = qsTr("Password required")
             return
         }
+        if (!ssid || ssid.charAt(0) === "-") {
+            passwordError = qsTr("Invalid network name")
+            return
+        }
         passwordError = ""
-        Cmd.run(["nmcli", "device", "wifi", "connect", ssid, "password", pw])
+        Cmd.runSecret(["nmcli", "device", "wifi", "connect", ssid, "password", pw])
         passwordSsid = ""
-        passwordField.text = ""
+        root.forceActiveFocus()
     }
 
     function rescan(): void {
@@ -105,12 +107,6 @@ WidgetSurface {
     function refreshInfo(): void {
         if (Net.connected && !infoProc.running)
             infoProc.running = true
-    }
-
-    Timer {
-        id: passwordTimer
-        interval: 40
-        onTriggered: passwordField.focusInput()
     }
 
     Timer {
@@ -214,6 +210,7 @@ WidgetSurface {
         if (event.key === Qt.Key_Escape && root.passwordSsid !== "") {
             root.passwordSsid = ""
             root.passwordError = ""
+            root.forceActiveFocus()
             event.accepted = true
             return
         }
@@ -223,14 +220,14 @@ WidgetSurface {
             root.toggleShare()
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
-            root.sel = Math.min(root.sel + 1, Math.max(0, root.nets.length - 1))
+            root.sel = Math.min(root.sel + 1, Math.max(0, root.availNets.length - 1))
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             root.sel = Math.max(root.sel - 1, 0)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (root.nets[root.sel])
-                root.connectNetwork(root.nets[root.sel])
+            if (root.availNets[root.sel])
+                root.connectNetwork(root.availNets[root.sel])
             event.accepted = true
         } else if (event.key === Qt.Key_D) {
             if (Net.active) Net.active.disconnect()
@@ -249,21 +246,14 @@ WidgetSurface {
         width: parent.width
         spacing: Tokens.space.sm
 
-        Icon {
-            icon: Net.enabled ? "wifi" : "wifi-off"
-            size: Tokens.size.iconXl
-            tone: Net.connected ? "accent" : "muted"
-            framed: true
-        }
-
         DetailHeader {
             Layout.fillWidth: true
             backable: false
             title: qsTr("Wi-Fi")
+            icon: Net.enabled ? "wifi" : "wifi-off"
             detail: !Net.hasWifi
-                ? qsTr("No Wi-Fi adapter")
-                : (!Net.enabled ? qsTr("Radio is off")
-                    : (Net.connected ? Net.ssid : (root.scanning ? qsTr("Scanning…") : qsTr("Select a network"))))
+                ? qsTr("Adapter unavailable")
+                : (!Net.enabled ? qsTr("Radio off") : "")
         }
 
         Button {
@@ -349,19 +339,15 @@ WidgetSurface {
                         autoThreshold: true
                     }
 
-                    RowLayout {
+                    TextLabel {
                         Layout.fillWidth: true
-                        spacing: Tokens.space.sm
-
-                        TextLabel {
-                            role: "caption"
-                            tone: "muted"
-                            tabular: true
-                            text: root.quality(Net.strength)
-                                + (root.info.ip ? " · " + root.info.ip : "")
-                                + (root.band(root.info.freq) ? " · " + root.band(root.info.freq) : "")
-                                + (root.info.bitrate ? " · " + String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "")
-                        }
+                        role: "caption"
+                        tone: "muted"
+                        tabular: true
+                        text: root.quality(Net.strength)
+                            + (root.info.ip ? " · " + root.info.ip : "")
+                            + (root.band(root.info.freq) ? " · " + root.band(root.info.freq) : "")
+                            + (root.info.bitrate ? " · " + String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "")
                     }
                 }
 
@@ -374,23 +360,70 @@ WidgetSurface {
                 }
             }
 
-            // Inline QR share view
-            ColumnLayout {
+            // Balanced side-by-side QR share view
+            Rectangle {
                 visible: root.sharing
                 Layout.fillWidth: true
-                spacing: Tokens.space.sm
+                Layout.preferredHeight: Tokens.hairlineWidth
+                color: Tokens.color.hairline
+            }
+
+            RowLayout {
+                visible: root.sharing
+                Layout.fillWidth: true
+                spacing: Tokens.space.lg
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: Tokens.space.xs
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "subtitle"
+                        font.weight: Font.Medium
+                        text: qsTr("Share Wi-Fi")
+                    }
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "body"
+                        tone: "accent"
+                        font.weight: Font.Medium
+                        text: root.qr.ssid || Net.ssid
+                    }
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "sm"
+                        tone: "muted"
+                        singleLine: false
+                        text: qsTr("Scan this QR code with your phone camera to join automatically.")
+                    }
+
+                    TextLabel {
+                        visible: root.band(root.info.freq) !== "" || root.info.ip !== undefined
+                        Layout.fillWidth: true
+                        role: "caption"
+                        tone: "muted"
+                        tabular: true
+                        text: (root.band(root.info.freq) ? root.band(root.info.freq) : "")
+                            + (root.band(root.info.freq) && root.info.ip ? " · " : "")
+                            + (root.info.ip ? root.info.ip : "")
+                    }
+                }
 
                 Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: Tokens.px(200)
-                    height: Tokens.px(200)
+                    Layout.preferredWidth: Tokens.px(160)
+                    Layout.preferredHeight: Tokens.px(160)
+                    Layout.alignment: Qt.AlignVCenter
                     radius: Tokens.radius.md
                     color: "#ffffff"
 
                     Canvas {
                         id: codeCanvas
                         anchors.fill: parent
-                        anchors.margins: Tokens.space.sm
+                        anchors.margins: Tokens.space.xs
                         onPaint: {
                             const ctx = getContext("2d")
                             ctx.reset()
@@ -417,187 +450,228 @@ WidgetSurface {
                     TextLabel {
                         visible: root.qr.size === 0
                         anchors.centerIn: parent
-                        width: parent.width - Tokens.space.lg
+                        width: parent.width - Tokens.space.md
                         horizontalAlignment: Text.AlignHCenter
                         singleLine: false
+                        role: "caption"
                         color: "#000000"
-                        text: root.qr.error !== "" ? root.qr.error : qsTr("Generating QR code…")
+                        text: root.qr.error !== "" ? root.qr.error : qsTr("Generating QR…")
                     }
-                }
-
-                TextLabel {
-                    Layout.alignment: Qt.AlignHCenter
-                    role: "caption"
-                    tone: "muted"
-                    text: qsTr("Scan with a phone to join %1").arg(root.qr.ssid)
-                }
-            }
-        }
-    }
-
-    // ── INLINE PASSWORD PROMPT ──────────────────────────────────────────────────
-    Card {
-        visible: Net.hasWifi && Net.enabled && !root.sharing && root.passwordSsid !== ""
-        width: parent.width
-        horizontalPadding: Tokens.space.lg
-        verticalPadding: Tokens.space.md
-        implicitHeight: pwCol.implicitHeight + verticalPadding * 2
-
-        ColumnLayout {
-            id: pwCol
-            width: parent.width
-            spacing: Tokens.space.sm
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                TextLabel {
-                    Layout.fillWidth: true
-                    role: "sm"
-                    font.weight: Font.Medium
-                    text: qsTr("Connect to %1").arg(root.passwordSsid)
-                }
-
-                Button {
-                    icon: "close"
-                    variant: "ghost"
-                    size: "sm"
-                    accessibleLabel: qsTr("Cancel password entry")
-                    onClicked: {
-                        root.passwordSsid = ""
-                        root.passwordError = ""
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                TextField {
-                    id: passwordField
-                    Layout.fillWidth: true
-                    icon: "lock"
-                    placeholderText: qsTr("Enter Wi-Fi password")
-                    errorText: root.passwordError
-                    accessibleLabel: qsTr("Wi-Fi password")
-                    onAccepted: root.submitPassword(root.passwordSsid, passwordField.text)
-                }
-
-                Button {
-                    text: qsTr("Join")
-                    variant: "primary"
-                    size: "md"
-                    onClicked: root.submitPassword(root.passwordSsid, passwordField.text)
                 }
             }
         }
     }
 
     // ── AVAILABLE NETWORKS LIST ─────────────────────────────────────────────────
-    ListView {
-        id: netList
-
-        visible: Net.hasWifi && Net.enabled && !root.sharing && root.nets.length > 0
+    Surface {
+        visible: Net.hasWifi && Net.enabled && !root.sharing && root.availNets.length > 0
         width: parent.width
-        height: Math.min(contentHeight, Tokens.px(250))
-        spacing: Tokens.space.xs
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        model: root.nets
+        role: "card"
+        horizontalPadding: Tokens.space.sm
+        verticalPadding: Tokens.space.sm
+        radius: Tokens.radius.md
+        implicitHeight: Math.min(Tokens.px(48) * 5, netList.contentHeight) + verticalPadding * 2
 
-        delegate: Card {
-            id: netRow
+        ListView {
+            id: netList
 
-            required property var modelData
-            required property int index
+            anchors.fill: parent
+            spacing: 0
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            model: root.availNets
 
-            width: netList.width
-            horizontalPadding: Tokens.space.lg
-            verticalPadding: Tokens.space.md
-            hovered: rowHover.hovered || root.sel === netRow.index
-            implicitHeight: netRowLayout.implicitHeight + verticalPadding * 2
+            delegate: Item {
+                id: netRow
 
-            FocusRing {
-                active: root.sel === netRow.index
-                ringRadius: netRow.radius
-            }
+                required property var modelData
+                required property int index
 
-            RowLayout {
-                id: netRowLayout
-                width: parent.width
-                spacing: Tokens.space.md
+                property bool showPw: false
+                readonly property bool askingPw: root.passwordSsid !== "" && root.passwordSsid === netRow.modelData.name
 
-                WifiIcon {
-                    level: netRow.modelData.signalStrength
-                    size: Tokens.size.iconMd
-                    color: netRow.modelData.connected ? Tokens.color.accent : Tokens.color.text
+                onAskingPwChanged: {
+                    if (askingPw) {
+                        showPw = false
+                        inlinePwField.text = ""
+                        Qt.callLater(() => {
+                            inlinePwField.focusInput()
+                            root.reveal(netRow)
+                        })
+                    }
+                }
+
+                width: netList.width
+                implicitHeight: netRow.askingPw
+                    ? (netRowCol.implicitHeight + Tokens.space.sm * 2)
+                    : (netRow.modelData.known ? Tokens.px(54) : Tokens.px(48))
+
+                Rectangle {
+                    visible: netRow.index > 0
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: Tokens.space.md
+                    anchors.rightMargin: Tokens.space.md
+                    height: Tokens.hairlineWidth
+                    color: Tokens.color.hairline
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.topMargin: netRow.index > 0 ? Tokens.space.xxs : 0
+                    anchors.bottomMargin: Tokens.space.xxs
+                    radius: Tokens.radius.sm
+                    color: (rowHover.hovered || root.sel === netRow.index || netRow.askingPw)
+                        ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+                        : "transparent"
+
+                    Behavior on color {
+                        enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                        ColorAnimation { duration: Tokens.motion.fast }
+                    }
+                }
+
+                FocusRing {
+                    active: root.sel === netRow.index
+                    ringRadius: Tokens.radius.sm
                 }
 
                 ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: Tokens.space.xxs
+                    id: netRowCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: Tokens.space.md
+                    anchors.rightMargin: Tokens.space.md
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Tokens.space.sm
 
-                    TextLabel {
+                    RowLayout {
                         Layout.fillWidth: true
-                        role: "body"
-                        font.weight: netRow.modelData.connected ? Font.Medium : Font.Normal
-                        tone: netRow.modelData.connected ? "accent" : "primary"
-                        text: netRow.modelData.name
+                        spacing: Tokens.space.md
+
+                        WifiIcon {
+                            level: netRow.modelData.signalStrength
+                            size: Tokens.size.iconMd
+                            color: Tokens.color.text
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: Tokens.space.xxs
+
+                            TextLabel {
+                                Layout.fillWidth: true
+                                role: "body"
+                                text: netRow.modelData.name
+                            }
+
+                            TextLabel {
+                                visible: netRow.modelData.known
+                                Layout.fillWidth: true
+                                role: "caption"
+                                tone: "muted"
+                                text: root.subtitleOf(netRow.modelData)
+                            }
+                        }
+
+                        Icon {
+                            visible: root.secured(netRow.modelData)
+                            name: "lock"
+                            size: Tokens.size.iconXs
+                            tone: "muted"
+                        }
+
+                        Badge {
+                            visible: netRow.modelData.known
+                            text: qsTr("Saved")
+                            tone: "accent"
+                        }
+
+                        TextLabel {
+                            role: "sm"
+                            tabular: true
+                            tone: "muted"
+                            text: Math.round(netRow.modelData.signalStrength * 100) + "%"
+                        }
+
+                        Button {
+                            text: netRow.askingPw ? qsTr("Cancel") : qsTr("Connect")
+                            variant: netRow.askingPw ? "ghost" : "secondary"
+                            size: "sm"
+                            accessibleLabel: netRow.askingPw
+                                ? qsTr("Cancel password entry")
+                                : qsTr("Connect to %1").arg(netRow.modelData.name)
+                            onClicked: {
+                                root.sel = netRow.index
+                                root.connectNetwork(netRow.modelData)
+                            }
+                        }
                     }
 
-                    TextLabel {
+                    // Inline password prompt inside selected network row
+                    RowLayout {
+                        visible: netRow.askingPw
                         Layout.fillWidth: true
-                        role: "caption"
-                        tone: "muted"
-                        text: root.subtitleOf(netRow.modelData)
+                        spacing: Tokens.space.xs
+
+                        TextField {
+                            id: inlinePwField
+                            Layout.fillWidth: true
+                            icon: "lock"
+                            echoMode: netRow.showPw ? TextInput.Normal : TextInput.Password
+                            placeholderText: qsTr("Enter Wi-Fi password")
+                            errorText: netRow.askingPw ? root.passwordError : ""
+                            accessibleLabel: qsTr("Wi-Fi password for %1").arg(netRow.modelData.name)
+                            onAccepted: root.submitPassword(netRow.modelData.name, inlinePwField.text)
+                        }
+
+                        Button {
+                            icon: "eye"
+                            variant: netRow.showPw ? "secondary" : "ghost"
+                            active: netRow.showPw
+                            size: "sm"
+                            accessibleLabel: netRow.showPw ? qsTr("Hide password") : qsTr("Show password")
+                            onClicked: netRow.showPw = !netRow.showPw
+                        }
+
+                        Button {
+                            text: qsTr("Join")
+                            variant: "primary"
+                            size: "sm"
+                            accessibleLabel: qsTr("Join %1").arg(netRow.modelData.name)
+                            onClicked: root.submitPassword(netRow.modelData.name, inlinePwField.text)
+                        }
                     }
                 }
 
-                Badge {
-                    visible: root.secured(netRow.modelData)
-                    text: qsTr("Secured")
-                    tone: netRow.modelData.known ? "accent" : "neutral"
+                HoverHandler {
+                    id: rowHover
+                    cursorShape: Qt.PointingHandCursor
                 }
 
-                TextLabel {
-                    role: "sm"
-                    tabular: true
-                    tone: "muted"
-                    text: Math.round(netRow.modelData.signalStrength * 100) + "%"
-                }
-
-                Button {
-                    text: netRow.modelData.connected ? qsTr("Active") : qsTr("Connect")
-                    variant: netRow.modelData.connected ? "primary" : "secondary"
-                    size: "sm"
-                    enabled: !netRow.modelData.connected
-                    accessibleLabel: qsTr("Connect to %1").arg(netRow.modelData.name)
-                    onClicked: {
+                TapHandler {
+                    onTapped: {
                         root.sel = netRow.index
-                        root.connectNetwork(netRow.modelData)
+                        root.reveal(netRow)
                     }
-                }
-            }
-
-            HoverHandler {
-                id: rowHover
-                cursorShape: Qt.PointingHandCursor
-            }
-
-            TapHandler {
-                onTapped: {
-                    root.sel = netRow.index
-                    root.reveal(netRow)
                 }
             }
         }
     }
 
     // ── EMPTY STATES ────────────────────────────────────────────────────────────
+    TextLabel {
+        visible: Net.hasWifi && Net.enabled && Net.connected && !root.sharing && root.availNets.length === 0
+        width: parent.width
+        horizontalAlignment: Text.AlignHCenter
+        role: "caption"
+        tone: "muted"
+        text: root.scanning ? qsTr("Scanning for other networks…") : qsTr("No other networks nearby")
+    }
+
     EmptyState {
-        visible: !Net.hasWifi || !Net.enabled || (!root.sharing && root.nets.length === 0)
+        visible: !Net.hasWifi || !Net.enabled || (!root.sharing && !Net.connected && root.availNets.length === 0)
         width: parent.width
         icon: !Net.hasWifi || !Net.enabled ? "wifi-off" : "wifi"
         title: !Net.hasWifi

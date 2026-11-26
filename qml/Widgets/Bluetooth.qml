@@ -13,7 +13,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 520
+    preferredWidth: 560
     useReserve: false
     scrollTarget: (Bt.hasAdapter && Bt.enabled && root.flat.length > 0) ? btList : null
     hint: qsTr("↑/↓ select · Enter connect/disconnect · B radio · S scan · Esc close")
@@ -32,7 +32,26 @@ WidgetSurface {
         return d ? (d.name || d.deviceName || "") : ""
     }
 
-    readonly property var all: Bt.hasAdapter ? Bt.devices.filter(d => nameOf(d) !== "") : []
+    function displayNameOf(d: var): string {
+        if (!d) return ""
+        return d.name || d.deviceName || d.address || ""
+    }
+
+    function groupOf(d: var): string {
+        if (!d) return "nearby"
+        if (d.connected) return "connected"
+        return (d.paired || d.bonded) ? "paired" : "nearby"
+    }
+
+    function groupLabel(g: string): string {
+        if (g === "connected") return qsTr("CONNECTED")
+        if (g === "paired") return qsTr("PAIRED")
+        return qsTr("NEARBY")
+    }
+
+    readonly property var all: Bt.hasAdapter
+        ? Bt.devices.filter(d => nameOf(d) !== "" || (d.address && d.address !== ""))
+        : []
     readonly property var connected: all.filter(d => d.connected)
     readonly property var paired: all.filter(d => !d.connected && (d.paired || d.bonded))
     readonly property var available: all.filter(d => !d.connected && !(d.paired || d.bonded))
@@ -52,9 +71,9 @@ WidgetSurface {
             return qsTr("Connecting…")
         if (d.state === BluetoothDeviceState.Disconnecting)
             return qsTr("Disconnecting…")
-        if (d.connected)
-            return qsTr("Connected")
-        return (d.paired || d.bonded) ? qsTr("Paired") : qsTr("Available")
+        if (nameOf(d) === "" && d.address)
+            return d.address
+        return ""
     }
 
     function toggleDevice(d: var): void {
@@ -123,22 +142,14 @@ WidgetSurface {
         width: parent.width
         spacing: Tokens.space.sm
 
-        Icon {
-            icon: Bt.enabled ? "bluetooth" : "bluetooth-off"
-            size: Tokens.size.iconXl
-            tone: Bt.connectedDevices.length > 0 ? "accent" : "muted"
-            framed: true
-        }
-
         DetailHeader {
             Layout.fillWidth: true
             backable: false
             title: qsTr("Bluetooth")
+            icon: Bt.enabled ? "bluetooth" : "bluetooth-off"
             detail: !Bt.hasAdapter
-                ? qsTr("No Bluetooth adapter")
-                : (!Bt.enabled ? qsTr("Radio is off")
-                    : (root.discovering ? qsTr("Scanning for devices…")
-                        : qsTr("%1 connected · %2 paired").arg(root.connected.length).arg(root.paired.length)))
+                ? qsTr("Adapter unavailable")
+                : (!Bt.enabled ? qsTr("Radio off") : "")
         }
 
         Button {
@@ -160,136 +171,213 @@ WidgetSurface {
         }
     }
 
-    // ── DEVICES LIST ────────────────────────────────────────────────────────────
-    ListView {
-        id: btList
-
+    // ── GROUPED DEVICES LIST ────────────────────────────────────────────────────
+    Surface {
         visible: Bt.hasAdapter && Bt.enabled && root.flat.length > 0
         width: parent.width
-        height: Math.min(contentHeight, Tokens.px(340))
-        spacing: Tokens.space.xs
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        model: root.flat
+        role: "card"
+        horizontalPadding: Tokens.space.sm
+        verticalPadding: Tokens.space.sm
+        radius: Tokens.radius.md
+        implicitHeight: Math.min(Tokens.px(48) * 5, btList.contentHeight) + verticalPadding * 2
 
-        delegate: Card {
-            id: devRow
+        ListView {
+            id: btList
 
-            required property var modelData
-            required property int index
+            anchors.fill: parent
+            spacing: 0
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            model: root.flat
 
-            readonly property bool isPaired: devRow.modelData.paired || devRow.modelData.bonded
-            readonly property bool hasBat: devRow.modelData.batteryAvailable === true
-            readonly property int batPct: hasBat ? Math.round(devRow.modelData.battery * 100) : 0
+            delegate: Item {
+                id: devRow
 
-            width: btList.width
-            horizontalPadding: Tokens.space.lg
-            verticalPadding: Tokens.space.md
-            hovered: rowHover.hovered || root.sel === devRow.index
-            implicitHeight: devRowLayout.implicitHeight + verticalPadding * 2
+                required property var modelData
+                required property int index
 
-            FocusRing {
-                active: root.sel === devRow.index
-                ringRadius: devRow.radius
-            }
+                readonly property bool isPaired: devRow.modelData.paired || devRow.modelData.bonded
+                readonly property bool hasBat: devRow.modelData.batteryAvailable === true
+                readonly property int batPct: hasBat ? Math.round(devRow.modelData.battery * 100) : 0
+                readonly property string sectionGroup: root.groupOf(devRow.modelData)
+                readonly property bool isFirstInGroup: devRow.index === 0
+                    || (devRow.index > 0 && root.groupOf(root.flat[devRow.index - 1]) !== devRow.sectionGroup)
+                readonly property string subText: root.statusOf(devRow.modelData)
+                readonly property bool hasSubtitle: devRow.subText !== ""
+                readonly property color batTint: batPct <= 20
+                    ? Tokens.color.danger
+                    : (batPct <= 40 ? Tokens.color.warning : Tokens.color.success)
 
-            RowLayout {
-                id: devRowLayout
-                width: parent.width
-                spacing: Tokens.space.md
+                width: btList.width
+                implicitHeight: devOuterCol.implicitHeight
 
-                Icon {
-                    icon: root.iconOf(devRow.modelData)
-                    size: Tokens.size.iconMd
-                    tone: devRow.modelData.connected ? "accent" : "primary"
-                    framed: true
+                // Hairline divider between rows within a group
+                Rectangle {
+                    visible: devRow.index > 0 && !devRow.isFirstInGroup
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: Tokens.space.md
+                    anchors.rightMargin: Tokens.space.md
+                    height: Tokens.hairlineWidth
+                    color: Tokens.color.hairline
                 }
 
                 ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: Tokens.space.xxs
+                    id: devOuterCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Tokens.space.xs
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Tokens.space.xs
-
-                        StatusDot {
-                            tone: devRow.modelData.connected
-                                ? "success"
-                                : (root.isPending(devRow.modelData) ? "warning" : "muted")
-                            pulse: root.isPending(devRow.modelData)
-                            size: Tokens.px(7)
-                        }
-
-                        TextLabel {
-                            Layout.fillWidth: true
-                            role: "body"
-                            font.weight: devRow.modelData.connected ? Font.Medium : Font.Normal
-                            text: root.nameOf(devRow.modelData)
-                        }
-                    }
-
+                    // Section label when starting a group
                     TextLabel {
+                        visible: devRow.isFirstInGroup
                         Layout.fillWidth: true
+                        Layout.leftMargin: Tokens.space.md
+                        Layout.topMargin: devRow.index > 0 ? Tokens.space.sm : Tokens.space.xs
                         role: "caption"
                         tone: "muted"
-                        tabular: true
-                        text: root.statusOf(devRow.modelData)
-                            + (devRow.modelData.address ? " · " + devRow.modelData.address : "")
-                    }
-                }
-
-                ColumnLayout {
-                    visible: devRow.hasBat
-                    spacing: Tokens.space.xxs
-                    Layout.alignment: Qt.AlignVCenter
-
-                    Badge {
-                        Layout.alignment: Qt.AlignRight
-                        text: devRow.batPct + "%"
-                        tone: devRow.batPct <= 20 ? "danger" : (devRow.batPct <= 40 ? "warning" : "success")
+                        font.weight: Font.Medium
+                        text: root.groupLabel(devRow.sectionGroup)
                     }
 
-                    UsageBar {
-                        implicitWidth: Tokens.px(54)
-                        progress: devRow.modelData.battery
-                        fillColor: devRow.batPct <= 20 ? Tokens.color.danger : Tokens.color.success
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: devRow.hasSubtitle ? Tokens.px(56) : Tokens.px(48)
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.topMargin: (devRow.index > 0 && !devRow.isFirstInGroup) ? Tokens.space.xxs : 0
+                            anchors.bottomMargin: Tokens.space.xxs
+                            radius: Tokens.radius.sm
+                            color: (rowHover.hovered || root.sel === devRow.index)
+                                ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+                                : "transparent"
+
+                            Behavior on color {
+                                enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                ColorAnimation { duration: Tokens.motion.fast }
+                            }
+                        }
+
+                        FocusRing {
+                            active: root.sel === devRow.index
+                            ringRadius: Tokens.radius.sm
+                        }
+
+                        RowLayout {
+                            id: devRowLayout
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.leftMargin: Tokens.px(14)
+                            anchors.rightMargin: Tokens.px(14)
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: Tokens.space.sm
+
+                            Icon {
+                                icon: root.iconOf(devRow.modelData)
+                                size: Tokens.size.iconMd
+                                tone: devRow.modelData.connected ? "accent" : "primary"
+                                framed: true
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: Tokens.space.xxs
+
+                                TextLabel {
+                                    Layout.fillWidth: true
+                                    role: "body"
+                                    font.weight: devRow.modelData.connected ? Font.Medium : Font.Normal
+                                    tone: devRow.modelData.connected ? "accent" : "primary"
+                                    text: root.displayNameOf(devRow.modelData)
+                                }
+
+                                TextLabel {
+                                    visible: devRow.subText !== ""
+                                    Layout.fillWidth: true
+                                    role: "caption"
+                                    tone: root.isPending(devRow.modelData) ? "warning" : "muted"
+                                    tabular: true
+                                    text: devRow.subText
+                                }
+                            }
+
+                            // Single clean battery % pill
+                            Rectangle {
+                                visible: devRow.hasBat
+                                Layout.alignment: Qt.AlignVCenter
+                                implicitWidth: batPillRow.implicitWidth + Tokens.space.sm * 2
+                                implicitHeight: batPillRow.implicitHeight + Tokens.space.xxs * 2
+                                radius: Tokens.radius.pill
+                                color: Qt.rgba(devRow.batTint.r, devRow.batTint.g, devRow.batTint.b, 0.14)
+                                border.width: Tokens.hairlineWidth
+                                border.color: Qt.rgba(devRow.batTint.r, devRow.batTint.g, devRow.batTint.b, 0.30)
+
+                                RowLayout {
+                                    id: batPillRow
+                                    anchors.centerIn: parent
+                                    spacing: Tokens.space.xxs
+
+                                    Icon {
+                                        name: "battery"
+                                        size: Tokens.size.iconXs
+                                        customColor: devRow.batTint
+                                    }
+
+                                    TextLabel {
+                                        role: "caption"
+                                        tabular: true
+                                        font.weight: Font.Medium
+                                        color: devRow.batTint
+                                        text: devRow.batPct + "%"
+                                    }
+                                }
+                            }
+
+                            Badge {
+                                visible: devRow.modelData.connected && !root.isPending(devRow.modelData)
+                                text: qsTr("Connected")
+                                tone: "accent"
+                            }
+
+                            Button {
+                                text: devRow.modelData.connected ? qsTr("Disconnect") : qsTr("Connect")
+                                variant: devRow.modelData.connected ? "ghost" : "primary"
+                                size: "sm"
+                                loading: root.isPending(devRow.modelData)
+                                accessibleLabel: devRow.modelData.connected
+                                    ? qsTr("Disconnect %1").arg(root.displayNameOf(devRow.modelData))
+                                    : qsTr("Connect %1").arg(root.displayNameOf(devRow.modelData))
+                                onClicked: {
+                                    root.sel = devRow.index
+                                    root.toggleDevice(devRow.modelData)
+                                }
+                            }
+
+                            Button {
+                                visible: devRow.isPaired
+                                icon: "trash-2"
+                                variant: "ghost"
+                                size: "sm"
+                                accessibleLabel: qsTr("Forget %1").arg(root.displayNameOf(devRow.modelData))
+                                onClicked: root.forgetDevice(devRow.modelData)
+                            }
+                        }
+
+                        HoverHandler {
+                            id: rowHover
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        TapHandler {
+                            onTapped: {
+                                root.sel = devRow.index
+                                root.reveal(devRow)
+                            }
+                        }
                     }
-                }
-
-                Button {
-                    text: devRow.modelData.connected ? qsTr("Disconnect") : qsTr("Connect")
-                    variant: devRow.modelData.connected ? "secondary" : "primary"
-                    size: "sm"
-                    loading: root.isPending(devRow.modelData)
-                    accessibleLabel: devRow.modelData.connected
-                        ? qsTr("Disconnect %1").arg(root.nameOf(devRow.modelData))
-                        : qsTr("Connect %1").arg(root.nameOf(devRow.modelData))
-                    onClicked: {
-                        root.sel = devRow.index
-                        root.toggleDevice(devRow.modelData)
-                    }
-                }
-
-                Button {
-                    visible: devRow.isPaired
-                    icon: "trash-2"
-                    variant: "ghost"
-                    size: "sm"
-                    accessibleLabel: qsTr("Forget %1").arg(root.nameOf(devRow.modelData))
-                    onClicked: root.forgetDevice(devRow.modelData)
-                }
-            }
-
-            HoverHandler {
-                id: rowHover
-                cursorShape: Qt.PointingHandCursor
-            }
-
-            TapHandler {
-                onTapped: {
-                    root.sel = devRow.index
-                    root.reveal(devRow)
                 }
             }
         }

@@ -77,209 +77,256 @@ WidgetSurface {
         }
     }
 
+    // Vertical airy action tile
+    component CaptureTile: Rectangle {
+        id: tile
+
+        property string icon: ""
+        property string label: ""
+        property string shortcut: ""
+        property string iconTone: "accent"
+
+        signal triggered()
+
+        implicitWidth: Tokens.px(156)
+        implicitHeight: Math.max(Tokens.px(76), tileCol.implicitHeight + Tokens.space.lg * 2)
+        radius: Tokens.radius.md
+        activeFocusOnTab: true
+        color: tileHover.hovered ? Tokens.veilHoverOf(Tokens.surfaceStyle) : Tokens.veilOf(Tokens.surfaceStyle)
+        border.width: Tokens.hairlineWidth
+        border.color: tileHover.hovered ? Tokens.color.accent : Tokens.veilBorderOf(Tokens.surfaceStyle)
+
+        Behavior on color {
+            enabled: !Tokens.reducedMotion && !Tokens.gameMode
+            ColorAnimation { duration: Tokens.motion.fast }
+        }
+        Behavior on border.color {
+            enabled: !Tokens.reducedMotion && !Tokens.gameMode
+            ColorAnimation { duration: Tokens.motion.fast }
+        }
+
+        Accessible.role: Accessible.Button
+        Accessible.name: tile.label
+
+        FocusRing {
+            active: tile.activeFocus
+            ringRadius: tile.radius
+        }
+
+        ColumnLayout {
+            id: tileCol
+
+            anchors.fill: parent
+            anchors.margins: Tokens.space.lg
+            spacing: Tokens.space.xs
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.space.xs
+
+                Icon {
+                    icon: tile.icon
+                    size: Tokens.size.iconMd
+                    tone: tile.iconTone
+                    framed: true
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Keycap {
+                    visible: tile.shortcut !== ""
+                    size: "sm"
+                    text: tile.shortcut
+                }
+            }
+
+            Item { Layout.fillHeight: true }
+
+            TextLabel {
+                Layout.fillWidth: true
+                role: "body"
+                font.weight: Font.Medium
+                tone: "primary"
+                text: tile.label
+            }
+        }
+
+        HoverHandler {
+            id: tileHover
+            cursorShape: Qt.PointingHandCursor
+        }
+
+        TapHandler {
+            onTapped: {
+                Tokens.keyboardNavigation = false
+                tile.triggered()
+            }
+        }
+
+        Keys.onSpacePressed: tile.triggered()
+        Keys.onReturnPressed: tile.triggered()
+    }
+
     // Header
-    RowLayout {
+    DetailHeader {
         width: parent.width
-        spacing: Tokens.space.md
-
-        Icon {
-            icon: "camera"
-            size: Tokens.size.iconLg
-            tone: "accent"
-            framed: true
-        }
-
-        DetailHeader {
-            Layout.fillWidth: true
-            backable: false
-            title: qsTr("Capture")
-            detail: qsTr("Screenshots, screen recording, and quick tools")
-        }
+        title: qsTr("Capture")
+        icon: "camera"
+        backable: false
     }
 
-    // Screenshots Card
-    Card {
-        width: parent.width
-        horizontalPadding: Tokens.space.lg
-        verticalPadding: Tokens.space.lg
-        implicitHeight: screenshotCol.implicitHeight + verticalPadding * 2
-
-        ColumnLayout {
-            id: screenshotCol
-
-            width: parent.width
-            spacing: Tokens.space.md
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                TextLabel {
-                    Layout.fillWidth: true
-                    role: "sm"
-                    font.weight: Font.Medium
-                    tone: "secondary"
-                    text: qsTr("Screenshots")
-                }
-
-                SegmentedControl {
-                    options: [
-                        { id: "0", label: "0s" },
-                        { id: "3", label: "3s" },
-                        { id: "5", label: "5s" }
-                    ]
-                    current: root.delayId
-                    accessibleLabel: qsTr("Screenshot delay")
-                    onSelected: id => root.delayId = id
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                QuickTile {
-                    Layout.fillWidth: true
-                    icon: "crop"
-                    label: qsTr("Region")
-                    detail: qsTr("Smart")
-                    onToggled: root.captureAfterClose(["omarchy-capture-screenshot"])
-                }
-
-                QuickTile {
-                    Layout.fillWidth: true
-                    icon: "maximize"
-                    label: qsTr("Fullscreen")
-                    onToggled: root.captureAfterClose(["omarchy-capture-screenshot", "--capture-fullscreen"])
-                }
-
-                QuickTile {
-                    Layout.fillWidth: true
-                    icon: "scissors"
-                    label: qsTr("Annotate")
-                    onToggled: root.captureAfterClose(["omarchy-capture-screenshot", "--editor"])
-                }
-            }
-        }
-    }
-
-    // Screen Recording Card
-    Card {
-        width: parent.width
-        horizontalPadding: Tokens.space.lg
-        verticalPadding: Tokens.space.lg
-        implicitHeight: recordCol.implicitHeight + verticalPadding * 2
-
-        ColumnLayout {
-            id: recordCol
-
-            width: parent.width
-            spacing: Tokens.space.md
-
-            // Active recording danger banner
-            Rectangle {
-                visible: Indicators.recording
-                Layout.fillWidth: true
-                implicitHeight: activeRecRow.implicitHeight + Tokens.space.md * 2
-                radius: Tokens.radius.sm
-                color: Qt.rgba(Tokens.color.danger.r, Tokens.color.danger.g, Tokens.color.danger.b, 0.14)
-                border.width: Tokens.hairlineWidth
-                border.color: Qt.rgba(Tokens.color.danger.r, Tokens.color.danger.g, Tokens.color.danger.b, 0.35)
-
-                RowLayout {
-                    id: activeRecRow
-
-                    anchors.fill: parent
-                    anchors.leftMargin: Tokens.space.md
-                    anchors.rightMargin: Tokens.space.md
-                    spacing: Tokens.space.sm
-
-                    StatusDot {
-                        tone: "danger"
-                        pulse: true
-                    }
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "body"
-                        font.weight: Font.Medium
-                        tone: "danger"
-                        text: qsTr("Recording in progress")
-                    }
-
-                    Button {
-                        variant: "danger"
-                        icon: "square"
-                        text: qsTr("Stop Recording")
-                        onClicked: {
-                            Cmd.run(["omarchy-capture-screenrecording", "--stop-recording"])
-                            Indicators.refresh()
-                        }
-                    }
-                }
-            }
-
-            // Idle recording controls
-            ColumnLayout {
-                visible: !Indicators.recording
-                Layout.fillWidth: true
-                spacing: Tokens.space.md
-
-                TextLabel {
-                    Layout.fillWidth: true
-                    role: "sm"
-                    font.weight: Font.Medium
-                    tone: "secondary"
-                    text: qsTr("Screen Recording")
-                }
-
-                SegmentedControl {
-                    Layout.fillWidth: true
-                    stretch: true
-                    options: [
-                        { id: "none", label: qsTr("Silent") },
-                        { id: "desktop", label: qsTr("Desktop") },
-                        { id: "mic", label: qsTr("Desktop + Mic") }
-                    ]
-                    current: root.audioSource
-                    accessibleLabel: qsTr("Recording audio source")
-                    onSelected: id => root.audioSource = id
-                }
-
-                Button {
-                    Layout.fillWidth: true
-                    variant: "primary"
-                    icon: "video"
-                    text: qsTr("Start Recording")
-                    onClicked: root.startRecording()
-                }
-            }
-        }
-    }
-
-    // Quick Tools row
+    // Screenshots section (no outer Card — aligns edge-to-edge with Quick Tools)
     RowLayout {
         width: parent.width
         spacing: Tokens.space.sm
 
-        QuickTile {
+        TextLabel {
+            Layout.fillWidth: true
+            role: "sm"
+            font.weight: Font.Medium
+            tone: "secondary"
+            text: qsTr("Screenshots")
+        }
+
+        SegmentedControl {
+            options: [
+                { id: "0", label: "0s" },
+                { id: "3", label: "3s" },
+                { id: "5", label: "5s" }
+            ]
+            current: root.delayId
+            accessibleLabel: qsTr("Screenshot delay")
+            onSelected: id => root.delayId = id
+        }
+    }
+
+    GridLayout {
+        width: parent.width
+        columns: 3
+        columnSpacing: Tokens.space.sm
+        rowSpacing: Tokens.space.sm
+
+        CaptureTile {
+            Layout.fillWidth: true
+            icon: "crop"
+            label: qsTr("Region")
+            shortcut: "1"
+            onTriggered: root.captureAfterClose(["omarchy-capture-screenshot"])
+        }
+
+        CaptureTile {
+            Layout.fillWidth: true
+            icon: "maximize"
+            label: qsTr("Fullscreen")
+            shortcut: "2"
+            onTriggered: root.captureAfterClose(["omarchy-capture-screenshot", "--capture-fullscreen"])
+        }
+
+        CaptureTile {
+            Layout.fillWidth: true
+            icon: "scissors"
+            label: qsTr("Annotate")
+            shortcut: "3"
+            onTriggered: root.captureAfterClose(["omarchy-capture-screenshot", "--editor"])
+        }
+    }
+
+    // Compact 1-row Screen Recording bar
+    Card {
+        width: parent.width
+        horizontalPadding: Tokens.space.lg
+        verticalPadding: Tokens.space.md
+        implicitHeight: recRow.implicitHeight + verticalPadding * 2
+
+        RowLayout {
+            id: recRow
+
+            width: parent.width
+            spacing: Tokens.space.md
+
+            Icon {
+                icon: "video"
+                size: Tokens.size.iconMd
+                tone: Indicators.recording ? "danger" : "accent"
+                framed: true
+            }
+
+            TextLabel {
+                visible: !Indicators.recording
+                role: "body"
+                font.weight: Font.Medium
+                text: qsTr("Screen Recording")
+            }
+
+            SegmentedControl {
+                visible: !Indicators.recording
+                Layout.fillWidth: true
+                stretch: true
+                options: [
+                    { id: "none", label: qsTr("Silent") },
+                    { id: "desktop", label: qsTr("Audio") },
+                    { id: "mic", label: qsTr("Mic") }
+                ]
+                current: root.audioSource
+                accessibleLabel: qsTr("Recording audio source")
+                onSelected: id => root.audioSource = id
+            }
+
+            StatusDot {
+                visible: Indicators.recording
+                tone: "danger"
+                pulse: true
+            }
+
+            TextLabel {
+                visible: Indicators.recording
+                Layout.fillWidth: true
+                role: "body"
+                font.weight: Font.Medium
+                tone: "danger"
+                text: qsTr("Recording active")
+            }
+
+            Button {
+                size: "sm"
+                variant: Indicators.recording ? "danger" : "primary"
+                icon: Indicators.recording ? "square" : "video"
+                text: Indicators.recording ? qsTr("Stop") : qsTr("Start")
+                accessibleLabel: Indicators.recording ? qsTr("Stop screen recording") : qsTr("Start screen recording")
+                onClicked: root.toggleRecording()
+            }
+        }
+    }
+
+    // Quick Tools 3-column grid
+    GridLayout {
+        width: parent.width
+        columns: 3
+        columnSpacing: Tokens.space.sm
+        rowSpacing: Tokens.space.sm
+
+        CaptureTile {
             Layout.fillWidth: true
             icon: "scan-text"
+            iconTone: "secondary"
             label: qsTr("OCR Text")
-            onToggled: root.runToolAfterClose("omarchy-capture-text")
+            onTriggered: root.runToolAfterClose("omarchy-capture-text")
         }
 
-        QuickTile {
+        CaptureTile {
             Layout.fillWidth: true
             icon: "qr-code"
+            iconTone: "secondary"
             label: qsTr("QR Scan")
-            onToggled: root.runToolAfterClose("omarchy-capture-qr")
+            onTriggered: root.runToolAfterClose("omarchy-capture-qr")
         }
 
-        QuickTile {
+        CaptureTile {
             Layout.fillWidth: true
             icon: "pipette"
+            iconTone: "secondary"
             label: qsTr("Color Picker")
-            onToggled: root.runToolAfterClose("(pkill hyprpicker || hyprpicker -a)")
+            onTriggered: root.runToolAfterClose("(pkill hyprpicker || hyprpicker -a)")
         }
     }
 }
