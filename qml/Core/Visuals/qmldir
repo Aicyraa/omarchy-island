@@ -1,0 +1,9 @@
+module Core.Visuals
+SmoothRect 1.0 SmoothRect.qml
+WifiIcon 1.0 WifiIcon.qml
+VolumeIcon 1.0 VolumeIcon.qml
+Vinyl 1.0 Vinyl.qml
+Visualizer 1.0 Visualizer.qml
+GlobeView 1.0 GlobeView.qml
+NotifThumb 1.0 NotifThumb.qml
+NotifToast 1.0 NotifToast.qml

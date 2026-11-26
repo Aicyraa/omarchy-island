@@ -1,0 +1,6 @@
+module QuickshellDS.Surfaces
+ShellBarReserve 1.0 ShellBarReserve.qml
+IslandHost 1.0 IslandHost.qml
+PopupSurface 1.0 PopupSurface.qml
+OsdToast 1.0 OsdToast.qml
+Showcase 1.0 Showcase.qml

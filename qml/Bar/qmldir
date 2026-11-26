@@ -1,0 +1,7 @@
+module Bar
+TopBar 1.0 TopBar.qml
+WorkspaceStrip 1.0 WorkspaceStrip.qml
+ClockCluster 1.0 ClockCluster.qml
+AudioVizSlot 1.0 AudioVizSlot.qml
+BarIconButton 1.0 BarIconButton.qml
+StatusEar 1.0 StatusEar.qml

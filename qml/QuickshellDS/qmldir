@@ -1,0 +1,6 @@
+module QuickshellDS
+import QuickshellDS.Theme auto
+import QuickshellDS.Primitives auto
+import QuickshellDS.Components auto
+import QuickshellDS.Patterns auto
+import QuickshellDS.Surfaces auto

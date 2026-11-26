@@ -1,33 +1,38 @@
 # Island
 
-A dynamic-island bar plugin for the Omarchy shell (Quickshell 0.3.2, Hyprland 0.56).
-One pill, top-centre, that stays docked while idle, detaches into a floating capsule when opened, and morphs between idle, hover, widget, notification toast, and HUD forms.
-
-Status: all four milestones done and live, with floating detached widget transitions, asymmetrical Apple-inspired widget layouts, and companion OSD, menu, and headless notification bridges.
+A dynamic-island bar plugin for the Omarchy shell (Quickshell, Hyprland) built on a Qt 6 module structure and the vendored `QuickshellDS` design system.
+One floating obsidian capsule centered on the top (or bottom) edge that morphs smoothly between the idle TopBar, HUD, notification toast, Command Hub menu, and 18 redesigned widgets with a detached sibling `ScrollRail`.
 
 ## Architecture
 
 ```
-Bar.qml              plugin entry (manifest kind "bar"): Variants -> one Island per screen,
-                     IPC loaders, Hyprland global shortcuts, charger HUD, host bar contract
-Island.qml           one PanelWindow per screen: fixed size, transparent, click-masked, holding the
-                     animated `pill`; sizes the pill from the active widget's implicit size
-State.qml            singleton "IslandState": the state machine (file is State.qml, the type is
-                     IslandState because QtQuick already has a type called State)
-Theme.qml            singleton: palette -> colour roles, contrast guard, and ALL layout tokens
-services/            Net, Bt, Audio, Brightness, Power, Indicators, Notifs, Stats, SysInfo,
-                     Themes, WeatherData, AgentUsage, Cache, Prefetch, Cmd (singletons)
-components/          shared building blocks + IdleForm (the idle/opening time capsule) +
-                     HoverPreview + Workspaces + ClickCatcher
-widgets/             one file per widget, each built on WidgetPanel; Registry.js lists them
-ipc/                 HostIpc (inside the shell) / PlainIpc (test rig) / indicator and bar handlers
-osd/                 companion plugin that routes Omarchy's OSD calls to the island HUD
-menu-shim/           companion plugin that routes Omarchy's root menu to the island menu widget
-notifications-shim/  companion headless notification service (`clonedFrom: omarchy.notifications`)
-                     that keeps D-Bus, history, Focus mode, and IPC active while suppressing stock
-                     top-right toast windows
-rig.qml              run the island beside your live bar: `qs -p rig.qml`
+Bar.qml                    thin Qt 6 bootstrap: Variants -> ClickCatcher + IslandWindow per screen,
+                           IPC loaders, Hyprland global shortcuts, charger HUD
+qml/
+  QuickshellDS/            vendored design system (Theme, Primitives, Components, Patterns, Surfaces,
+                           and 96 uniform 24x24 Lucide SVG icons in Assets/icons/)
+  Core/                    ConfigStore (~/.config/omarchy/island-config.json), IslandState,
+                           WidgetRegistry.js, WidgetSurface, IslandWindow, ClickCatcher, Visuals/
+  Bar/                     TopBar, WorkspaceStrip, ClockCluster, AudioVizSlot (cava), BarIconButton, StatusEar
+  Services/                Audio, Brightness, Bt, Net, Power, Indicators, Notifs, Stats,
+                           SysInfo, Themes, WeatherData, AgentUsage, ArtLookup, Cache, Cmd, MenuData
+  Widgets/                 Settings (replaces Home), Media, Capture, Menu (6-tab Command Hub),
+                           Wifi, Bluetooth, Audio, Display, System, Battery, Agent, Power,
+                           Calendar, WorldClock, Weather, Notifications, ThemePicker, Look, Tray
+  MenuCore/                MenuModel.js, MenuHidden.js, menu.test.js
+  Ipc/                     HostIpc, PlainIpc, HostIndicatorsIpc, HostBarIpc
+shims/
+  osd/                     companion plugin routing Omarchy OSD calls to the island HUD
+  menu/                    companion plugin routing Super+Space / omarchy-menu to Island Menu
+  notifications/           headless notification bridge keeping D-Bus, history, and DND active
+rig.qml                    standalone preview/test rig: `qs -p rig.qml`
 ```
+
+### TopBar, Island Settings & Widget Suite
+- **TopBar**: Floating `36 px` obsidian capsule (`Tokens.color.islandGround`) with workspace dots & gliding accent pill, grouped widget strip (Wi-Fi, Bluetooth, Notifications, Audio, System, Capture, Look, Clipboard, Theme, Settings, Power), and right-aligned time, weather, battery, and live `cava` audio visualizer slot (opens **Media**).
+- **Island Settings (`settings`)**: Replaces `home` (`home` remains an alias) with live-persisted `~/.config/omarchy/island-config.json` controls for surface material (`classic` / `glass` / `liquid`), corner radius strategy, density, UI scale, detached `ScrollRail` variant & side, bar edge (`top` / `bottom`) & pattern (`pill` / `notch` / `full`), topbar item visibility, menu mode (`morphed` / `spotlight`), and one-click presets.
+- **Standalone Media (`media`) & Capture (`capture`)**: Dedicated MPRIS player with album art / spinning vinyl, scrub timeline, mirrored `cava` spectrum, and volume; plus screenshot delay/region/fullscreen/annotate, screen recording, OCR, QR, and color picker tools.
+- **Omarchy Menu (`Super + Space`)**: Streamlined 6-tab Command Hub (`Home`, `Apps`, `Actions`, `Packages`, `Setup`, `Docs`) with fuzzy search, `/`-scoped filtering, `Keycap` hints, pins, and full `dmenu` compatibility.
 
 ### Why the window never resizes
 Resizing a layer-shell window makes the compositor reconfigure the surface on every
