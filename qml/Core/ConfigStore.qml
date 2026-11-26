@@ -34,7 +34,34 @@ Singleton {
   property bool reducedMotion: false
   property bool gameMode: false
   property real motionScale: 1.0
+  property var motionCurve: defaultMotionCurve()
   property bool hideInFullscreen: true
+
+  function defaultMotionCurve() {
+    return [0.05, 0.92, 0.12, 1.04]
+  }
+
+  function sanitizeCurve(c) {
+    if (!c || c.length !== 4)
+      return defaultMotionCurve()
+    var out = []
+    for (var i = 0; i < 4; ++i) {
+      var v = Number(c[i])
+      if (!isFinite(v))
+        return defaultMotionCurve()
+      if (i === 0 || i === 2)
+        v = Math.max(0.0, Math.min(1.0, v))
+      else
+        v = Math.max(-0.25, Math.min(1.45, v))
+      out.push(Math.round(v * 100) / 100)
+    }
+    return out
+  }
+
+  function setMotionCurve(c) {
+    motionCurve = sanitizeCurve(c)
+    save()
+  }
 
   // ---- Topbar Items Visibility ----
   property var barItems: defaultBarItems()
@@ -98,6 +125,7 @@ Singleton {
   onReducedMotionChanged: { syncTokens(); save() }
   onGameModeChanged: { syncTokens(); save() }
   onMotionScaleChanged: { syncTokens(); save() }
+  onMotionCurveChanged: save()
   onHideInFullscreenChanged: save()
 
   function applyPreset(name) {
@@ -140,6 +168,7 @@ Singleton {
     reducedMotion = false
     gameMode = false
     motionScale = 1.0
+    motionCurve = defaultMotionCurve()
     hideInFullscreen = true
     barItems = defaultBarItems()
     syncTokens()
@@ -176,6 +205,8 @@ Singleton {
         gameMode = j.gameMode
       if (typeof j.motionScale === "number" && isFinite(j.motionScale))
         motionScale = Math.max(0.6, Math.min(1.4, j.motionScale))
+      if (j.motionCurve && j.motionCurve.length === 4)
+        motionCurve = sanitizeCurve(j.motionCurve)
       if (typeof j.hideInFullscreen === "boolean")
         hideInFullscreen = j.hideInFullscreen
       if (j.barItems && typeof j.barItems === "object" && !Array.isArray(j.barItems))
@@ -198,6 +229,7 @@ Singleton {
       reducedMotion: reducedMotion,
       gameMode: gameMode,
       motionScale: motionScale,
+      motionCurve: motionCurve,
       hideInFullscreen: hideInFullscreen,
       barItems: barItems
     }, null, 2)

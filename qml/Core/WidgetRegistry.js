@@ -14,7 +14,7 @@ var widgets = {
   battery:       { file: "Battery.qml", w: 540, h: 281 },
   calendar:      { file: "Calendar.qml", w: 660, h: 304 },
   worldclock:    { file: "WorldClock.qml", w: 660, h: 291 },
-  power:         { file: "Power.qml", w: 600, h: 289 },
+  power:         { file: "Power.qml", w: 787, h: 128 },
   notifications: { file: "Notifications.qml", w: 540, h: 343 },
   system:        { file: "System.qml", w: 720, h: 194 },
   tray:          { file: "Tray.qml", w: 320, h: 111 },
