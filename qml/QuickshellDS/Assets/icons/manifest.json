@@ -22,12 +22,12 @@
     },
     "battery": {
       "mode": "stroke",
-      "source": "iconify:lucide/battery-charging",
+      "source": "lucide:battery",
       "strokeWidth": 1.85
     },
     "battery-charging": {
       "mode": "stroke",
-      "source": "iconify:lucide/battery-charging",
+      "source": "lucide:battery-charging",
       "strokeWidth": 1.85
     },
     "bell": {
@@ -478,6 +478,46 @@
     "zap": {
       "mode": "stroke",
       "source": "iconify:lucide/zap",
+      "strokeWidth": 1.85
+    },
+    "battery-low": {
+      "mode": "stroke",
+      "source": "lucide:battery-low",
+      "strokeWidth": 1.85
+    },
+    "battery-medium": {
+      "mode": "stroke",
+      "source": "lucide:battery-medium",
+      "strokeWidth": 1.85
+    },
+    "battery-full": {
+      "mode": "stroke",
+      "source": "lucide:battery-full",
+      "strokeWidth": 1.85
+    },
+    "battery-warning": {
+      "mode": "stroke",
+      "source": "lucide:battery-warning",
+      "strokeWidth": 1.85
+    },
+    "type": {
+      "mode": "stroke",
+      "source": "lucide:type",
+      "strokeWidth": 1.85
+    },
+    "laptop": {
+      "mode": "stroke",
+      "source": "lucide:laptop",
+      "strokeWidth": 1.85
+    },
+    "keyboard": {
+      "mode": "stroke",
+      "source": "lucide:keyboard",
+      "strokeWidth": 1.85
+    },
+    "touchpad": {
+      "mode": "stroke",
+      "source": "lucide:mouse-pointer-click",
       "strokeWidth": 1.85
     }
   }

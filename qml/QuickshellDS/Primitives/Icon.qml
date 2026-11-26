@@ -71,11 +71,13 @@ Item {
         Image {
             id: svgImg
 
+            readonly property real rasterScale: Math.max(2.0, Tokens.dpr)
+
             anchors.fill: parent
             source: root.resolvedSource
             sourceSize: Qt.size(
-                Math.max(1, Math.ceil(root.size * Tokens.dpr)),
-                Math.max(1, Math.ceil(root.size * Tokens.dpr))
+                Math.max(1, Math.ceil(root.size * rasterScale)),
+                Math.max(1, Math.ceil(root.size * rasterScale))
             )
             fillMode: Image.PreserveAspectFit
             smooth: true
@@ -97,6 +99,7 @@ Item {
         anchors.centerIn: parent
         visible: !root.useSvg && root.effectiveGlyph !== ""
         text: root.effectiveGlyph
+        textFormat: Text.PlainText
         font.family: Tokens.type.monoFamily
         font.pixelSize: Math.round(root.size)
         color: root.resolvedColor

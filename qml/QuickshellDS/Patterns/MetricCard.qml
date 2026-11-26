@@ -14,6 +14,7 @@ Card {
     property string subtext: ""
     property string delta: ""
     property string deltaTone: "neutral" // "neutral" | "accent" | "success" | "warning" | "danger" | "info"
+    property bool compact: false
     default property alias visual: visualSlot.data
 
     implicitWidth: Tokens.px(240)
@@ -58,7 +59,7 @@ Card {
             spacing: Tokens.space.xs
 
             TextLabel {
-                role: "h1"
+                role: root.compact ? "h2" : "h1"
                 tabular: true
                 text: root.value
             }

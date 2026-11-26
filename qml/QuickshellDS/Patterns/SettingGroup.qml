@@ -23,9 +23,10 @@ ColumnLayout {
 
     Surface {
         Layout.fillWidth: true
-        implicitHeight: rowsColumn.implicitHeight
+        implicitHeight: rowsColumn.implicitHeight + Tokens.space.xs * 2
         role: "card"
         radius: Tokens.radius.md
+        verticalPadding: Tokens.space.xs
 
         ColumnLayout {
             id: rowsColumn

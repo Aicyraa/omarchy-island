@@ -247,14 +247,14 @@ QtObject {
         readonly property string monoFamily: resolveFont(monoStack)
         readonly property string scriptFamily: resolveFont(scriptStack)
 
-        readonly property int caption: Math.round(root.px(10))
-        readonly property int sm: Math.round(root.px(11))
+        readonly property int caption: Math.round(root.px(11))
+        readonly property int sm: Math.round(root.px(12))
         readonly property int body: Math.round(root.px(13))
         readonly property int subtitle: Math.round(root.px(14))
         readonly property int title: Math.round(root.px(16))
         readonly property int h2: Math.round(root.px(20))
-        readonly property int h1: Math.round(root.px(30))
-        readonly property int display: Math.round(root.px(68))
+        readonly property int h1: Math.round(root.px(24))
+        readonly property int display: Math.round(root.px(56))
     }
 
     component MotionTokens: QtObject {
