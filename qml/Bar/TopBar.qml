@@ -14,7 +14,7 @@ Item {
   property var win: null
   readonly property string screenName: win ? win.screenName : ""
   readonly property bool vertical: win ? win.isVertical : false
-  readonly property real edgePad: 14
+  readonly property real edgePad: 18
 
   function widthFor() {
     return Math.ceil(barGrid.implicitWidth + 2 * edgePad)
@@ -37,8 +37,16 @@ Item {
     }
   }
 
+  function batteryIconName() {
+    if (Power.charging) return "battery-charging"
+    if (Power.level >= 0.85) return "battery-full"
+    if (Power.level >= 0.45) return "battery-medium"
+    if (Power.level >= 0.20) return "battery-low"
+    return "battery-warning"
+  }
+
   component BarDivider: Rectangle {
-    width: root.vertical ? 16 : Tokens.hairlineWidth
+    width: root.vertical ? 18 : Tokens.hairlineWidth
     height: root.vertical ? Tokens.hairlineWidth : 14
     color: Tokens.color.hairline
   }
@@ -47,8 +55,8 @@ Item {
     id: barGrid
     anchors.centerIn: parent
     columns: root.vertical ? 1 : 40
-    columnSpacing: Tokens.space.xs
-    rowSpacing: Tokens.space.xs
+    columnSpacing: Tokens.space.sm
+    rowSpacing: Tokens.space.sm
     horizontalItemAlignment: Grid.AlignHCenter
     verticalItemAlignment: Grid.AlignVCenter
 
@@ -116,7 +124,7 @@ Item {
         Icon {
           anchors.verticalCenter: parent.verticalCenter
           name: Indicators.recording ? "video" : "mic"
-          size: 13
+          size: 12
           tone: Indicators.recording ? "danger" : "accent"
         }
       }
@@ -282,7 +290,7 @@ Item {
 
         Icon {
           name: root.mapWeatherIcon(WeatherData.w.icon)
-          size: 14
+          size: 13
           tone: "secondary"
         }
 
@@ -351,8 +359,8 @@ Item {
         verticalItemAlignment: Grid.AlignVCenter
 
         Icon {
-          name: Power.charging ? "battery-charging" : "battery"
-          size: 14
+          name: root.batteryIconName()
+          size: 13
           tone: batteryChip.batteryTone
         }
 

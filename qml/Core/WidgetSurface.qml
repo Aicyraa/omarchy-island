@@ -24,12 +24,12 @@ Item {
   readonly property var column: col
 
   // Generous asymmetric padding (horizontal > vertical per QuickshellDS)
-  property real hPad: Tokens.space.xl
-  property real vPad: Tokens.space.lg
+  property real hPad: Tokens.space.xxl
+  property real vPad: Tokens.space.xl
   readonly property int pad: Math.round(vPad)
 
   readonly property real maxWidth: Math.min(Tokens.px(940), 940)
-  readonly property real maxHeight: Math.min(Tokens.px(560), 560)
+  readonly property real maxHeight: Math.min(Tokens.px(580), 580)
   readonly property real minHeight: compact ? Tokens.px(64) : Tokens.px(120)
 
   property bool dataLoading: false

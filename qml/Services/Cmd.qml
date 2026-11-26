@@ -12,4 +12,8 @@ Singleton {
     if (dryRun) { console.log("island[dry-run]: " + last); return }
     Quickshell.execDetached(argv)
   }
+  function runSecret(argv) {
+    if (dryRun) { console.log("island[dry-run]: <redacted>"); return }
+    Quickshell.execDetached(argv)
+  }
 }

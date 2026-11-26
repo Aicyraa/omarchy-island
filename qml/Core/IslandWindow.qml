@@ -41,11 +41,11 @@ PanelWindow {
   readonly property bool isFullBar: ConfigStore.barStyle === "full"
   readonly property bool isSpotlightMenu: myMode === "widget" && myWidget === "menu" && ConfigStore.menuPresentation === "spotlight"
 
-  readonly property bool detachedMode: pill.shownMode === "widget" || pill.shownMode === "hud" || pill.shownMode === "notification" || !isNotch
+  readonly property bool detachedMode: !isNotch || isSpotlightMenu
   readonly property int topGap: 6
   readonly property int notchMargin: 10
-  readonly property int barHeight: 36
-  readonly property int vBarWidth: 44
+  readonly property int barHeight: 42
+  readonly property int vBarWidth: 48
   readonly property int ear: 12
 
   function dur(ms) {
@@ -80,22 +80,30 @@ PanelWindow {
     }
   }
 
+  function isSpotlightFor(mode, wName) {
+    return mode === "widget" && wName === "menu" && ConfigStore.menuPresentation === "spotlight"
+  }
+
+  function isNotchAttached(mode, wName) {
+    return win.isNotch && !isSpotlightFor(mode, wName)
+  }
+
   function calcY(mode, wName, h) {
-    if (mode === "widget" && wName === "menu" && ConfigStore.menuPresentation === "spotlight")
+    if (isSpotlightFor(mode, wName))
       return Math.round((win.height - h) * 0.28)
     if (win.isVertical)
       return Math.round((win.height - h) / 2)
-    var edgeOffset = (win.isNotch && mode === "idle") ? 0 : win.topGap
+    var edgeOffset = isNotchAttached(mode, wName) ? 0 : win.topGap
     return win.isBottom ? Math.round(win.height - h - edgeOffset) : edgeOffset
   }
 
   function calcBaseRadius(mode, w, h) {
     return mode === "idle" ? Math.min(Tokens.radius.pill, Math.min(w, h) / 2) : Tokens.radius.lg
   }
-  function calcTlR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isTop || win.isLeft)) ? 0 : calcBaseRadius(mode, w, h) }
-  function calcTrR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isTop || win.isRight)) ? 0 : calcBaseRadius(mode, w, h) }
-  function calcBlR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isBottom || win.isLeft)) ? 0 : calcBaseRadius(mode, w, h) }
-  function calcBrR(mode, w, h) { return (win.isNotch && mode === "idle" && (win.isBottom || win.isRight)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcTlR(mode, wName, w, h) { return (isNotchAttached(mode, wName) && (win.isTop || win.isLeft)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcTrR(mode, wName, w, h) { return (isNotchAttached(mode, wName) && (win.isTop || win.isRight)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcBlR(mode, wName, w, h) { return (isNotchAttached(mode, wName) && (win.isBottom || win.isLeft)) ? 0 : calcBaseRadius(mode, w, h) }
+  function calcBrR(mode, wName, w, h) { return (isNotchAttached(mode, wName) && (win.isBottom || win.isRight)) ? 0 : calcBaseRadius(mode, w, h) }
 
   readonly property size target: sizeFor(myMode, myWidget)
   readonly property size shownSize: pill.shownMode === "widget" ? widgetSizeOf(pill.shownWidget) : sizeFor(pill.shownMode, pill.shownWidget)
@@ -161,10 +169,10 @@ PanelWindow {
   }
 
   // ---- Input region: pill + detached ScrollRail ----
-  readonly property real pillHitX: Math.round(pill.x - (!win.isVertical && win.isNotch && !win.detachedMode ? win.ear : 0))
-  readonly property real pillHitY: Math.round(pill.y - (win.isVertical && win.isNotch && !win.detachedMode ? win.ear : 0))
-  readonly property real pillHitW: Math.round(pill.width + (!win.isVertical && win.isNotch && !win.detachedMode ? 2 * win.ear : 0))
-  readonly property real pillHitH: Math.round(pill.height + (win.isVertical && win.isNotch && !win.detachedMode ? 2 * win.ear : 0))
+  readonly property real pillHitX: Math.round(pill.x - (!win.isVertical && !win.detachedMode ? win.ear : 0))
+  readonly property real pillHitY: Math.round(pill.y - (win.isVertical && !win.detachedMode ? win.ear : 0))
+  readonly property real pillHitW: Math.round(pill.width + (!win.isVertical && !win.detachedMode ? 2 * win.ear : 0))
+  readonly property real pillHitH: Math.round(pill.height + (win.isVertical && !win.detachedMode ? 2 * win.ear : 0))
 
   readonly property real zoneMinX: Math.min(pillHitX, rail.needed ? rail.inputRect.x : pillHitX)
   readonly property real zoneMinY: Math.min(pillHitY, rail.needed ? rail.inputRect.y : pillHitY)
@@ -246,10 +254,10 @@ PanelWindow {
     }
   }
 
-  // ---- Concave notch ears (only when barStyle === "notch" and in idle on top/bottom) ----
+  // ---- Concave notch ears (horizontal: top/bottom, vertical: left/right) ----
   Shape {
     z: 3
-    opacity: !win.isVertical && win.isNotch && pill.shownMode === "idle" && !pill.transitioning ? 1 : 0
+    opacity: !win.isVertical && !win.detachedMode ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
     x: pill.x - win.ear
@@ -267,7 +275,7 @@ PanelWindow {
 
   Shape {
     z: 3
-    opacity: !win.isVertical && win.isNotch && pill.shownMode === "idle" && !pill.transitioning ? 1 : 0
+    opacity: !win.isVertical && !win.detachedMode ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
     x: pill.x + pill.width
@@ -283,11 +291,47 @@ PanelWindow {
     }
   }
 
+  Shape {
+    z: 3
+    opacity: win.isVertical && !win.detachedMode ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+    x: win.isRight ? pill.x + pill.width - win.ear : pill.x
+    y: pill.y - win.ear
+    width: win.ear; height: win.ear
+    preferredRendererType: Shape.CurveRenderer
+    ShapePath {
+      fillColor: Tokens.groundOf(Tokens.surfaceStyle); strokeWidth: 0; strokeColor: "transparent"
+      startX: win.isRight ? win.ear : 0; startY: 0
+      PathQuad { x: win.isRight ? 0 : win.ear; y: win.ear; controlX: win.isRight ? win.ear : 0; controlY: win.ear }
+      PathLine { x: win.isRight ? win.ear : 0; y: win.ear }
+      PathLine { x: win.isRight ? win.ear : 0; y: 0 }
+    }
+  }
+
+  Shape {
+    z: 3
+    opacity: win.isVertical && !win.detachedMode ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+    x: win.isRight ? pill.x + pill.width - win.ear : pill.x
+    y: pill.y + pill.height
+    width: win.ear; height: win.ear
+    preferredRendererType: Shape.CurveRenderer
+    ShapePath {
+      fillColor: Tokens.groundOf(Tokens.surfaceStyle); strokeWidth: 0; strokeColor: "transparent"
+      startX: win.isRight ? win.ear : 0; startY: win.ear
+      PathQuad { x: win.isRight ? 0 : win.ear; y: 0; controlX: win.isRight ? win.ear : 0; controlY: 0 }
+      PathLine { x: win.isRight ? win.ear : 0; y: 0 }
+      PathLine { x: win.isRight ? win.ear : 0; y: win.ear }
+    }
+  }
+
   // ---- Smooth SDF Drop Shadow (zero FBO allocation during morph) ----
   RectangularShadow {
     id: pillShadow
     z: 0
-    visible: Tokens.elevation.shadowsActive && !(win.isNotch && pill.shownMode === "idle" && !pill.transitioning)
+    visible: Tokens.elevation.shadowsActive && win.detachedMode
     anchors.fill: pillSurface
     cached: false
     offset: Qt.vector2d(
@@ -314,7 +358,7 @@ PanelWindow {
     topRightRadius: pill.animTrR
     bottomLeftRadius: pill.animBlR
     bottomRightRadius: pill.animBrR
-    showBorder: !(win.isNotch && pill.shownMode === "idle" && !pill.transitioning)
+    showBorder: win.detachedMode
   }
 
   Item {
@@ -335,27 +379,27 @@ PanelWindow {
     readonly property var curveRevealPop: [0.16, 0.0, 0.22, 1.024, 0.56, 1.024, 0.74, 1.024, 0.82, 1.0, 1.0, 1.0]
 
     property real animW: 220
-    property real animH: 36
+    property real animH: 42
     property real animY: 6
-    property real animTlR: 18
-    property real animTrR: 18
-    property real animBlR: 18
-    property real animBrR: 18
+    property real animTlR: 21
+    property real animTrR: 21
+    property real animBlR: 21
+    property real animBrR: 21
 
     property real destW: 220
-    property real destH: 36
+    property real destH: 42
     property real destY: 6
-    property real destTlR: 18
-    property real destTrR: 18
-    property real destBlR: 18
-    property real destBrR: 18
+    property real destTlR: 21
+    property real destTrR: 21
+    property real destBlR: 21
+    property real destBrR: 21
 
     width: animW
     height: animH
     y: animY
     x: {
       if (win.isSpotlightMenu || !win.isVertical) return Math.round((win.width - width) / 2)
-      var edgeOffset = (win.isNotch && shownMode === "idle" && !transitioning) ? 0 : win.topGap
+      var edgeOffset = win.isNotch ? 0 : win.topGap
       if (win.isLeft) return edgeOffset
       return Math.round(win.width - width - edgeOffset)
     }
@@ -365,10 +409,10 @@ PanelWindow {
       destW = sz.width
       destH = sz.height
       destY = win.calcY(mode, wName, destH)
-      destTlR = win.calcTlR(mode, destW, destH)
-      destTrR = win.calcTrR(mode, destW, destH)
-      destBlR = win.calcBlR(mode, destW, destH)
-      destBrR = win.calcBrR(mode, destW, destH)
+      destTlR = win.calcTlR(mode, wName, destW, destH)
+      destTrR = win.calcTrR(mode, wName, destW, destH)
+      destBlR = win.calcBlR(mode, wName, destW, destH)
+      destBrR = win.calcBrR(mode, wName, destW, destH)
     }
 
     function applyImmediate(mode, wName) {
@@ -576,6 +620,8 @@ PanelWindow {
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function (e) {
         IslandState.touch(true)
+        if (e.key === Qt.Key_Tab || e.key === Qt.Key_Backtab || e.key === Qt.Key_Up || e.key === Qt.Key_Down || e.key === Qt.Key_Left || e.key === Qt.Key_Right)
+          Tokens.keyboardNavigation = true
         var claimed = widgetLoader.item && widgetLoader.item.capturesEscape === true
         if (e.key === Qt.Key_Escape && !claimed) {
           IslandState.closeWidget("Esc")

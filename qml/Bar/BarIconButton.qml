@@ -4,7 +4,7 @@ import QtQuick
 import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 
-// BarIconButton: uniform 28x28 hit target with 15px icon, optional badge dot, hover veil & focus ring.
+// BarIconButton: uniform 30x30 hit target with 16px icon, optional badge dot, hover veil & focus ring.
 Item {
   id: root
 
@@ -28,8 +28,8 @@ Item {
     }
   }
 
-  implicitWidth: Tokens.size.hitMin
-  implicitHeight: Tokens.size.hitMin
+  implicitWidth: Tokens.px(30)
+  implicitHeight: Tokens.px(30)
 
   activeFocusOnTab: true
   Accessible.role: Accessible.Button
@@ -63,7 +63,7 @@ Item {
   Icon {
     anchors.centerIn: parent
     name: root.name
-    size: 15
+    size: 14
     tone: root.tone
   }
 

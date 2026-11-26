@@ -50,7 +50,7 @@ Singleton {
           else { root.rxRate = -1; root.txRate = -1 }
           root.prevNet = { rx: rx, tx: tx, t: now }
         }
-        else if (p[0] === "proc") procs.push({ name: String(p[1]).slice(0, 24), cpu: (+p[2]) / Math.max(1, root.cores), mem: +p[3] })
+        else if (p[0] === "proc") procs.push({ pid: parseInt(p[1], 10) || 0, name: String(p[2] || "").slice(0, 24), cpu: (+p[3]) / Math.max(1, root.cores), mem: +p[4] })
       })
       root.procs = procs; root.sampledAt = now
       Cache.put("sysinfo", { load1: root.load1, load5: root.load5, load15: root.load15, uptimeSec: root.uptimeSec, diskUsed: root.diskUsed,

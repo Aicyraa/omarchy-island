@@ -178,7 +178,7 @@ Singleton {
         motionScale = Math.max(0.6, Math.min(1.4, j.motionScale))
       if (typeof j.hideInFullscreen === "boolean")
         hideInFullscreen = j.hideInFullscreen
-      if (j.barItems && typeof j.barItems === "object")
+      if (j.barItems && typeof j.barItems === "object" && !Array.isArray(j.barItems))
         barItems = Object.assign({}, defaultBarItems(), j.barItems)
     } catch (e) {}
   }
@@ -203,15 +203,23 @@ Singleton {
     }, null, 2)
   }
 
+  Timer {
+    id: saveTimer
+    interval: 50
+    repeat: false
+    onTriggered: store.setText(root.serialize())
+  }
+
   function save() {
     if (!ready) return
-    store.setText(serialize())
+    saveTimer.restart()
   }
 
   FileView {
     id: store
     path: root.configPath
     watchChanges: true
+    atomicWrites: true
     printErrors: false
     onFileChanged: reload()
     onLoaded: {
