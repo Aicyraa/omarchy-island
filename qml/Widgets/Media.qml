@@ -168,28 +168,17 @@ WidgetSurface {
         description: qsTr("Start music or video to control playback here")
     }
 
-    // Multi-player switcher pills (wrapping Flow)
-    Flow {
+    // Multi-player switcher strip
+    TabStrip {
         visible: root.player !== null && root.players.length > 1
         width: parent.width
-        spacing: Tokens.space.xs
-
-        Repeater {
-            model: root.players
-
-            Button {
-                required property int index
-                required property var modelData
-
-                size: "sm"
-                shape: "pill"
-                variant: "secondary"
-                active: index === root.clampedIndex
-                text: modelData.identity || qsTr("Player %1").arg(index + 1)
-                accessibleLabel: qsTr("Switch to %1").arg(text)
-                onClicked: root.selectedIndex = index
-            }
-        }
+        stretch: true
+        accessibleLabel: qsTr("Active media player")
+        tabs: root.players.map(function (p, i) {
+            return { id: String(i), label: p.identity || qsTr("Player %1").arg(i + 1) }
+        })
+        current: String(root.clampedIndex)
+        onPicked: function (id) { root.selectedIndex = parseInt(id, 10) || 0 }
     }
 
     // Quiet single-line source pill when only one player is active

@@ -205,6 +205,7 @@ WidgetSurface {
         }
 
         TabStrip {
+            stretch: false
             tabs: [
                 { id: "backgrounds", label: qsTr("Backgrounds") },
                 { id: "fonts", label: qsTr("Fonts") }

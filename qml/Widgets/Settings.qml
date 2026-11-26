@@ -384,7 +384,7 @@ WidgetSurface {
                 spacing: Tokens.space.lg
 
                 SettingGroup {
-                    title: qsTr("Menu & Motion")
+                    title: qsTr("Menu & Behavior")
 
                     SettingRow {
                         label: qsTr("Omarchy Menu Mode")
@@ -430,9 +430,14 @@ WidgetSurface {
                             onToggled: checked => ConfigStore.hideInFullscreen = checked
                         }
                     }
+                }
+
+                SettingGroup {
+                    title: qsTr("Animation")
 
                     SettingRow {
                         label: qsTr("Motion Speed")
+                        showDivider: false
 
                         Slider {
                             accessibleLabel: qsTr("Motion Speed")
@@ -446,6 +451,31 @@ WidgetSurface {
                             showReadout: true
                             value: ConfigStore.motionScale
                             onMoved: value => ConfigStore.motionScale = Math.round(value * 10) / 10
+                        }
+                    }
+
+                    Separator {
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: curveEditor.implicitHeight + Tokens.space.md * 2
+
+                        BezierCurveEditor {
+                            id: curveEditor
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.leftMargin: Tokens.space.md
+                            anchors.rightMargin: Tokens.space.md
+                            anchors.topMargin: Tokens.space.md
+                            curve: ConfigStore.motionCurve
+                            durationMs: Math.round(420 * ConfigStore.motionScale)
+                            interactive: !ConfigStore.reducedMotion && !ConfigStore.gameMode
+                            opacity: interactive ? 1.0 : 0.45
+                            onCurveEdited: next => ConfigStore.setMotionCurve(next)
                         }
                     }
                 }

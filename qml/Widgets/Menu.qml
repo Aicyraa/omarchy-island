@@ -410,7 +410,8 @@ WidgetSurface {
 
     SegmentedControl {
       visible: root.activeTab === "packages" && root.route === "root" && root.query === ""
-      Layout.alignment: Qt.AlignLeft
+      Layout.fillWidth: true
+      stretch: true
       options: root.pkgTabs
       current: root.pkgSubTab
       onSelected: function (id) { root.pkgSubTab = id; root.sel = 0 }

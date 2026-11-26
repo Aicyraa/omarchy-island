@@ -13,7 +13,12 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 600
+    readonly property real tileWidth: Tokens.px(106)
+    readonly property real tileHeight: Tokens.px(96)
+    readonly property real tileGap: Tokens.space.md
+    preferredWidth: root.visibleActions.length * root.tileWidth
+        + Math.max(0, root.visibleActions.length - 1) * root.tileGap
+        + root.hPad * 2
     readonly property bool capturesEscape: root.pendingIndex >= 0
     hint: root.pendingIndex >= 0
         ? qsTr("Enter confirm · Esc cancel")
@@ -21,8 +26,8 @@ WidgetSurface {
 
     property int sel: 0
     property int pendingIndex: -1
-    property bool hibernateAvailable: false
-    property bool restartNeeded: false
+    property bool hibernateAvailable: Cache.get("power_hibernate") === true
+    property bool restartNeeded: Cache.get("power_restart") === true
 
     readonly property var sessionActions: {
         const list = [
@@ -104,9 +109,14 @@ WidgetSurface {
         readonly property bool isSelected: root.sel === tile.globalIndex
         readonly property bool isDestructive: !!tile.actionData.destructive
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: tile.isDestructive ? Tokens.px(88) : Tokens.px(92)
-        verticalPadding: Tokens.space.md
+        implicitWidth: root.tileWidth
+        implicitHeight: root.tileHeight
+        Layout.preferredWidth: root.tileWidth
+        Layout.preferredHeight: root.tileHeight
+        Layout.minimumWidth: root.tileWidth
+        Layout.maximumWidth: root.tileWidth
+        horizontalPadding: 0
+        verticalPadding: 0
         role: "card"
         radius: Tokens.radius.md
         hovered: tileHover.hovered
@@ -136,8 +146,8 @@ WidgetSurface {
         Keycap {
             anchors.top: parent.top
             anchors.right: parent.right
-            anchors.topMargin: Tokens.space.sm
-            anchors.rightMargin: Tokens.space.sm
+            anchors.topMargin: Tokens.space.xs
+            anchors.rightMargin: Tokens.space.xs
             text: String(tile.globalIndex + 1)
             size: "sm"
         }
@@ -145,13 +155,13 @@ WidgetSurface {
         ColumnLayout {
             anchors.centerIn: parent
             width: parent.width - Tokens.space.sm * 2
-            spacing: Tokens.space.xs
+            spacing: Tokens.space.sm
 
             Icon {
                 Layout.alignment: Qt.AlignHCenter
                 icon: String(tile.actionData.icon ?? "")
-                size: Tokens.size.iconLg
-                framed: true
+                size: Tokens.size.iconXl
+                framed: false
                 tone: tile.isDestructive
                     ? "danger"
                     : (tile.isSelected ? "accent" : "primary")
@@ -188,7 +198,7 @@ WidgetSurface {
             id: mainCol
 
             width: parent.width
-            spacing: Tokens.space.md
+            spacing: Tokens.space.sm
             visible: opacity > 0
             opacity: root.pendingIndex < 0 ? 1.0 : 0.0
 
@@ -197,30 +207,19 @@ WidgetSurface {
                 NumberAnimation { duration: Tokens.motion.fast; easing.type: Tokens.motion.easeOut }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                DetailHeader {
-                    Layout.fillWidth: true
-                    title: qsTr("Power")
-                    icon: "power"
-                    backable: false
-                }
-
-                Badge {
-                    visible: root.restartNeeded
-                    text: qsTr("Restart needed")
-                    tone: "warning"
-                }
+            Badge {
+                visible: root.restartNeeded
+                Layout.alignment: Qt.AlignHCenter
+                text: qsTr("Restart needed")
+                tone: "warning"
             }
 
             RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
+                Layout.alignment: Qt.AlignHCenter
+                spacing: root.tileGap
 
                 Repeater {
-                    model: root.sessionActions
+                    model: root.visibleActions
 
                     delegate: ActionTile {
                         required property var modelData
@@ -228,40 +227,6 @@ WidgetSurface {
 
                         actionData: modelData
                         globalIndex: index
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                TextLabel {
-                    role: "caption"
-                    tone: "muted"
-                    font.weight: Font.Medium
-                    font.capitalization: Font.AllUppercase
-                    text: qsTr("System")
-                }
-
-                Separator {
-                    Layout.fillWidth: true
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                Repeater {
-                    model: root.destructiveActions
-
-                    delegate: ActionTile {
-                        required property var modelData
-                        required property int index
-
-                        actionData: modelData
-                        globalIndex: root.sessionActions.length + index
                     }
                 }
             }
@@ -294,7 +259,7 @@ WidgetSurface {
                         icon: root.pendingIndex >= 0 ? String(root.visibleActions[root.pendingIndex].icon ?? "power") : "power"
                         size: Tokens.size.iconLg
                         tone: "danger"
-                        framed: true
+                        framed: false
                     }
 
                     ColumnLayout {
@@ -353,7 +318,9 @@ WidgetSurface {
         running: true
         command: ["omarchy-hibernation-available"]
         onExited: function (code) {
-            root.hibernateAvailable = (code === 0)
+            const ok = (code === 0)
+            root.hibernateAvailable = ok
+            Cache.put("power_hibernate", ok)
         }
     }
 
@@ -361,7 +328,11 @@ WidgetSurface {
         running: true
         command: ["bash", "-c", "[ -d /usr/lib/modules/$(uname -r) ] || echo restart"]
         stdout: StdioCollector {
-            onStreamFinished: root.restartNeeded = text.indexOf("restart") >= 0
+            onStreamFinished: {
+                const need = text.indexOf("restart") >= 0
+                root.restartNeeded = need
+                Cache.put("power_restart", need)
+            }
         }
     }
 }
