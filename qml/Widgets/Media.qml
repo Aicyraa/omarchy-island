@@ -10,12 +10,14 @@ import "../Services"
 import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 import "../QuickshellDS/Components"
-import "../QuickshellDS/Patterns"
 
 WidgetSurface {
     id: root
 
-    preferredWidth: 540
+    preferredWidth: 440
+    hPad: Tokens.space.lg
+    vPad: Tokens.space.md
+    compact: root.player === null
     hint: qsTr("Space play/pause · ←/→ seek · ↑/↓ volume · Esc close")
 
     property int selectedIndex: 0
@@ -132,6 +134,13 @@ WidgetSurface {
         }
     }
 
+    Keys.onTabPressed: event => {
+        if (root.players.length > 1) {
+            IslandState.touch(true)
+            root.selectedIndex = (root.clampedIndex + 1) % root.players.length
+            event.accepted = true
+        }
+    }
     Keys.onSpacePressed: event => {
         IslandState.touch(true)
         if (root.player)
@@ -168,76 +177,13 @@ WidgetSurface {
         description: qsTr("Start music or video to control playback here")
     }
 
-    // Multi-player switcher strip
-    TabStrip {
-        visible: root.player !== null && root.players.length > 1
-        width: parent.width
-        stretch: true
-        accessibleLabel: qsTr("Active media player")
-        tabs: root.players.map(function (p, i) {
-            return { id: String(i), label: p.identity || qsTr("Player %1").arg(i + 1) }
-        })
-        current: String(root.clampedIndex)
-        onPicked: function (id) { root.selectedIndex = parseInt(id, 10) || 0 }
-    }
-
-    // Quiet single-line source pill when only one player is active
-    Rectangle {
-        visible: root.player !== null && root.players.length === 1 && (root.player.identity || "") !== ""
-        implicitWidth: sourcePillRow.implicitWidth + Tokens.space.md * 2
-        implicitHeight: Tokens.px(24)
-        radius: Tokens.radius.pill
-        color: Tokens.veilOf(Tokens.surfaceStyle)
-        border.width: Tokens.hairlineWidth
-        border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
-
-        RowLayout {
-            id: sourcePillRow
-
-            anchors.centerIn: parent
-            spacing: Tokens.space.xs
-
-            Icon {
-                icon: "music"
-                size: Tokens.size.iconXs
-                tone: "muted"
-            }
-
-            TextLabel {
-                role: "caption"
-                tone: "muted"
-                text: root.player ? (root.player.identity || "") : ""
-            }
-        }
-    }
-
-    // Active player hero card
-    Card {
+    // Borderless media layout: large standalone left cover + right visualizer/controls/duration
+    Item {
         id: heroCard
 
         visible: root.player !== null
         width: parent.width
-        horizontalPadding: 0
-        verticalPadding: 0
-        implicitHeight: heroCol.implicitHeight + Tokens.space.lg * 2
-
-        // Subtle tinted album-art ambient backdrop scrim
-        ClippingRectangle {
-            anchors.fill: parent
-            radius: heroCard.radius
-            color: "transparent"
-            visible: coverImg.status === Image.Ready
-
-            Image {
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                sourceSize: Qt.size(Tokens.px(64), Tokens.px(64))
-                source: root.artUrl
-                opacity: 0.14
-            }
-        }
+        implicitHeight: heroCol.implicitHeight
 
         ColumnLayout {
             id: heroCol
@@ -245,23 +191,24 @@ WidgetSurface {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: Tokens.space.lg
-            spacing: Tokens.space.md
+            spacing: Tokens.space.xs
 
-            // Top row: 84x84 cover art + 2-line title/subtitle + compact non-progress Visualizer
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Tokens.space.lg
+                spacing: Tokens.space.md
 
+                // Left: Standalone large high-res album artwork (borderless)
                 Item {
-                    Layout.preferredWidth: Tokens.px(84)
-                    Layout.preferredHeight: Tokens.px(84)
+                    Layout.preferredWidth: Tokens.px(116)
+                    Layout.preferredHeight: Tokens.px(116)
                     Layout.alignment: Qt.AlignVCenter
 
                     ClippingRectangle {
                         anchors.fill: parent
                         radius: Tokens.radius.md
-                        color: Tokens.veilOf(Tokens.surfaceStyle)
+                        color: "transparent"
+                        border.width: 0
+                        border.color: "transparent"
                         visible: coverImg.status === Image.Ready
 
                         Image {
@@ -271,7 +218,9 @@ WidgetSurface {
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
                             cache: true
-                            sourceSize: Qt.size(Tokens.px(168), Tokens.px(168))
+                            smooth: true
+                            mipmap: true
+                            sourceSize: Qt.size(256, 256)
                             source: root.artUrl
                         }
                     }
@@ -283,154 +232,191 @@ WidgetSurface {
                     }
                 }
 
+                // Right: Title + player dots, 48-bar visualizer, and start time / transport / end time
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
+                    Layout.minimumHeight: Tokens.px(116)
                     spacing: Tokens.space.xs
 
-                    TextLabel {
+                    // Top row: Track title/subtitle left + multi-player switcher dots top-right
+                    RowLayout {
                         Layout.fillWidth: true
-                        role: "title"
-                        font.weight: Font.Medium
-                        singleLine: false
-                        maximumLineCount: 2
-                        elide: Text.ElideRight
-                        text: root.trackTitle !== "" ? root.trackTitle : qsTr("Unknown track")
+                        spacing: Tokens.space.sm
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: Tokens.space.xxs
+
+                            TextLabel {
+                                Layout.fillWidth: true
+                                role: "subtitle"
+                                font.weight: Font.DemiBold
+                                singleLine: true
+                                elide: Text.ElideRight
+                                text: root.trackTitle !== "" ? root.trackTitle : qsTr("Unknown track")
+                                textFormat: Text.PlainText
+                            }
+
+                            TextLabel {
+                                Layout.fillWidth: true
+                                visible: root.trackSubtitle !== ""
+                                role: "caption"
+                                tone: "muted"
+                                singleLine: true
+                                elide: Text.ElideRight
+                                text: root.trackSubtitle
+                                textFormat: Text.PlainText
+                            }
+                        }
+
+                        // Subtle multi-player switcher dots in top-right corner
+                        Row {
+                            visible: root.players.length > 1
+                            Layout.alignment: Qt.AlignTop
+                            Layout.topMargin: Tokens.space.xxs
+                            spacing: Tokens.space.xs
+
+                            Repeater {
+                                model: root.players.length
+
+                                delegate: Rectangle {
+                                    id: playerDot
+
+                                    required property int index
+                                    readonly property bool active: playerDot.index === root.clampedIndex
+
+                                    width: active ? Tokens.px(16) : Tokens.px(6)
+                                    height: Tokens.px(6)
+                                    radius: Tokens.radius.pill
+                                    color: active ? Tokens.color.accent : Tokens.color.textMuted
+                                    opacity: active ? 1.0 : 0.45
+
+                                    Behavior on width {
+                                        enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                        NumberAnimation { duration: Tokens.motion.fast; easing.type: Tokens.motion.easeOut }
+                                    }
+
+                                    TapHandler {
+                                        onTapped: root.selectedIndex = playerDot.index
+                                    }
+                                }
+                            }
+                        }
                     }
 
-                    TextLabel {
+                    // Middle row: Extended 48-bar audio visualizer with waveform seek
+                    Item {
                         Layout.fillWidth: true
-                        visible: root.trackSubtitle !== ""
-                        role: "sm"
-                        tone: "muted"
-                        text: root.trackSubtitle
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: Tokens.px(36)
+
+                        Visualizer {
+                            anchors.fill: parent
+                            bars: 48
+                            mirror: true
+                            gap: 2
+                            maxBarW: Tokens.px(3)
+                            active: root.playing && root.visible
+                            progress: root.duration > 0
+                                ? Math.max(0, Math.min(1, (root.player ? root.player.position : 0) / root.duration))
+                                : -1
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: root.seekable
+                            cursorShape: root.seekable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: mouse => {
+                                if (root.seekable && width > 0)
+                                    root.player.position = Math.max(0, Math.min(root.duration, (mouse.x / width) * root.duration))
+                            }
+                            onPositionChanged: mouse => {
+                                if (pressed && root.seekable && width > 0)
+                                    root.player.position = Math.max(0, Math.min(root.duration, (mouse.x / width) * root.duration))
+                            }
+                        }
                     }
-                }
 
-                Visualizer {
-                    visible: root.playing
-                    Layout.preferredWidth: Tokens.px(64)
-                    Layout.preferredHeight: Tokens.px(28)
-                    Layout.alignment: Qt.AlignVCenter
-                    bars: 12
-                    mirror: true
-                    progress: -1
-                    active: root.playing && root.visible
-                }
-            }
+                    // Bottom row: Start time (left) + prev/play-pause/next (center) + end time (right)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Tokens.space.sm
 
-            // Full-width centered 5-control transport bar
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Tokens.space.md
+                        TextLabel {
+                            visible: root.duration > 0
+                            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                            horizontalAlignment: Text.AlignLeft
+                            role: "caption"
+                            font.family: Tokens.type.monoFamily
+                            tabular: true
+                            tone: "muted"
+                            text: root.fmtTime(root.player ? root.player.position : 0)
+                            textFormat: Text.PlainText
+                        }
 
-                Item { Layout.fillWidth: true }
+                        Item { Layout.fillWidth: true }
 
-                Button {
-                    icon: "shuffle"
-                    variant: "ghost"
-                    shape: "circle"
-                    size: "sm"
-                    active: root.player !== null && root.player.shuffle
-                    enabled: root.player !== null && root.player.shuffleSupported
-                    accessibleLabel: qsTr("Shuffle")
-                    onClicked: {
-                        if (root.player && root.player.shuffleSupported)
-                            root.player.shuffle = !root.player.shuffle
+                        RowLayout {
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: Tokens.space.xs
+
+                            Button {
+                                visible: root.playing
+                                icon: "skip-back"
+                                variant: "ghost"
+                                shape: "circle"
+                                size: "sm"
+                                enabled: root.player !== null && root.player.canGoPrevious
+                                accessibleLabel: qsTr("Previous track")
+                                onClicked: {
+                                    if (root.player)
+                                        root.player.previous()
+                                }
+                            }
+
+                            Button {
+                                icon: root.playing ? "pause" : "play"
+                                variant: "primary"
+                                shape: "circle"
+                                size: "md"
+                                enabled: root.player !== null && (root.player.canPlay || root.player.canPause)
+                                accessibleLabel: root.playing ? qsTr("Pause") : qsTr("Play")
+                                onClicked: {
+                                    if (root.player)
+                                        root.player.togglePlaying()
+                                }
+                            }
+
+                            Button {
+                                visible: root.playing
+                                icon: "skip-forward"
+                                variant: "ghost"
+                                shape: "circle"
+                                size: "sm"
+                                enabled: root.player !== null && root.player.canGoNext
+                                accessibleLabel: qsTr("Next track")
+                                onClicked: {
+                                    if (root.player)
+                                        root.player.next()
+                                }
+                            }
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        TextLabel {
+                            visible: root.duration > 0
+                            Layout.alignment: Qt.AlignTop | Qt.AlignRight
+                            horizontalAlignment: Text.AlignRight
+                            role: "caption"
+                            font.family: Tokens.type.monoFamily
+                            tabular: true
+                            tone: "muted"
+                            text: root.duration > 0 ? root.fmtTime(root.duration) : "--:--"
+                            textFormat: Text.PlainText
+                        }
                     }
-                }
-
-                Button {
-                    icon: "skip-back"
-                    variant: "ghost"
-                    shape: "circle"
-                    size: "md"
-                    enabled: root.player !== null && root.player.canGoPrevious
-                    accessibleLabel: qsTr("Previous track")
-                    onClicked: {
-                        if (root.player)
-                            root.player.previous()
-                    }
-                }
-
-                Button {
-                    icon: root.player !== null && root.player.isPlaying ? "pause" : "play"
-                    variant: "primary"
-                    shape: "circle"
-                    size: "lg"
-                    enabled: root.player !== null && (root.player.canPlay || root.player.canPause)
-                    accessibleLabel: root.player !== null && root.player.isPlaying ? qsTr("Pause") : qsTr("Play")
-                    onClicked: {
-                        if (root.player)
-                            root.player.togglePlaying()
-                    }
-                }
-
-                Button {
-                    icon: "skip-forward"
-                    variant: "ghost"
-                    shape: "circle"
-                    size: "md"
-                    enabled: root.player !== null && root.player.canGoNext
-                    accessibleLabel: qsTr("Next track")
-                    onClicked: {
-                        if (root.player)
-                            root.player.next()
-                    }
-                }
-
-                Button {
-                    icon: "repeat"
-                    variant: "ghost"
-                    shape: "circle"
-                    size: "sm"
-                    active: root.player !== null && root.player.loopState !== MprisLoopState.None
-                    enabled: root.player !== null && root.player.loopSupported
-                    accessibleLabel: qsTr("Repeat")
-                    onClicked: root.cycleLoop()
-                }
-
-                Item { Layout.fillWidth: true }
-            }
-
-            // Thin scrubbing slider with 48 px tabular elapsed/total timestamps
-            RowLayout {
-                visible: root.duration > 0
-                Layout.fillWidth: true
-                spacing: Tokens.space.sm
-
-                TextLabel {
-                    Layout.preferredWidth: Tokens.px(48)
-                    horizontalAlignment: Text.AlignLeft
-                    role: "mono"
-                    tabular: true
-                    tone: "muted"
-                    text: root.fmtTime(root.player ? root.player.position : 0)
-                }
-
-                Slider {
-                    Layout.fillWidth: true
-                    style: "thin"
-                    showReadout: false
-                    from: 0
-                    to: root.duration > 0 ? root.duration : 1
-                    stepSize: 1
-                    value: root.duration > 0 ? Math.min(root.duration, Math.max(0, root.player.position)) : 0
-                    enabled: root.seekable
-                    accessibleLabel: qsTr("Playback position")
-                    onMoved: val => {
-                        if (root.seekable)
-                            root.player.position = val
-                    }
-                }
-
-                TextLabel {
-                    Layout.preferredWidth: Tokens.px(48)
-                    horizontalAlignment: Text.AlignRight
-                    role: "mono"
-                    tabular: true
-                    tone: "muted"
-                    text: root.duration > 0 ? root.fmtTime(root.duration) : "--:--"
                 }
             }
         }

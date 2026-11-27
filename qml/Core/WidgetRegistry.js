@@ -5,7 +5,7 @@
 var widgets = {
   settings:      { file: "Settings.qml", w: 680, h: 520 },
   home:          { file: "Settings.qml", w: 680, h: 520 },
-  media:         { file: "Media.qml", w: 540, h: 244 },
+  media:         { file: "Media.qml", w: 440, h: 140 },
   capture:       { file: "Capture.qml", w: 540, h: 364 },
   wifi:          { file: "Wifi.qml", w: 560, h: 397 },
   bluetooth:     { file: "Bluetooth.qml", w: 560, h: 213 },
