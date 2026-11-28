@@ -10,7 +10,6 @@ import "../Services"
 import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 import "../QuickshellDS/Components"
-import "../QuickshellDS/Patterns"
 
 WidgetSurface {
     id: root
@@ -241,64 +240,67 @@ WidgetSurface {
         }
     }
 
-    // ── HEADER ──────────────────────────────────────────────────────────────────
+    // ── TOP CONNECTED SECTION + ACTION CONTROLS ─────────────────────────────────
     RowLayout {
         width: parent.width
-        spacing: Tokens.space.sm
+        spacing: Tokens.space.md
 
-        DetailHeader {
+        Item {
             Layout.fillWidth: true
-            backable: false
-            title: qsTr("Wi-Fi")
-            icon: Net.enabled ? "wifi" : "wifi-off"
-            detail: !Net.hasWifi
-                ? qsTr("Adapter unavailable")
-                : (!Net.enabled ? qsTr("Radio off") : "")
-        }
-
-        Button {
-            visible: Net.hasWifi && Net.connected
-            icon: "qr-code"
-            variant: root.sharing ? "primary" : "secondary"
-            size: "sm"
-            accessibleLabel: qsTr("Share Wi-Fi QR code")
-            onClicked: root.toggleShare()
-        }
-
-        Button {
-            visible: Net.hasWifi
-            icon: "refresh-cw"
-            variant: "secondary"
-            size: "sm"
-            enabled: Net.enabled && !root.scanning
-            loading: root.scanning
-            accessibleLabel: qsTr("Rescan networks")
-            onClicked: root.rescan()
-        }
-
-        ToggleSwitch {
-            visible: Net.hasWifi
-            checked: Net.enabled
-            accessibleLabel: qsTr("Toggle Wi-Fi radio")
-            onToggled: Net.toggle()
-        }
-    }
-
-    // ── CONNECTED HERO CARD ─────────────────────────────────────────────────────
-    Card {
-        visible: Net.hasWifi && Net.enabled && Net.connected
-        width: parent.width
-        horizontalPadding: Tokens.space.lg
-        verticalPadding: Tokens.space.md
-        implicitHeight: heroCol.implicitHeight + verticalPadding * 2
-
-        ColumnLayout {
-            id: heroCol
-            width: parent.width
-            spacing: Tokens.space.md
+            Layout.alignment: Qt.AlignVCenter
+            implicitHeight: connectedRow.visible ? connectedRow.implicitHeight : idleRow.implicitHeight
 
             RowLayout {
-                Layout.fillWidth: true
+                id: idleRow
+                visible: !(Net.hasWifi && Net.enabled && Net.connected)
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Tokens.space.md
+
+                WifiIcon {
+                    level: 0
+                    off: !Net.hasWifi || !Net.enabled
+                    size: Tokens.size.iconXl
+                    color: Tokens.color.textMuted
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.xxs
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "subtitle"
+                        font.weight: Font.Medium
+                        tone: "secondary"
+                        text: !Net.hasWifi
+                            ? qsTr("No Wi-Fi adapter")
+                            : (!Net.enabled ? qsTr("Wi-Fi is off") : qsTr("Not connected"))
+                        textFormat: Text.PlainText
+                    }
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "caption"
+                        tone: "muted"
+                        text: !Net.hasWifi
+                            ? qsTr("Adapter unavailable")
+                            : (!Net.enabled
+                                ? qsTr("Turn on Wi-Fi to see networks")
+                                : (root.scanning ? qsTr("Scanning for networks…") : qsTr("Select a network below to connect")))
+                        textFormat: Text.PlainText
+                    }
+                }
+            }
+
+            RowLayout {
+                id: connectedRow
+                visible: Net.hasWifi && Net.enabled && Net.connected
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: Tokens.space.md
 
                 WifiIcon {
@@ -306,11 +308,12 @@ WidgetSurface {
                     off: !Net.enabled
                     size: Tokens.size.iconXl
                     color: Tokens.color.accent
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: Tokens.space.xxs
+                    spacing: Tokens.space.xs
 
                     RowLayout {
                         Layout.fillWidth: true
@@ -320,163 +323,269 @@ WidgetSurface {
                             Layout.fillWidth: true
                             role: "subtitle"
                             font.weight: Font.Medium
+                            singleLine: true
+                            elide: Text.ElideRight
                             text: Net.ssid
+                            textFormat: Text.PlainText
                         }
 
                         TextLabel {
                             role: "sm"
                             tabular: true
-                            tone: "accent"
+                            tone: Net.strength > 0.5 ? "accent" : (Net.strength > 0.25 ? "warning" : "danger")
                             font.weight: Font.Medium
                             text: Math.round(Net.strength * 100) + "%"
+                            textFormat: Text.PlainText
                         }
                     }
 
-                    UsageBar {
+                    // Ascending 36-bar vertical signal-strength graph visualizer
+                    Item {
+                        id: signalGraph
+
+                        readonly property int barCount: 36
+                        readonly property real strength: Math.max(0, Math.min(1, Net.strength))
+                        readonly property color litColor: strength > 0.5
+                            ? Tokens.color.accent
+                            : (strength > 0.25 ? Tokens.color.warning : Tokens.color.danger)
+
                         Layout.fillWidth: true
-                        progress: Net.strength
-                        segmented: true
-                        autoThreshold: true
-                    }
+                        Layout.preferredHeight: Tokens.px(12)
 
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "caption"
-                        tone: "muted"
-                        tabular: true
-                        text: root.quality(Net.strength)
-                            + (root.info.ip ? " · " + root.info.ip : "")
-                            + (root.band(root.info.freq) ? " · " + root.band(root.info.freq) : "")
-                            + (root.info.bitrate ? " · " + String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "")
-                    }
-                }
+                        Repeater {
+                            model: signalGraph.barCount
 
-                Button {
-                    text: qsTr("Disconnect")
-                    variant: "danger"
-                    size: "sm"
-                    accessibleLabel: qsTr("Disconnect from Wi-Fi")
-                    onClicked: if (Net.active) Net.active.disconnect()
-                }
-            }
+                            Rectangle {
+                                id: sigBar
 
-            // Balanced side-by-side QR share view
-            Rectangle {
-                visible: root.sharing
-                Layout.fillWidth: true
-                Layout.preferredHeight: Tokens.hairlineWidth
-                color: Tokens.color.hairline
-            }
+                                required property int index
 
-            RowLayout {
-                visible: root.sharing
-                Layout.fillWidth: true
-                spacing: Tokens.space.lg
+                                readonly property real frac: signalGraph.barCount > 1
+                                    ? index / (signalGraph.barCount - 1) : 1.0
+                                readonly property bool lit: (index + 0.5) / signalGraph.barCount <= signalGraph.strength
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: Tokens.space.xs
+                                width: Tokens.px(3)
+                                height: Math.max(Tokens.px(3), Math.round(Tokens.px(3) + (signalGraph.height - Tokens.px(3)) * sigBar.frac))
+                                x: signalGraph.barCount > 1
+                                    ? Math.round(sigBar.frac * Math.max(0, signalGraph.width - sigBar.width))
+                                    : 0
+                                anchors.bottom: parent.bottom
+                                radius: Tokens.radius.pill
+                                color: sigBar.lit ? signalGraph.litColor : Tokens.veilHoverOf(Tokens.surfaceStyle)
 
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "subtitle"
-                        font.weight: Font.Medium
-                        text: qsTr("Share Wi-Fi")
-                    }
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "body"
-                        tone: "accent"
-                        font.weight: Font.Medium
-                        text: root.qr.ssid || Net.ssid
-                    }
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "sm"
-                        tone: "muted"
-                        singleLine: false
-                        text: qsTr("Scan this QR code with your phone camera to join automatically.")
-                    }
-
-                    TextLabel {
-                        visible: root.band(root.info.freq) !== "" || root.info.ip !== undefined
-                        Layout.fillWidth: true
-                        role: "caption"
-                        tone: "muted"
-                        tabular: true
-                        text: (root.band(root.info.freq) ? root.band(root.info.freq) : "")
-                            + (root.band(root.info.freq) && root.info.ip ? " · " : "")
-                            + (root.info.ip ? root.info.ip : "")
-                    }
-                }
-
-                Rectangle {
-                    Layout.preferredWidth: Tokens.px(160)
-                    Layout.preferredHeight: Tokens.px(160)
-                    Layout.alignment: Qt.AlignVCenter
-                    radius: Tokens.radius.md
-                    color: "#ffffff"
-
-                    Canvas {
-                        id: codeCanvas
-                        anchors.fill: parent
-                        anchors.margins: Tokens.space.xs
-                        onPaint: {
-                            const ctx = getContext("2d")
-                            ctx.reset()
-                            ctx.fillStyle = "#ffffff"
-                            ctx.fillRect(0, 0, width, height)
-                            const n = root.qr.size
-                            if (n <= 0) return
-                            const quiet = 4
-                            const cells = n + 2 * quiet
-                            const m = Math.floor(Math.min(width, height) / cells)
-                            const ox = Math.floor((width - cells * m) / 2) + quiet * m
-                            const oy = Math.floor((height - cells * m) / 2) + quiet * m
-                            ctx.fillStyle = "#000000"
-                            for (let y = 0; y < n; y++) {
-                                const row = root.qr.rows[y]
-                                for (let x = 0; x < n; x++) {
-                                    if (row.charAt(x) === "1")
-                                        ctx.fillRect(ox + x * m, oy + y * m, m, m)
+                                Behavior on color {
+                                    enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                    ColorAnimation { duration: Tokens.motion.fast }
                                 }
                             }
                         }
                     }
 
                     TextLabel {
-                        visible: root.qr.size === 0
-                        anchors.centerIn: parent
-                        width: parent.width - Tokens.space.md
-                        horizontalAlignment: Text.AlignHCenter
-                        singleLine: false
+                        Layout.fillWidth: true
                         role: "caption"
-                        color: "#000000"
-                        text: root.qr.error !== "" ? root.qr.error : qsTr("Generating QR…")
+                        tone: "muted"
+                        tabular: true
+                        singleLine: true
+                        elide: Text.ElideRight
+                        text: root.quality(Net.strength)
+                            + (root.info.ip ? " · " + root.info.ip : "")
+                            + (root.band(root.info.freq) ? " · " + root.band(root.info.freq) : "")
+                            + (root.info.bitrate ? " · " + String(root.info.bitrate).replace(" MBit/s", " Mb/s") : "")
+                        textFormat: Text.PlainText
                     }
+                }
+            }
+        }
+
+        Rectangle {
+            visible: Net.hasWifi
+            Layout.preferredWidth: Tokens.hairlineWidth
+            Layout.fillHeight: true
+            Layout.topMargin: Tokens.space.xs
+            Layout.bottomMargin: Tokens.space.xs
+            color: Tokens.color.hairline
+        }
+
+        ColumnLayout {
+            id: rightCtrlCol
+
+            visible: Net.hasWifi
+            Layout.fillWidth: false
+            Layout.preferredWidth: topCtrlRow.implicitWidth
+            Layout.minimumWidth: topCtrlRow.implicitWidth
+            Layout.maximumWidth: topCtrlRow.implicitWidth
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+            spacing: Tokens.space.sm
+
+            RowLayout {
+                id: topCtrlRow
+
+                Layout.alignment: Qt.AlignRight
+                spacing: Tokens.space.sm
+
+                Button {
+                    icon: "refresh-cw"
+                    variant: "elevated"
+                    shape: "circle"
+                    size: "sm"
+                    enabled: Net.enabled
+                    accessibleLabel: qsTr("Rescan networks")
+                    onClicked: if (!root.scanning) root.rescan()
+                }
+
+                ToggleSwitch {
+                    checked: Net.enabled
+                    accessibleLabel: qsTr("Toggle Wi-Fi radio")
+                    onToggled: Net.toggle()
+                }
+            }
+
+            RowLayout {
+                visible: Net.enabled && Net.connected
+                Layout.fillWidth: true
+                spacing: Tokens.space.sm
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    icon: "qr-code"
+                    variant: root.sharing ? "primary" : "elevated"
+                    shape: "pill"
+                    size: "sm"
+                    accessibleLabel: qsTr("Share Wi-Fi QR code")
+                    onClicked: root.toggleShare()
+                }
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    icon: "unlink"
+                    variant: "dangerSubtle"
+                    shape: "pill"
+                    size: "sm"
+                    accessibleLabel: qsTr("Disconnect from Wi-Fi")
+                    onClicked: if (Net.active) Net.active.disconnect()
                 }
             }
         }
     }
 
-    // ── AVAILABLE NETWORKS LIST ─────────────────────────────────────────────────
-    Surface {
+    // ── QR SHARE VIEW ───────────────────────────────────────────────────────────
+    ColumnLayout {
+        visible: Net.hasWifi && Net.enabled && Net.connected && root.sharing
+        width: parent.width
+        spacing: Tokens.space.md
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: Tokens.hairlineWidth
+            color: Tokens.color.hairline
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Tokens.space.lg
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: Tokens.space.xs
+
+                TextLabel {
+                    Layout.fillWidth: true
+                    role: "subtitle"
+                    font.weight: Font.Medium
+                    text: qsTr("Share Wi-Fi")
+                }
+
+                TextLabel {
+                    Layout.fillWidth: true
+                    role: "body"
+                    tone: "accent"
+                    font.weight: Font.Medium
+                    text: root.qr.ssid || Net.ssid
+                }
+
+                TextLabel {
+                    Layout.fillWidth: true
+                    role: "sm"
+                    tone: "muted"
+                    singleLine: false
+                    text: qsTr("Scan this QR code with your phone camera to join automatically.")
+                }
+
+                TextLabel {
+                    visible: root.band(root.info.freq) !== "" || root.info.ip !== undefined
+                    Layout.fillWidth: true
+                    role: "caption"
+                    tone: "muted"
+                    tabular: true
+                    text: (root.band(root.info.freq) ? root.band(root.info.freq) : "")
+                        + (root.band(root.info.freq) && root.info.ip ? " · " : "")
+                        + (root.info.ip ? root.info.ip : "")
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: Tokens.px(160)
+                Layout.preferredHeight: Tokens.px(160)
+                Layout.alignment: Qt.AlignVCenter
+                radius: Tokens.radius.md
+                color: "#ffffff"
+
+                Canvas {
+                    id: codeCanvas
+                    anchors.fill: parent
+                    anchors.margins: Tokens.space.xs
+                    onPaint: {
+                        const ctx = getContext("2d")
+                        ctx.reset()
+                        ctx.fillStyle = "#ffffff"
+                        ctx.fillRect(0, 0, width, height)
+                        const n = root.qr.size
+                        if (n <= 0) return
+                        const quiet = 4
+                        const cells = n + 2 * quiet
+                        const m = Math.floor(Math.min(width, height) / cells)
+                        const ox = Math.floor((width - cells * m) / 2) + quiet * m
+                        const oy = Math.floor((height - cells * m) / 2) + quiet * m
+                        ctx.fillStyle = "#000000"
+                        for (let y = 0; y < n; y++) {
+                            const row = root.qr.rows[y]
+                            for (let x = 0; x < n; x++) {
+                                if (row.charAt(x) === "1")
+                                    ctx.fillRect(ox + x * m, oy + y * m, m, m)
+                            }
+                        }
+                    }
+                }
+
+                TextLabel {
+                    visible: root.qr.size === 0
+                    anchors.centerIn: parent
+                    width: parent.width - Tokens.space.md
+                    horizontalAlignment: Text.AlignHCenter
+                    singleLine: false
+                    role: "caption"
+                    color: "#000000"
+                    text: root.qr.error !== "" ? root.qr.error : qsTr("Generating QR…")
+                }
+            }
+        }
+    }
+
+    // ── AVAILABLE NETWORKS LIST (borderless container) ──────────────────────────
+    Item {
         visible: Net.hasWifi && Net.enabled && !root.sharing && root.availNets.length > 0
         width: parent.width
-        role: "card"
-        horizontalPadding: Tokens.space.sm
-        verticalPadding: Tokens.space.sm
-        radius: Tokens.radius.md
-        implicitHeight: Math.min(Tokens.px(48) * 5, netList.contentHeight) + verticalPadding * 2
+        implicitHeight: Math.min(Tokens.px(72) * 4 + Tokens.space.sm * 3, netList.contentHeight)
 
         ListView {
             id: netList
 
             anchors.fill: parent
-            spacing: 0
+            spacing: Tokens.space.sm
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             model: root.availNets
@@ -503,28 +612,17 @@ WidgetSurface {
 
                 width: netList.width
                 implicitHeight: netRow.askingPw
-                    ? (netRowCol.implicitHeight + Tokens.space.sm * 2)
-                    : (netRow.modelData.known ? Tokens.px(54) : Tokens.px(48))
-
-                Rectangle {
-                    visible: netRow.index > 0
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: Tokens.space.md
-                    anchors.rightMargin: Tokens.space.md
-                    height: Tokens.hairlineWidth
-                    color: Tokens.color.hairline
-                }
+                    ? Math.max(Tokens.px(72), netRowCol.implicitHeight + Tokens.space.md * 2)
+                    : Tokens.px(72)
 
                 Rectangle {
                     anchors.fill: parent
-                    anchors.topMargin: netRow.index > 0 ? Tokens.space.xxs : 0
-                    anchors.bottomMargin: Tokens.space.xxs
-                    radius: Tokens.radius.sm
+                    radius: Tokens.radius.md
+                    border.width: 0
+                    border.color: "transparent"
                     color: (rowHover.hovered || root.sel === netRow.index || netRow.askingPw)
                         ? Tokens.veilHoverOf(Tokens.surfaceStyle)
-                        : "transparent"
+                        : Tokens.veilOf(Tokens.surfaceStyle)
 
                     Behavior on color {
                         enabled: !Tokens.reducedMotion && !Tokens.gameMode
@@ -534,15 +632,15 @@ WidgetSurface {
 
                 FocusRing {
                     active: root.sel === netRow.index
-                    ringRadius: Tokens.radius.sm
+                    ringRadius: Tokens.radius.md
                 }
 
                 ColumnLayout {
                     id: netRowCol
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.leftMargin: Tokens.space.md
-                    anchors.rightMargin: Tokens.space.md
+                    anchors.leftMargin: Tokens.space.lg
+                    anchors.rightMargin: Tokens.space.lg
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Tokens.space.sm
 
@@ -552,7 +650,7 @@ WidgetSurface {
 
                         WifiIcon {
                             level: netRow.modelData.signalStrength
-                            size: Tokens.size.iconMd
+                            size: Tokens.size.iconLg
                             color: Tokens.color.text
                         }
 
@@ -563,29 +661,31 @@ WidgetSurface {
                             TextLabel {
                                 Layout.fillWidth: true
                                 role: "body"
+                                font.weight: Font.Medium
                                 text: netRow.modelData.name
                             }
 
                             TextLabel {
-                                visible: netRow.modelData.known
                                 Layout.fillWidth: true
                                 role: "caption"
                                 tone: "muted"
-                                text: root.subtitleOf(netRow.modelData)
+                                text: (netRow.modelData.known ? qsTr("Saved") + " · " : "")
+                                    + root.quality(netRow.modelData.signalStrength)
                             }
                         }
 
-                        Icon {
-                            visible: root.secured(netRow.modelData)
-                            name: "lock"
-                            size: Tokens.size.iconXs
-                            tone: "muted"
-                        }
-
-                        Badge {
-                            visible: netRow.modelData.known
-                            text: qsTr("Saved")
-                            tone: "accent"
+                        Button {
+                            icon: netRow.askingPw ? "close" : "link"
+                            variant: "ghost"
+                            shape: "circle"
+                            size: "sm"
+                            accessibleLabel: netRow.askingPw
+                                ? qsTr("Cancel password entry")
+                                : qsTr("Connect to %1").arg(netRow.modelData.name)
+                            onClicked: {
+                                root.sel = netRow.index
+                                root.connectNetwork(netRow.modelData)
+                            }
                         }
 
                         TextLabel {
@@ -595,17 +695,11 @@ WidgetSurface {
                             text: Math.round(netRow.modelData.signalStrength * 100) + "%"
                         }
 
-                        Button {
-                            text: netRow.askingPw ? qsTr("Cancel") : qsTr("Connect")
-                            variant: netRow.askingPw ? "ghost" : "secondary"
-                            size: "sm"
-                            accessibleLabel: netRow.askingPw
-                                ? qsTr("Cancel password entry")
-                                : qsTr("Connect to %1").arg(netRow.modelData.name)
-                            onClicked: {
-                                root.sel = netRow.index
-                                root.connectNetwork(netRow.modelData)
-                            }
+                        Icon {
+                            name: "lock"
+                            size: Tokens.size.iconSm
+                            tone: "muted"
+                            opacity: root.secured(netRow.modelData) ? 1 : 0
                         }
                     }
 
