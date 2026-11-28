@@ -10,7 +10,7 @@ Rectangle {
 
     property string text: ""
     property string icon: ""
-    property string variant: "secondary" // "primary" | "secondary" | "ghost" | "danger"
+    property string variant: "secondary" // "primary" | "secondary" | "elevated" | "ghost" | "danger" | "dangerSubtle"
     property string shape: "pill"        // "pill" | "rounded" | "circle"
     property string size: "md"           // "sm" | "md" | "lg"
     property bool active: false
@@ -21,6 +21,8 @@ Rectangle {
 
     readonly property bool isPrimary: root.variant === "primary" || root.active
     readonly property bool isDanger: root.variant === "danger"
+    readonly property bool isDangerSubtle: root.variant === "dangerSubtle"
+    readonly property bool isElevated: root.variant === "elevated" && !root.active
     readonly property bool isGhost: root.variant === "ghost" && !root.active
     readonly property bool iconOnly: root.text === "" && root.icon !== ""
 
@@ -55,21 +57,29 @@ Rectangle {
     color: {
         if (root.isDanger)
             return hover.hovered ? Qt.lighter(Tokens.color.danger, 1.1) : Tokens.color.danger
+        if (root.isDangerSubtle)
+            return hover.hovered
+                ? Qt.rgba(Tokens.color.danger.r, Tokens.color.danger.g, Tokens.color.danger.b, 0.26)
+                : Qt.rgba(Tokens.color.danger.r, Tokens.color.danger.g, Tokens.color.danger.b, 0.15)
         if (root.isPrimary)
             return hover.hovered ? Tokens.color.accentHover : Tokens.color.accent
         if (root.isGhost)
             return hover.hovered ? Tokens.veilHoverOf(Tokens.surfaceStyle) : "transparent"
+        if (root.isElevated) {
+            if (Tokens.isTranslucent(Tokens.surfaceStyle)) {
+                return hover.hovered
+                    ? (Tokens.isLight ? Qt.rgba(0, 0, 0, 0.16) : Qt.rgba(1, 1, 1, 0.24))
+                    : (Tokens.isLight ? Qt.rgba(0, 0, 0, 0.10) : Qt.rgba(1, 1, 1, 0.16))
+            }
+            return hover.hovered
+                ? Qt.tint(Tokens.color.surfaceHover, Qt.alpha(Tokens.color.text, 0.20))
+                : Qt.tint(Tokens.color.surfaceHover, Qt.alpha(Tokens.color.text, 0.12))
+        }
         return hover.hovered ? Tokens.veilHoverOf(Tokens.surfaceStyle) : Tokens.veilOf(Tokens.surfaceStyle)
     }
 
-    border.width: root.isGhost && !hover.hovered ? 0 : Tokens.hairlineWidth
-    border.color: {
-        if (root.isDanger)
-            return Tokens.color.danger
-        if (root.isPrimary)
-            return Tokens.color.accent
-        return hover.hovered ? Tokens.color.accent : Tokens.veilBorderOf(Tokens.surfaceStyle)
-    }
+    border.width: 0
+    border.color: "transparent"
 
     Behavior on color {
         enabled: !Tokens.reducedMotion && !Tokens.gameMode
@@ -98,7 +108,7 @@ Rectangle {
         TextLabel {
             visible: root.loading
             role: "mono"
-            tone: (root.isPrimary || root.isDanger) ? "onAccent" : "accent"
+            tone: (root.isPrimary || root.isDanger) ? "onAccent" : (root.isDangerSubtle ? "danger" : "accent")
             text: "󰔟"
         }
 
@@ -108,6 +118,8 @@ Rectangle {
             tone: {
                 if (root.isPrimary || root.isDanger)
                     return "onAccent"
+                if (root.isDangerSubtle)
+                    return "danger"
                 return hover.hovered ? "accent" : "primary"
             }
             icon: root.icon
@@ -116,8 +128,8 @@ Rectangle {
         TextLabel {
             visible: root.text !== ""
             role: root.size === "sm" ? "sm" : "body"
-            tone: (root.isPrimary || root.isDanger) ? "onAccent" : "primary"
-            font.weight: root.isPrimary ? Font.Medium : Font.Normal
+            tone: (root.isPrimary || root.isDanger) ? "onAccent" : (root.isDangerSubtle ? "danger" : "primary")
+            font.weight: (root.isPrimary || root.isElevated || root.isDangerSubtle) ? Font.Medium : Font.Normal
             text: root.text
         }
     }
