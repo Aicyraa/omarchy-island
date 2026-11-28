@@ -8,14 +8,13 @@ import "../Services"
 import "../QuickshellDS/Theme"
 import "../QuickshellDS/Primitives"
 import "../QuickshellDS/Components"
-import "../QuickshellDS/Patterns"
 
 WidgetSurface {
     id: root
 
     preferredWidth: 560
     useReserve: false
-    scrollTarget: (Bt.hasAdapter && Bt.enabled && root.flat.length > 0) ? btList : null
+    scrollTarget: (Bt.hasAdapter && Bt.enabled && root.listDevices.length > 0) ? btList : null
     hint: qsTr("↑/↓ select · Enter connect/disconnect · B radio · S scan · Esc close")
 
     property int sel: 0
@@ -55,6 +54,8 @@ WidgetSurface {
     readonly property var connected: all.filter(d => d.connected)
     readonly property var paired: all.filter(d => !d.connected && (d.paired || d.bonded))
     readonly property var available: all.filter(d => !d.connected && !(d.paired || d.bonded))
+    readonly property var primaryConnected: connected.length > 0 ? connected[0] : null
+    readonly property var listDevices: connected.slice(1).concat(paired).concat(available)
     readonly property var flat: connected.concat(paired).concat(available)
     readonly property bool discovering: Bt.hasAdapter && Bt.adapter.discovering
 
@@ -119,14 +120,14 @@ WidgetSurface {
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Down) {
-            root.sel = Math.min(root.sel + 1, Math.max(0, root.flat.length - 1))
+            root.sel = Math.min(root.sel + 1, Math.max(0, root.listDevices.length - 1))
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             root.sel = Math.max(root.sel - 1, 0)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (root.flat[root.sel])
-                root.toggleDevice(root.flat[root.sel])
+            if (root.listDevices[root.sel])
+                root.toggleDevice(root.listDevices[root.sel])
             event.accepted = true
         } else if (event.key === Qt.Key_B) {
             Bt.toggle()
@@ -137,58 +138,243 @@ WidgetSurface {
         }
     }
 
-    // ── HEADER ──────────────────────────────────────────────────────────────────
+    // ── TOP CONNECTED SECTION + ACTION CONTROLS ─────────────────────────────────
     RowLayout {
         width: parent.width
-        spacing: Tokens.space.sm
+        spacing: Tokens.space.md
 
-        DetailHeader {
+        Item {
             Layout.fillWidth: true
-            backable: false
-            title: qsTr("Bluetooth")
-            icon: Bt.enabled ? "bluetooth" : "bluetooth-off"
-            detail: !Bt.hasAdapter
-                ? qsTr("Adapter unavailable")
-                : (!Bt.enabled ? qsTr("Radio off") : "")
+            Layout.alignment: Qt.AlignVCenter
+            implicitHeight: connectedRow.visible ? connectedRow.implicitHeight : idleRow.implicitHeight
+
+            RowLayout {
+                id: idleRow
+                visible: !(Bt.hasAdapter && Bt.enabled && root.primaryConnected !== null)
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Tokens.space.md
+
+                Icon {
+                    icon: (!Bt.hasAdapter || !Bt.enabled) ? "bluetooth-off" : "bluetooth"
+                    size: Tokens.size.iconXl
+                    tone: "muted"
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.xxs
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "subtitle"
+                        font.weight: Font.Medium
+                        tone: "secondary"
+                        text: !Bt.hasAdapter
+                            ? qsTr("No Bluetooth adapter")
+                            : (!Bt.enabled ? qsTr("Bluetooth is off") : qsTr("Not connected"))
+                        textFormat: Text.PlainText
+                    }
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "caption"
+                        tone: "muted"
+                        text: !Bt.hasAdapter
+                            ? qsTr("Adapter unavailable")
+                            : (!Bt.enabled
+                                ? qsTr("Turn on Bluetooth to connect devices")
+                                : (root.discovering ? qsTr("Scanning for devices…") : qsTr("Select a device below to connect")))
+                        textFormat: Text.PlainText
+                    }
+                }
+            }
+
+            RowLayout {
+                id: connectedRow
+                visible: Bt.hasAdapter && Bt.enabled && root.primaryConnected !== null
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Tokens.space.md
+
+                Icon {
+                    icon: root.iconOf(root.primaryConnected)
+                    size: Tokens.size.iconXl
+                    tone: "accent"
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.xs
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Tokens.space.sm
+
+                        TextLabel {
+                            Layout.fillWidth: true
+                            role: "subtitle"
+                            font.weight: Font.Medium
+                            singleLine: true
+                            elide: Text.ElideRight
+                            text: root.displayNameOf(root.primaryConnected)
+                            textFormat: Text.PlainText
+                        }
+
+                        TextLabel {
+                            readonly property bool hasBat: root.primaryConnected !== null && root.primaryConnected.batteryAvailable === true
+                            readonly property int batPct: hasBat ? Math.round(root.primaryConnected.battery * 100) : 0
+                            role: "sm"
+                            tabular: true
+                            tone: hasBat
+                                ? (batPct > 40 ? "accent" : (batPct > 20 ? "warning" : "danger"))
+                                : "accent"
+                            font.weight: Font.Medium
+                            text: hasBat ? (batPct + "%") : qsTr("Connected")
+                            textFormat: Text.PlainText
+                        }
+                    }
+
+                    // Ascending 36-bar vertical battery graph visualizer
+                    Item {
+                        id: btBatGraph
+
+                        readonly property int barCount: 36
+                        readonly property real level: (root.primaryConnected !== null && root.primaryConnected.batteryAvailable === true)
+                            ? Math.max(0, Math.min(1, root.primaryConnected.battery)) : 0
+                        readonly property color litColor: level > 0.4
+                            ? Tokens.color.accent
+                            : (level > 0.2 ? Tokens.color.warning : Tokens.color.danger)
+
+                        visible: root.primaryConnected !== null && root.primaryConnected.batteryAvailable === true
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Tokens.px(12)
+
+                        Repeater {
+                            model: btBatGraph.barCount
+
+                            Rectangle {
+                                id: btBatBar
+
+                                required property int index
+
+                                readonly property real frac: btBatGraph.barCount > 1
+                                    ? index / (btBatGraph.barCount - 1) : 1.0
+                                readonly property bool lit: (index + 0.5) / btBatGraph.barCount <= btBatGraph.level
+
+                                width: Tokens.px(3)
+                                height: Math.max(Tokens.px(3), Math.round(Tokens.px(3) + (btBatGraph.height - Tokens.px(3)) * btBatBar.frac))
+                                x: btBatGraph.barCount > 1
+                                    ? Math.round(btBatBar.frac * Math.max(0, btBatGraph.width - btBatBar.width))
+                                    : 0
+                                anchors.bottom: parent.bottom
+                                radius: Tokens.radius.pill
+                                color: btBatBar.lit ? btBatGraph.litColor : Tokens.veilHoverOf(Tokens.surfaceStyle)
+
+                                Behavior on color {
+                                    enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                    ColorAnimation { duration: Tokens.motion.fast }
+                                }
+                            }
+                        }
+                    }
+
+                    TextLabel {
+                        Layout.fillWidth: true
+                        role: "caption"
+                        tone: root.isPending(root.primaryConnected) ? "warning" : "muted"
+                        tabular: true
+                        singleLine: true
+                        elide: Text.ElideRight
+                        text: {
+                            const sub = root.statusOf(root.primaryConnected)
+                            if (sub !== "")
+                                return sub
+                            if (root.connected.length > 1)
+                                return qsTr("Connected") + " · " + qsTr("+%1 more").arg(root.connected.length - 1)
+                            return qsTr("Connected") + (root.primaryConnected && root.primaryConnected.address ? " · " + root.primaryConnected.address : "")
+                        }
+                        textFormat: Text.PlainText
+                    }
+                }
+            }
         }
 
-        Button {
+        Rectangle {
             visible: Bt.hasAdapter
-            icon: "refresh-cw"
-            variant: "secondary"
-            size: "sm"
-            enabled: Bt.enabled
-            loading: root.discovering
-            accessibleLabel: qsTr("Scan for Bluetooth devices")
-            onClicked: root.scan()
+            Layout.preferredWidth: Tokens.hairlineWidth
+            Layout.fillHeight: true
+            Layout.topMargin: Tokens.space.xs
+            Layout.bottomMargin: Tokens.space.xs
+            color: Tokens.color.hairline
         }
 
-        ToggleSwitch {
+        ColumnLayout {
+            id: rightCtrlCol
+
             visible: Bt.hasAdapter
-            checked: Bt.enabled
-            accessibleLabel: qsTr("Toggle Bluetooth")
-            onToggled: Bt.toggle()
+            Layout.fillWidth: false
+            Layout.preferredWidth: topCtrlRow.implicitWidth
+            Layout.minimumWidth: topCtrlRow.implicitWidth
+            Layout.maximumWidth: topCtrlRow.implicitWidth
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+            spacing: Tokens.space.sm
+
+            RowLayout {
+                id: topCtrlRow
+
+                Layout.alignment: Qt.AlignRight
+                spacing: Tokens.space.sm
+
+                Button {
+                    icon: "refresh-cw"
+                    variant: "elevated"
+                    shape: "circle"
+                    size: "sm"
+                    enabled: Bt.enabled
+                    accessibleLabel: qsTr("Scan for Bluetooth devices")
+                    onClicked: root.scan()
+                }
+
+                ToggleSwitch {
+                    checked: Bt.enabled
+                    accessibleLabel: qsTr("Toggle Bluetooth")
+                    onToggled: Bt.toggle()
+                }
+            }
+
+            Button {
+                visible: Bt.enabled && root.primaryConnected !== null
+                Layout.fillWidth: true
+                icon: "unlink"
+                variant: "dangerSubtle"
+                shape: "pill"
+                size: "sm"
+                loading: root.isPending(root.primaryConnected)
+                accessibleLabel: qsTr("Disconnect %1").arg(root.displayNameOf(root.primaryConnected))
+                onClicked: root.toggleDevice(root.primaryConnected)
+            }
         }
     }
 
-    // ── GROUPED DEVICES LIST ────────────────────────────────────────────────────
-    Surface {
-        visible: Bt.hasAdapter && Bt.enabled && root.flat.length > 0
+    // ── GROUPED DEVICES LIST (borderless container, soft list items) ────────────
+    Item {
+        visible: Bt.hasAdapter && Bt.enabled && root.listDevices.length > 0
         width: parent.width
-        role: "card"
-        horizontalPadding: Tokens.space.sm
-        verticalPadding: Tokens.space.sm
-        radius: Tokens.radius.md
-        implicitHeight: Math.min(Tokens.px(48) * 5, btList.contentHeight) + verticalPadding * 2
+        implicitHeight: Math.min(Tokens.px(72) * 4 + Tokens.space.sm * 3, btList.contentHeight)
 
         ListView {
             id: btList
 
             anchors.fill: parent
-            spacing: 0
+            spacing: Tokens.space.sm
             clip: true
             boundsBehavior: Flickable.StopAtBounds
-            model: root.flat
+            model: root.listDevices
 
             delegate: Item {
                 id: devRow
@@ -201,7 +387,7 @@ WidgetSurface {
                 readonly property int batPct: hasBat ? Math.round(devRow.modelData.battery * 100) : 0
                 readonly property string sectionGroup: root.groupOf(devRow.modelData)
                 readonly property bool isFirstInGroup: devRow.index === 0
-                    || (devRow.index > 0 && root.groupOf(root.flat[devRow.index - 1]) !== devRow.sectionGroup)
+                    || (devRow.index > 0 && root.groupOf(root.listDevices[devRow.index - 1]) !== devRow.sectionGroup)
                 readonly property string subText: root.statusOf(devRow.modelData)
                 readonly property bool hasSubtitle: devRow.subText !== ""
                 readonly property color batTint: batPct <= 20
@@ -210,18 +396,6 @@ WidgetSurface {
 
                 width: btList.width
                 implicitHeight: devOuterCol.implicitHeight
-
-                // Hairline divider between rows within a group
-                Rectangle {
-                    visible: devRow.index > 0 && !devRow.isFirstInGroup
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: Tokens.space.md
-                    anchors.rightMargin: Tokens.space.md
-                    height: Tokens.hairlineWidth
-                    color: Tokens.color.hairline
-                }
 
                 ColumnLayout {
                     id: devOuterCol
@@ -244,16 +418,18 @@ WidgetSurface {
 
                     Item {
                         Layout.fillWidth: true
-                        implicitHeight: devRow.hasSubtitle ? Tokens.px(56) : Tokens.px(48)
+                        implicitHeight: Tokens.px(72)
 
                         Rectangle {
                             anchors.fill: parent
-                            anchors.topMargin: (devRow.index > 0 && !devRow.isFirstInGroup) ? Tokens.space.xxs : 0
-                            anchors.bottomMargin: Tokens.space.xxs
-                            radius: Tokens.radius.sm
-                            color: (rowHover.hovered || root.sel === devRow.index)
-                                ? Tokens.veilHoverOf(Tokens.surfaceStyle)
-                                : "transparent"
+                            radius: Tokens.radius.md
+                            border.width: 0
+                            border.color: "transparent"
+                            color: devRow.modelData.connected
+                                ? Tokens.color.accentMuted
+                                : ((rowHover.hovered || root.sel === devRow.index)
+                                    ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+                                    : Tokens.veilOf(Tokens.surfaceStyle))
 
                             Behavior on color {
                                 enabled: !Tokens.reducedMotion && !Tokens.gameMode
@@ -263,23 +439,22 @@ WidgetSurface {
 
                         FocusRing {
                             active: root.sel === devRow.index
-                            ringRadius: Tokens.radius.sm
+                            ringRadius: Tokens.radius.md
                         }
 
                         RowLayout {
                             id: devRowLayout
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            anchors.leftMargin: Tokens.px(14)
-                            anchors.rightMargin: Tokens.px(14)
+                            anchors.leftMargin: Tokens.space.lg
+                            anchors.rightMargin: Tokens.space.lg
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: Tokens.space.sm
+                            spacing: Tokens.space.md
 
                             Icon {
                                 icon: root.iconOf(devRow.modelData)
-                                size: Tokens.size.iconMd
+                                size: Tokens.size.iconLg
                                 tone: devRow.modelData.connected ? "accent" : "primary"
-                                framed: true
                             }
 
                             ColumnLayout {
@@ -289,18 +464,45 @@ WidgetSurface {
                                 TextLabel {
                                     Layout.fillWidth: true
                                     role: "body"
-                                    font.weight: devRow.modelData.connected ? Font.Medium : Font.Normal
+                                    font.weight: Font.Medium
                                     tone: devRow.modelData.connected ? "accent" : "primary"
                                     text: root.displayNameOf(devRow.modelData)
                                 }
 
                                 TextLabel {
-                                    visible: devRow.subText !== ""
                                     Layout.fillWidth: true
                                     role: "caption"
                                     tone: root.isPending(devRow.modelData) ? "warning" : "muted"
                                     tabular: true
-                                    text: devRow.subText
+                                    text: devRow.subText !== ""
+                                        ? devRow.subText
+                                        : (devRow.isPaired
+                                            ? qsTr("Paired")
+                                            : (devRow.modelData.address || qsTr("Available")))
+                                }
+                            }
+
+                            Button {
+                                visible: devRow.isPaired && rowHover.hovered
+                                icon: "trash-2"
+                                variant: "ghost"
+                                size: "sm"
+                                accessibleLabel: qsTr("Forget %1").arg(root.displayNameOf(devRow.modelData))
+                                onClicked: root.forgetDevice(devRow.modelData)
+                            }
+
+                            Button {
+                                icon: devRow.modelData.connected ? "unlink" : "link"
+                                variant: devRow.modelData.connected ? "dangerSubtle" : "ghost"
+                                shape: "circle"
+                                size: "sm"
+                                loading: root.isPending(devRow.modelData)
+                                accessibleLabel: devRow.modelData.connected
+                                    ? qsTr("Disconnect %1").arg(root.displayNameOf(devRow.modelData))
+                                    : qsTr("Connect %1").arg(root.displayNameOf(devRow.modelData))
+                                onClicked: {
+                                    root.sel = devRow.index
+                                    root.toggleDevice(devRow.modelData)
                                 }
                             }
 
@@ -341,29 +543,6 @@ WidgetSurface {
                                 text: qsTr("Connected")
                                 tone: "accent"
                             }
-
-                            Button {
-                                text: devRow.modelData.connected ? qsTr("Disconnect") : qsTr("Connect")
-                                variant: devRow.modelData.connected ? "ghost" : "primary"
-                                size: "sm"
-                                loading: root.isPending(devRow.modelData)
-                                accessibleLabel: devRow.modelData.connected
-                                    ? qsTr("Disconnect %1").arg(root.displayNameOf(devRow.modelData))
-                                    : qsTr("Connect %1").arg(root.displayNameOf(devRow.modelData))
-                                onClicked: {
-                                    root.sel = devRow.index
-                                    root.toggleDevice(devRow.modelData)
-                                }
-                            }
-
-                            Button {
-                                visible: devRow.isPaired
-                                icon: "trash-2"
-                                variant: "ghost"
-                                size: "sm"
-                                accessibleLabel: qsTr("Forget %1").arg(root.displayNameOf(devRow.modelData))
-                                onClicked: root.forgetDevice(devRow.modelData)
-                            }
                         }
 
                         HoverHandler {
@@ -384,8 +563,18 @@ WidgetSurface {
     }
 
     // ── EMPTY STATES ────────────────────────────────────────────────────────────
+    TextLabel {
+        visible: Bt.hasAdapter && Bt.enabled && root.connected.length > 0 && root.listDevices.length === 0
+        width: parent.width
+        horizontalAlignment: Text.AlignHCenter
+        role: "caption"
+        tone: "muted"
+        text: root.discovering ? qsTr("Scanning for other devices…") : qsTr("No other devices nearby")
+        textFormat: Text.PlainText
+    }
+
     EmptyState {
-        visible: !Bt.hasAdapter || !Bt.enabled || root.flat.length === 0
+        visible: !Bt.hasAdapter || !Bt.enabled || (root.connected.length === 0 && root.listDevices.length === 0)
         width: parent.width
         icon: !Bt.hasAdapter || !Bt.enabled ? "bluetooth-off" : "bluetooth"
         title: !Bt.hasAdapter
