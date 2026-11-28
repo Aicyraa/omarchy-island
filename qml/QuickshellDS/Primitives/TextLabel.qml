@@ -23,7 +23,8 @@ Text {
     font.pixelSize: {
         switch (root.role) {
         case "caption":  return Tokens.type.caption
-        case "sm":       return Tokens.type.sm
+        case "sm":
+        case "mono":     return Tokens.type.sm
         case "subtitle": return Tokens.type.subtitle
         case "title":    return Tokens.type.title
         case "h2":       return Tokens.type.h2

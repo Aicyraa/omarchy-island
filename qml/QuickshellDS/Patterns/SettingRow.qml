@@ -13,12 +13,14 @@ Item {
     default property alias control: controlSlot.data
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(Tokens.px(48), body.implicitHeight + Tokens.space.lg)
+    implicitHeight: Math.max(Tokens.px(46), body.implicitHeight + Tokens.space.lg)
 
     Separator {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.leftMargin: Tokens.space.lg
+        anchors.rightMargin: Tokens.space.lg
         visible: root.showDivider
     }
 
@@ -26,8 +28,10 @@ Item {
         id: body
 
         anchors.fill: parent
-        anchors.leftMargin: Tokens.space.xl
-        anchors.rightMargin: Tokens.space.xl
+        anchors.leftMargin: Tokens.space.lg
+        anchors.rightMargin: Tokens.space.lg
+        anchors.topMargin: Tokens.space.sm
+        anchors.bottomMargin: Tokens.space.sm
         spacing: Tokens.space.md
 
         ColumnLayout {

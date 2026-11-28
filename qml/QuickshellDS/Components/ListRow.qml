@@ -19,21 +19,21 @@ Rectangle {
     signal clicked()
 
     implicitWidth: Tokens.px(320)
-    implicitHeight: root.subtitle !== "" ? Tokens.px(48) : Tokens.px(36)
-    radius: Tokens.radius.sm
+    implicitHeight: root.subtitle !== "" ? Tokens.px(56) : Tokens.px(44)
+    radius: Tokens.radius.md
     opacity: root.enabled ? 1.0 : 0.45
     activeFocusOnTab: root.enabled
 
     color: {
         if (root.selected)
-            return Tokens.color.accentMuted
-        if (rowHover.hovered)
             return Tokens.veilHoverOf(Tokens.surfaceStyle)
+        if (rowHover.hovered)
+            return Tokens.veilOf(Tokens.surfaceStyle)
         return "transparent"
     }
 
-    border.width: root.selected ? Tokens.hairlineWidth : 0
-    border.color: root.selected ? Tokens.color.accent : "transparent"
+    border.width: 0
+    border.color: "transparent"
 
     Behavior on color {
         enabled: !Tokens.reducedMotion && !Tokens.gameMode
@@ -52,6 +52,8 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: Tokens.space.lg
         anchors.rightMargin: Tokens.space.lg
+        anchors.topMargin: Tokens.space.sm
+        anchors.bottomMargin: Tokens.space.sm
         spacing: Tokens.space.md
 
         Icon {

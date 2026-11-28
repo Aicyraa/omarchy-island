@@ -14,9 +14,9 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 640
-    scrollTarget: sec === 1 ? fontList : null
-    hint: qsTr("Tab section · ←/→ backgrounds · ↑/↓ fonts · Enter apply · Esc close")
+    preferredWidth: 660
+    scrollTarget: root.sec === 0 ? bgGrid : fontList
+    hint: qsTr("Tab section · ←/→/↑/↓ navigate · Enter apply · Esc close")
 
     property int sec: 0
     property int bgIdx: 0
@@ -25,7 +25,16 @@ WidgetSurface {
     property string bgCurrent: ""
     property var fonts: []
     property string fontCurrent: ""
-    readonly property var bgItems: [""].concat(bgs)
+
+    readonly property real fontRowHeight: Tokens.px(44)
+    readonly property real fontRowSpacing: Tokens.space.xs
+
+    onSecChanged: {
+        bgSectionFade.stop()
+        bgGrid.opacity = 1.0
+        fontList.opacity = 1.0
+        bgSectionFade.restart()
+    }
 
     Component.onCompleted: {
         scanBg.running = true
@@ -49,13 +58,13 @@ WidgetSurface {
         function onIntentChanged() { root.takeIntent() }
     }
 
+    function nextBg(): void {
+        Cmd.run(["omarchy-theme-bg-next"])
+        reread.restart()
+    }
+
     function applyBg(i: int): void {
-        if (i === 0) {
-            Cmd.run(["omarchy-theme-bg-next"])
-            reread.restart()
-            return
-        }
-        const p = bgs[i - 1]
+        const p = bgs[i]
         if (!p)
             return
         Cmd.run(["omarchy-theme-bg-set", p])
@@ -92,6 +101,9 @@ WidgetSurface {
                 })
                 root.bgCurrent = cur
                 root.bgs = list
+                const at = list.indexOf(cur)
+                if (at >= 0)
+                    root.bgIdx = at
             }
         }
     }
@@ -123,37 +135,53 @@ WidgetSurface {
             IslandState.touch(true)
             root.sec = 1 - root.sec
             event.accepted = true
-        } else if (event.key === Qt.Key_Left && root.sec === 0) {
-            IslandState.touch(true)
-            root.bgIdx = Math.max(0, root.bgIdx - 1)
-            bgList.positionViewAtIndex(root.bgIdx, ListView.Contain)
-            event.accepted = true
-        } else if (event.key === Qt.Key_Right && root.sec === 0) {
-            IslandState.touch(true)
-            root.bgIdx = Math.min(root.bgItems.length - 1, root.bgIdx + 1)
-            bgList.positionViewAtIndex(root.bgIdx, ListView.Contain)
-            event.accepted = true
-        } else if (event.key === Qt.Key_Up && root.sec === 1) {
-            IslandState.touch(true)
-            root.fontIdx = Math.max(0, root.fontIdx - 1)
-            fontList.positionViewAtIndex(root.fontIdx, ListView.Contain)
-            event.accepted = true
-        } else if (event.key === Qt.Key_Down && root.sec === 1) {
-            IslandState.touch(true)
-            root.fontIdx = Math.min(Math.max(0, root.fonts.length - 1), root.fontIdx + 1)
-            fontList.positionViewAtIndex(root.fontIdx, ListView.Contain)
-            event.accepted = true
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            IslandState.touch(true)
-            if (root.sec === 0)
+        } else if (root.sec === 0 && root.bgs.length > 0) {
+            const n = root.bgs.length
+            if (event.key === Qt.Key_Left) {
+                IslandState.touch(true)
+                root.bgIdx = Math.max(0, root.bgIdx - 1)
+                bgGrid.positionViewAtIndex(root.bgIdx, GridView.Contain)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Right) {
+                IslandState.touch(true)
+                root.bgIdx = Math.min(n - 1, root.bgIdx + 1)
+                bgGrid.positionViewAtIndex(root.bgIdx, GridView.Contain)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Up) {
+                IslandState.touch(true)
+                root.bgIdx = Math.max(0, root.bgIdx - 3)
+                bgGrid.positionViewAtIndex(root.bgIdx, GridView.Contain)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Down) {
+                IslandState.touch(true)
+                root.bgIdx = Math.min(n - 1, root.bgIdx + 3)
+                bgGrid.positionViewAtIndex(root.bgIdx, GridView.Contain)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                IslandState.touch(true)
                 root.applyBg(root.bgIdx)
-            else
+                event.accepted = true
+            }
+        } else if (root.sec === 1 && root.fonts.length > 0) {
+            if (event.key === Qt.Key_Up) {
+                IslandState.touch(true)
+                root.fontIdx = Math.max(0, root.fontIdx - 1)
+                fontList.positionViewAtIndex(root.fontIdx, ListView.Contain)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Down) {
+                IslandState.touch(true)
+                root.fontIdx = Math.min(root.fonts.length - 1, root.fontIdx + 1)
+                fontList.positionViewAtIndex(root.fontIdx, ListView.Contain)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                IslandState.touch(true)
                 root.applyFont(root.fontIdx)
-            event.accepted = true
+                event.accepted = true
+            }
         }
     }
 
-    // Header + TabStrip
+    // Header + Next Wallpaper + TabStrip
     RowLayout {
         width: parent.width
         spacing: Tokens.space.md
@@ -161,27 +189,38 @@ WidgetSurface {
         DetailHeader {
             Layout.fillWidth: true
             backable: false
-            title: qsTr("Look")
-            detail: root.sec === 0 ? qsTr("Theme backgrounds") : qsTr("Monospace fonts")
+            icon: "sparkles"
+            title: qsTr("Appearance")
+            detail: ""
+        }
+
+        Button {
+            visible: root.sec === 0
+            text: qsTr("Next Wallpaper")
+            icon: "skip-forward"
+            variant: "secondary"
+            size: "sm"
+            accessibleLabel: qsTr("Cycle to next wallpaper")
+            onClicked: root.nextBg()
         }
 
         TabStrip {
+            stretch: false
             tabs: [
                 { id: "backgrounds", label: qsTr("Backgrounds") },
                 { id: "fonts", label: qsTr("Fonts") }
             ]
             current: root.sec === 0 ? "backgrounds" : "fonts"
-            accessibleLabel: qsTr("Look sections")
+            accessibleLabel: qsTr("Appearance sections")
             onPicked: id => {
                 root.sec = (id === "fonts" ? 1 : 0)
-                bgSectionFade.restart()
             }
         }
     }
 
     NumberAnimation {
         id: bgSectionFade
-        target: root.sec === 0 ? bgList : fontList
+        target: root.sec === 0 ? bgGrid : fontList
         property: "opacity"
         from: 0.25
         to: 1.0
@@ -195,16 +234,19 @@ WidgetSurface {
         width: parent.width
         spacing: Tokens.space.sm
 
-        ListView {
-            id: bgList
+        GridView {
+            id: bgGrid
 
+            readonly property int rowCount: Math.ceil(root.bgs.length / 3)
+
+            visible: root.bgs.length > 0
             Layout.fillWidth: true
-            Layout.preferredHeight: Tokens.px(108)
-            orientation: ListView.Horizontal
-            spacing: Tokens.space.sm
-            clip: true
+            Layout.preferredHeight: Math.max(0, Math.min(2 * cellHeight, rowCount * cellHeight) - Tokens.space.sm)
+            cellWidth: Math.floor(width / 3)
+            cellHeight: Tokens.px(116)
+            clip: rowCount > 2
             boundsBehavior: Flickable.StopAtBounds
-            model: root.bgItems
+            model: root.bgs
 
             delegate: Item {
                 id: bgTile
@@ -212,45 +254,32 @@ WidgetSurface {
                 required property string modelData
                 required property int index
 
-                readonly property bool isNext: index === 0
-                readonly property bool isCurrent: !isNext && modelData === root.bgCurrent
+                readonly property bool isCurrent: modelData === root.bgCurrent
                 readonly property bool selected: root.sec === 0 && root.bgIdx === index
 
-                width: Tokens.px(148)
-                height: bgList.height
+                width: bgGrid.cellWidth
+                height: bgGrid.cellHeight
 
                 ClippingRectangle {
+                    id: bgCard
+
                     anchors.fill: parent
+                    anchors.leftMargin: Tokens.space.xs
+                    anchors.rightMargin: Tokens.space.xs
+                    anchors.topMargin: 0
+                    anchors.bottomMargin: Tokens.space.sm
                     radius: Tokens.radius.md
                     color: Tokens.veilOf(Tokens.surfaceStyle)
+                    activeFocusOnTab: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: qsTr("Wallpaper %1").arg(bgTile.index + 1)
 
                     Image {
-                        visible: !bgTile.isNext
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        sourceSize: Qt.size(296, 216)
-                        source: bgTile.isNext ? "" : "file://" + bgTile.modelData
-                    }
-
-                    ColumnLayout {
-                        visible: bgTile.isNext
-                        anchors.centerIn: parent
-                        spacing: Tokens.space.xs
-
-                        Icon {
-                            Layout.alignment: Qt.AlignHCenter
-                            icon: "skip-forward"
-                            size: Tokens.size.iconLg
-                            tone: "accent"
-                        }
-
-                        TextLabel {
-                            Layout.alignment: Qt.AlignHCenter
-                            role: "sm"
-                            font.weight: Font.Medium
-                            text: qsTr("Next")
-                        }
+                        sourceSize: Qt.size(384, 224)
+                        source: "file://" + bgTile.modelData
                     }
 
                     Badge {
@@ -272,13 +301,26 @@ WidgetSurface {
                             : (bgTile.selected ? Tokens.color.text : Tokens.veilBorderOf(Tokens.surfaceStyle))
                     }
 
+                    FocusRing {
+                        active: bgCard.activeFocus
+                        ringRadius: Tokens.radius.md
+                    }
+
+                    HoverHandler {
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
                     TapHandler {
                         onTapped: {
+                            Tokens.keyboardNavigation = false
                             root.sec = 0
                             root.bgIdx = bgTile.index
                             root.applyBg(bgTile.index)
                         }
                     }
+
+                    Keys.onSpacePressed: root.applyBg(bgTile.index)
+                    Keys.onReturnPressed: root.applyBg(bgTile.index)
                 }
             }
         }
@@ -308,7 +350,7 @@ WidgetSurface {
                 id: previewCol
 
                 width: parent.width
-                spacing: Tokens.space.xxs
+                spacing: Tokens.space.xs
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -322,8 +364,10 @@ WidgetSurface {
                     Item { Layout.fillWidth: true }
 
                     Badge {
-                        visible: root.fontCurrent !== ""
-                        text: root.fontCurrent
+                        readonly property string previewName: root.fonts[root.fontIdx] || root.fontCurrent
+
+                        visible: previewName !== ""
+                        text: previewName
                         tone: "accent"
                     }
                 }
@@ -333,7 +377,7 @@ WidgetSurface {
                     textFormat: Text.PlainText
                     elide: Text.ElideRight
                     font.family: root.fonts[root.fontIdx] || root.fontCurrent || Tokens.type.monoFamily
-                    font.pixelSize: Tokens.type.subtitle
+                    font.pixelSize: Tokens.px(18)
                     color: Tokens.color.text
                     text: "0123456789  AaBbCc  !==  =>  { omarchy }"
                 }
@@ -343,10 +387,14 @@ WidgetSurface {
         ListView {
             id: fontList
 
+            readonly property int visibleRows: Math.min(4, Math.max(1, root.fonts.length))
+
+            visible: root.fonts.length > 0
             Layout.fillWidth: true
-            Layout.preferredHeight: Tokens.px(210)
-            clip: true
-            spacing: Tokens.space.xs
+            Layout.preferredHeight: visibleRows * root.fontRowHeight
+                + Math.max(0, visibleRows - 1) * root.fontRowSpacing
+            clip: root.fonts.length > 4
+            spacing: root.fontRowSpacing
             boundsBehavior: Flickable.StopAtBounds
             model: root.fonts
 
@@ -359,22 +407,24 @@ WidgetSurface {
                 readonly property bool isCurrent: modelData === root.fontCurrent
 
                 width: fontList.width
+                height: root.fontRowHeight
                 icon: isCurrent ? "check-circle" : "terminal"
                 title: modelData
-                subtitle: qsTr("Monospace")
                 selected: root.sec === 1 && root.fontIdx === index
                 onClicked: {
                     root.sec = 1
                     root.fontIdx = fRow.index
                     root.applyFont(fRow.index)
                 }
-
-                Badge {
-                    visible: fRow.isCurrent
-                    text: qsTr("Active")
-                    tone: "accent"
-                }
             }
+        }
+
+        EmptyState {
+            visible: root.fonts.length === 0
+            Layout.fillWidth: true
+            icon: "type"
+            title: qsTr("No monospace fonts found")
+            description: qsTr("Install a monospace font to configure terminal and bar typography.")
         }
     }
 }

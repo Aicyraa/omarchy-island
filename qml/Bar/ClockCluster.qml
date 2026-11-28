@@ -19,7 +19,7 @@ Item {
   }
 
   implicitWidth: root.vertical ? 32 : (hTimeLabel.implicitWidth + Tokens.space.sm * 2)
-  implicitHeight: root.vertical ? (vClockCol.implicitHeight + Tokens.space.xs * 2) : 28
+  implicitHeight: root.vertical ? (vClockCol.implicitHeight + Tokens.space.xs * 2) : 30
 
   activeFocusOnTab: true
   Accessible.role: Accessible.Button

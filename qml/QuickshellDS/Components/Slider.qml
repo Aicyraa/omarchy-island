@@ -64,18 +64,21 @@ Item {
         anchors.fill: parent
         visible: root.style === "pill"
         radius: Tokens.radius.pill
-        color: Tokens.veilOf(Tokens.surfaceStyle)
+        clip: true
+        color: Tokens.isTranslucent(Tokens.surfaceStyle)
+            ? Tokens.veilOf(Tokens.surfaceStyle)
+            : Tokens.color.surfaceRaised
         border.width: Tokens.hairlineWidth
-        border.color: pillHover.hovered ? Tokens.veilBorderOf(Tokens.surfaceStyle) : "transparent"
+        border.color: pillHover.hovered ? Tokens.color.borderStrong : Tokens.veilBorderOf(Tokens.surfaceStyle)
 
         Rectangle {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: Math.max(parent.height, parent.width * root.position)
+            width: root.position <= 0.001 ? 0 : Math.max(parent.height, parent.width * root.position)
             radius: parent.radius
-            color: root.dimmed ? Tokens.veilHoverOf(Tokens.surfaceStyle) : Tokens.color.accent
-            opacity: root.dimmed ? 1.0 : 0.9
+            color: root.dimmed ? Tokens.color.surfaceActive : Tokens.color.accent
+            opacity: root.dimmed ? 0.9 : 0.92
 
             Behavior on width {
                 enabled: !Tokens.reducedMotion && !Tokens.gameMode && !pillDrag.active

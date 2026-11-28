@@ -14,40 +14,40 @@ WidgetSurface {
     property string currentTab: "appearance"
 
     readonly property var barItemCatalog: [
-        { key: "workspaces",    label: qsTr("Workspaces") },
-        { key: "clock",         label: qsTr("Clock") },
-        { key: "weather",       label: qsTr("Weather") },
-        { key: "visualizer",    label: qsTr("Visualizer") },
-        { key: "wifi",          label: qsTr("Wi-Fi") },
-        { key: "bluetooth",     label: qsTr("Bluetooth") },
-        { key: "battery",       label: qsTr("Battery") },
-        { key: "notifications", label: qsTr("Notifications") },
-        { key: "audio",         label: qsTr("Audio") },
-        { key: "system",        label: qsTr("System") },
-        { key: "capture",       label: qsTr("Capture") },
-        { key: "look",          label: qsTr("Look & Theme") },
-        { key: "clipboard",     label: qsTr("Clipboard") },
-        { key: "theme",         label: qsTr("Palette") },
-        { key: "power",         label: qsTr("Power") }
+        { key: "workspaces",    label: qsTr("Workspaces"),    icon: "layout-grid" },
+        { key: "clock",         label: qsTr("Clock"),         icon: "clock" },
+        { key: "weather",       label: qsTr("Weather"),       icon: "cloud-sun" },
+        { key: "visualizer",    label: qsTr("Visualizer"),    icon: "activity" },
+        { key: "wifi",          label: qsTr("Wi-Fi"),         icon: "wifi" },
+        { key: "bluetooth",     label: qsTr("Bluetooth"),     icon: "bluetooth" },
+        { key: "battery",       label: qsTr("Battery"),       icon: "battery" },
+        { key: "notifications", label: qsTr("Notifications"), icon: "bell" },
+        { key: "audio",         label: qsTr("Audio"),         icon: "volume" },
+        { key: "system",        label: qsTr("System"),        icon: "cpu" },
+        { key: "capture",       label: qsTr("Capture"),       icon: "camera" },
+        { key: "look",          label: qsTr("Look & Theme"),  icon: "sparkles" },
+        { key: "clipboard",     label: qsTr("Clipboard"),     icon: "clipboard" },
+        { key: "theme",         label: qsTr("Palette"),       icon: "palette" },
+        { key: "power",         label: qsTr("Power"),         icon: "power" }
     ]
 
     readonly property var presetCatalog: [
         {
             id: "obsidian-pill",
             title: qsTr("Obsidian Pill"),
-            description: qsTr("Classic opaque surface, comfortable spacing, floating pill bar, and capsule scroll rail."),
+            attributes: [qsTr("Classic"), qsTr("Pill"), qsTr("Capsule Rail"), qsTr("Comfortable")],
             chips: [Tokens.color.bg, Tokens.color.surface, Tokens.color.accent]
         },
         {
             id: "frosted-liquid",
             title: qsTr("Frosted Liquid"),
-            description: qsTr("Translucent directional-lit liquid glass, comfortable spacing, floating pill, and capsule rail."),
+            attributes: [qsTr("Liquid Glass"), qsTr("Pill"), qsTr("Capsule Rail"), qsTr("Comfortable")],
             chips: [Tokens.color.liquidGround, Tokens.color.accent, Tokens.color.info]
         },
         {
             id: "minimal-docked",
             title: qsTr("Minimal Docked"),
-            description: qsTr("Compact classic surface docked as a screen-edge notch with a subtle hairline scroll rail."),
+            attributes: [qsTr("Classic"), qsTr("Notch"), qsTr("Hairline Rail"), qsTr("Compact")],
             chips: [Tokens.color.surfaceRaised, Tokens.color.borderStrong, Tokens.color.textMuted]
         }
     ]
@@ -80,7 +80,7 @@ WidgetSurface {
         return false
     }
 
-    preferredWidth: 620
+    preferredWidth: 680
     scrollTarget: settingsFlick
     hint: qsTr("Tab switch tab · Esc close")
 
@@ -95,18 +95,11 @@ WidgetSurface {
         width: parent.width
         spacing: Tokens.space.md
 
-        Icon {
-            icon: "settings"
-            size: Tokens.size.iconMd
-            tone: "accent"
-            framed: true
-        }
-
         DetailHeader {
             Layout.fillWidth: true
             backable: false
+            icon: "settings"
             title: qsTr("Island Settings")
-            detail: qsTr("Customize surface material, topbar layout, and motion")
         }
 
         Button {
@@ -152,8 +145,8 @@ WidgetSurface {
         id: settingsFlick
 
         width: parent.width
-        height: 310
-        clip: true
+        height: Math.min(tabContent.implicitHeight, Tokens.px(430))
+        clip: contentHeight > height + 1
         boundsBehavior: Flickable.StopAtBounds
         contentWidth: width
         contentHeight: tabContent.implicitHeight
@@ -176,7 +169,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Surface Material")
-                        description: qsTr("Backdrop translucency and rim lighting")
                         showDivider: false
 
                         SegmentedControl {
@@ -193,7 +185,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Corner Radius")
-                        description: qsTr("Use Island pill radii or match compositor rounding")
 
                         SegmentedControl {
                             accessibleLabel: qsTr("Corner Radius")
@@ -208,7 +199,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Density")
-                        description: qsTr("Control height and spacing scale")
 
                         SegmentedControl {
                             accessibleLabel: qsTr("Density")
@@ -224,7 +214,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("UI Scale")
-                        description: qsTr("Multiplier for typography, icons, and spacing")
 
                         Slider {
                             accessibleLabel: qsTr("UI Scale")
@@ -241,7 +230,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Drop Shadows")
-                        description: qsTr("Soft elevation shadows beneath floating surfaces")
 
                         ToggleSwitch {
                             accessibleLabel: qsTr("Drop Shadows")
@@ -256,7 +244,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Rail Variant")
-                        description: qsTr("Visual indicator style for scrollable panels")
                         showDivider: false
 
                         SegmentedControl {
@@ -273,7 +260,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Rail Side")
-                        description: qsTr("Edge placement relative to the active widget")
 
                         SegmentedControl {
                             accessibleLabel: qsTr("Rail Side")
@@ -300,7 +286,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Screen Edge")
-                        description: qsTr("Anchor the bar to any screen edge")
                         showDivider: false
 
                         SegmentedControl {
@@ -318,7 +303,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Bar Pattern")
-                        description: qsTr("Floating pill, edge-attached notch, or full-width bar")
 
                         SegmentedControl {
                             accessibleLabel: qsTr("Bar Pattern")
@@ -334,40 +318,57 @@ WidgetSurface {
                 }
 
                 SettingGroup {
-                    title: qsTr("Visible Topbar Sections & Icons")
+                    title: qsTr("Visible Topbar Icons")
 
                     GridLayout {
                         Layout.fillWidth: true
-                        Layout.leftMargin: Tokens.space.xl
-                        Layout.rightMargin: Tokens.space.xl
-                        Layout.topMargin: Tokens.space.md
-                        Layout.bottomMargin: Tokens.space.md
-                        columns: 2
-                        columnSpacing: Tokens.space.xl
-                        rowSpacing: Tokens.space.sm
+                        Layout.leftMargin: Tokens.space.md
+                        Layout.rightMargin: Tokens.space.md
+                        Layout.topMargin: Tokens.space.sm
+                        Layout.bottomMargin: Tokens.space.sm
+                        columns: 3
+                        columnSpacing: Tokens.space.sm
+                        rowSpacing: Tokens.space.xs
 
                         Repeater {
                             model: root.barItemCatalog
 
-                            RowLayout {
-                                id: barItemRow
+                            Item {
+                                id: barItemCell
 
                                 required property var modelData
+                                readonly property bool itemVisible: ConfigStore.barItemVisible(barItemCell.modelData.key)
 
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: Tokens.px(32)
-                                spacing: Tokens.space.sm
+                                Layout.preferredHeight: Math.max(Tokens.px(40), barItemRow.implicitHeight + Tokens.space.sm * 2)
 
-                                TextLabel {
-                                    Layout.fillWidth: true
-                                    role: "body"
-                                    text: barItemRow.modelData.label
-                                }
+                                RowLayout {
+                                    id: barItemRow
 
-                                ToggleSwitch {
-                                    accessibleLabel: barItemRow.modelData.label
-                                    checked: ConfigStore.barItemVisible(barItemRow.modelData.key)
-                                    onToggled: checked => ConfigStore.setBarItem(barItemRow.modelData.key, checked)
+                                    anchors.fill: parent
+                                    anchors.leftMargin: Tokens.space.md
+                                    anchors.rightMargin: Tokens.space.md
+                                    anchors.topMargin: Tokens.space.sm
+                                    anchors.bottomMargin: Tokens.space.sm
+                                    spacing: Tokens.space.sm
+
+                                    Icon {
+                                        icon: barItemCell.modelData.icon
+                                        size: Tokens.size.iconSm
+                                        tone: barItemCell.itemVisible ? "accent" : "muted"
+                                    }
+
+                                    TextLabel {
+                                        Layout.fillWidth: true
+                                        role: "body"
+                                        text: barItemCell.modelData.label
+                                    }
+
+                                    ToggleSwitch {
+                                        accessibleLabel: barItemCell.modelData.label
+                                        checked: barItemCell.itemVisible
+                                        onToggled: checked => ConfigStore.setBarItem(barItemCell.modelData.key, checked)
+                                    }
                                 }
                             }
                         }
@@ -383,11 +384,10 @@ WidgetSurface {
                 spacing: Tokens.space.lg
 
                 SettingGroup {
-                    title: qsTr("Menu & Motion")
+                    title: qsTr("Menu & Behavior")
 
                     SettingRow {
                         label: qsTr("Omarchy Menu Mode")
-                        description: qsTr("Morph the topbar or open a centered spotlight")
                         showDivider: false
 
                         SegmentedControl {
@@ -403,7 +403,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Reduced Motion")
-                        description: qsTr("Disable spring and transition animations")
 
                         ToggleSwitch {
                             accessibleLabel: qsTr("Reduced Motion")
@@ -414,7 +413,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Game Mode")
-                        description: qsTr("Disable shadows and animations for minimum latency")
 
                         ToggleSwitch {
                             accessibleLabel: qsTr("Game Mode")
@@ -425,7 +423,6 @@ WidgetSurface {
 
                     SettingRow {
                         label: qsTr("Hide in Fullscreen")
-                        description: qsTr("Automatically conceal the bar when an app is fullscreen")
 
                         ToggleSwitch {
                             accessibleLabel: qsTr("Hide in Fullscreen")
@@ -433,13 +430,19 @@ WidgetSurface {
                             onToggled: checked => ConfigStore.hideInFullscreen = checked
                         }
                     }
+                }
+
+                SettingGroup {
+                    title: qsTr("Animation")
 
                     SettingRow {
                         label: qsTr("Motion Speed")
-                        description: qsTr("Scale animation durations across Island")
+                        showDivider: false
 
                         Slider {
                             accessibleLabel: qsTr("Motion Speed")
+                            enabled: !ConfigStore.reducedMotion && !ConfigStore.gameMode
+                            opacity: enabled ? 1.0 : 0.45
                             from: 0.6
                             to: 1.4
                             stepSize: 0.1
@@ -448,6 +451,31 @@ WidgetSurface {
                             showReadout: true
                             value: ConfigStore.motionScale
                             onMoved: value => ConfigStore.motionScale = Math.round(value * 10) / 10
+                        }
+                    }
+
+                    Separator {
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: curveEditor.implicitHeight + Tokens.space.md * 2
+
+                        BezierCurveEditor {
+                            id: curveEditor
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.leftMargin: Tokens.space.md
+                            anchors.rightMargin: Tokens.space.md
+                            anchors.topMargin: Tokens.space.md
+                            curve: ConfigStore.motionCurve
+                            durationMs: Math.round(420 * ConfigStore.motionScale)
+                            interactive: !ConfigStore.reducedMotion && !ConfigStore.gameMode
+                            opacity: interactive ? 1.0 : 0.45
+                            onCurveEdited: next => ConfigStore.setMotionCurve(next)
                         }
                     }
                 }
@@ -494,7 +522,7 @@ WidgetSurface {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: Tokens.space.xxs
+                                spacing: Tokens.space.xs
 
                                 RowLayout {
                                     Layout.fillWidth: true
@@ -513,12 +541,35 @@ WidgetSurface {
                                     }
                                 }
 
-                                TextLabel {
+                                Flow {
                                     Layout.fillWidth: true
-                                    role: "sm"
-                                    tone: "muted"
-                                    singleLine: false
-                                    text: presetCard.modelData.description
+                                    spacing: Tokens.space.xs
+
+                                    Repeater {
+                                        model: presetCard.modelData.attributes
+
+                                        Rectangle {
+                                            id: attrChip
+
+                                            required property string modelData
+
+                                            implicitWidth: chipLabel.implicitWidth + Tokens.space.md
+                                            implicitHeight: chipLabel.implicitHeight + Tokens.space.xs
+                                            radius: Tokens.radius.pill
+                                            color: Tokens.veilOf(Tokens.surfaceStyle)
+                                            border.width: Tokens.hairlineWidth
+                                            border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
+
+                                            TextLabel {
+                                                id: chipLabel
+
+                                                anchors.centerIn: parent
+                                                role: "caption"
+                                                tone: "secondary"
+                                                text: attrChip.modelData
+                                            }
+                                        }
+                                    }
                                 }
                             }
 

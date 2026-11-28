@@ -9,12 +9,13 @@ RowLayout {
 
     property string title: ""
     property string detail: ""
+    property string icon: ""
     property bool backable: true
 
     signal back()
 
     Layout.fillWidth: true
-    Layout.preferredHeight: Tokens.px(38)
+    Layout.preferredHeight: Math.max(Tokens.px(40), titleCol.implicitHeight)
     spacing: Tokens.space.md
 
     Button {
@@ -27,13 +28,23 @@ RowLayout {
         onClicked: root.back()
     }
 
+    Icon {
+        visible: root.icon !== ""
+        name: root.icon
+        size: Tokens.size.iconMd
+        tone: "accent"
+        framed: true
+    }
+
     ColumnLayout {
+        id: titleCol
+
         Layout.fillWidth: true
         spacing: Tokens.space.xxs
 
         TextLabel {
             Layout.fillWidth: true
-            role: "subtitle"
+            role: "title"
             font.weight: Font.Medium
             text: root.title
         }
@@ -41,7 +52,7 @@ RowLayout {
         TextLabel {
             Layout.fillWidth: true
             visible: root.detail !== ""
-            role: "caption"
+            role: "sm"
             tone: "muted"
             text: root.detail
         }

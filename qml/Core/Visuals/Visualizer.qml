@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -9,16 +11,20 @@ import "../../QuickshellDS/Theme"
 // fails, the bars simply stay at their resting height rather than faking motion.
 Item {
   id: root
+
   property bool active: false
-  property int bars: 24
+  property int bars: 48
   property bool mirror: false                   // bars grow up and down from the centre line
   property real progress: -1                    // 0..1 playback position; bars past it are dimmed. -1: off
   property color color: Tokens.color.accent
+  property real gap: 3
+  property real maxBarW: 4
   property var levels: []                       // 0..1 per bar (cava sends 0..~1000 whatever ascii_max_value says)
 
-  implicitHeight: 28
-  readonly property real gap: 3
-  readonly property real barW: Math.max(2, (width - (bars - 1) * gap) / bars)
+  implicitHeight: 34
+  readonly property real slotW: width / Math.max(1, bars)
+  readonly property real barW: Math.max(2, Math.min(maxBarW, slotW - gap))
+  readonly property real step: bars > 1 ? (width - barW) / (bars - 1) : 0
 
   Process {
     id: cava
@@ -41,12 +47,15 @@ Item {
       readonly property real v: root.levels.length > index ? root.levels[index] : 0
       // Bars past the playhead are dimmed when the visualizer doubles as a progress bar.
       readonly property bool ahead: root.progress >= 0 && (index + 0.5) / root.bars > root.progress
-      x: index * (root.barW + root.gap); width: root.barW; radius: width / 2
+      x: index * root.step
+      width: root.barW
+      radius: width / 2
       height: Math.max(3, v * root.height)
       // mirror: grows up and down from the centre line; otherwise it grows up from the base
       y: root.mirror ? (root.height - height) / 2 : root.height - height
-      color: root.color; opacity: ahead ? 0.28 : 0.55 + 0.45 * v
-      Behavior on height { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 70 } }
+      color: root.color
+      opacity: !root.active ? 0.30 : (ahead ? 0.28 : 0.62 + 0.38 * v)
+      Behavior on height { enabled: !Tokens.reducedMotion && !Tokens.gameMode; NumberAnimation { duration: 60 } }
     }
   }
 }

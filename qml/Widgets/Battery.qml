@@ -13,7 +13,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 520
+    preferredWidth: 540
     hint: qsTr("←/→ or 1-3 profile · Esc close")
     compact: !Power.present
 
@@ -40,19 +40,19 @@ WidgetSurface {
         ? Tokens.color.danger
         : ((Power.charging || Power.full) ? Tokens.color.success : Tokens.color.accent)
 
-    readonly property string badgeTone: Power.low
-        ? "danger"
-        : ((Power.charging || Power.full) ? "success" : "neutral")
+    readonly property string statusHeading: Power.stateText !== ""
+        ? Power.stateText
+        : (Power.full ? qsTr("Fully Charged") : (Power.charging ? qsTr("Charging") : qsTr("On Battery")))
 
     readonly property string timeSummary: {
         const t = Power.timeText(Power.secondsLeft)
         if (t !== "")
             return t + (Power.charging ? qsTr(" until full") : qsTr(" remaining"))
         if (Power.full)
-            return qsTr("Fully charged · AC power")
+            return qsTr("AC power · Fully charged")
         if (Power.charging)
-            return qsTr("Connected to AC power")
-        return qsTr("Running on battery")
+            return qsTr("AC power · Estimating time")
+        return qsTr("Estimating time remaining")
     }
 
     function setProfile(profileId: string): void {
@@ -100,7 +100,7 @@ WidgetSurface {
             spacing: Tokens.space.lg
 
             UsageRing {
-                size: Tokens.px(92)
+                size: Tokens.px(88)
                 thickness: Tokens.px(8)
                 values: [1]
                 fill: Power.level
@@ -113,22 +113,11 @@ WidgetSurface {
                 Layout.fillWidth: true
                 spacing: Tokens.space.xs
 
-                RowLayout {
+                TextLabel {
                     Layout.fillWidth: true
-                    spacing: Tokens.space.sm
-
-                    TextLabel {
-                        role: "h1"
-                        tabular: true
-                        text: root.pctInt + "%"
-                    }
-
-                    Badge {
-                        text: Power.stateText !== "" ? Power.stateText : qsTr("On Battery")
-                        tone: root.badgeTone
-                    }
-
-                    Item { Layout.fillWidth: true }
+                    role: "title"
+                    font.weight: Font.Medium
+                    text: root.statusHeading
                 }
 
                 TextLabel {
@@ -186,6 +175,10 @@ WidgetSurface {
                 }
             }
 
+            Separator {
+                visible: Power.present
+            }
+
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Tokens.space.md
@@ -197,23 +190,11 @@ WidgetSurface {
                     framed: true
                 }
 
-                ColumnLayout {
+                TextLabel {
                     Layout.fillWidth: true
-                    spacing: Tokens.space.xxs
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "body"
-                        font.weight: Font.Medium
-                        text: qsTr("Stay Awake")
-                    }
-
-                    TextLabel {
-                        Layout.fillWidth: true
-                        role: "caption"
-                        tone: "muted"
-                        text: qsTr("Keep display and system awake while idle")
-                    }
+                    role: "body"
+                    font.weight: Font.Medium
+                    text: qsTr("Stay Awake")
                 }
 
                 ToggleSwitch {

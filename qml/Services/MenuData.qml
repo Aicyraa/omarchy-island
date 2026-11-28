@@ -276,11 +276,19 @@ Singleton {
   property var request: ({ active: false })
   function resolveRoute(input) { return MenuModel.resolveRoute(items, itemOrder, input) }
 
+  function safeMenuPath(p) {
+    var s = String(p || "")
+    if (s === "" || s.indexOf("..") >= 0) return ""
+    var rt = Quickshell.env("XDG_RUNTIME_DIR") || ""
+    if (s.indexOf("/tmp/") === 0 || (rt !== "" && s.indexOf(rt + "/") === 0)) return s
+    return ""
+  }
+
   function startRequest(p) {
     cancelRequest()
     request = { active: true, mode: p.mode === "input" ? "input" : "select", prompt: String(p.prompt || ""),
                 options: Array.isArray(p.options) ? p.options : [], width: Number(p.width) || 0,
-                selectionFile: String(p.selectionFile || ""), doneFile: String(p.doneFile || "") }
+                selectionFile: safeMenuPath(p.selectionFile), doneFile: safeMenuPath(p.doneFile) }
   }
   // Every exit that is not a choice (Esc, a click outside, a newer request, closing) writes ONLY the done file, so the
   // script that asked waits no longer and sees that nothing was chosen.
@@ -288,7 +296,7 @@ Singleton {
     if (!request.active) return
     var done = request.doneFile
     request = ({ active: false })
-    if (done) Cmd.run(["bash", "-c", ': > "$1"', "_", done])
+    if (done) Cmd.runSecret(["bash", "-c", '[ ! -L "$1" ] && : > "$1"', "_", done])
   }
   // A choice: the selection goes to the selection file, then the done file is written (the same order as the stock menu).
   function finishRequest(selection) {
@@ -297,9 +305,9 @@ Singleton {
     request = ({ active: false })
     if (!r.doneFile) return
     if (selection === null || selection === undefined || r.selectionFile === "")
-      Cmd.run(["bash", "-c", ': > "$1"', "_", r.doneFile])
+      Cmd.runSecret(["bash", "-c", '[ ! -L "$1" ] && : > "$1"', "_", r.doneFile])
     else
-      Cmd.run(["bash", "-c", 'printf "%s\\n" "$1" > "$2"; : > "$3"', "_", String(selection), r.selectionFile, r.doneFile])
+      Cmd.runSecret(["bash", "-c", '[ ! -L "$2" ] && [ ! -L "$3" ] && printf "%s\\n" "$1" > "$2"; [ ! -L "$3" ] && : > "$3"', "_", String(selection), r.selectionFile, r.doneFile])
   }
 
   // Entry point for `omarchy-shell island openMenu <json>` (and the shim plugin): a dmenu request, or a route. A route

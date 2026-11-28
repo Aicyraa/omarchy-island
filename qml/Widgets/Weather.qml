@@ -12,7 +12,7 @@ import "../QuickshellDS/Patterns"
 WidgetSurface {
     id: root
 
-    preferredWidth: 460
+    preferredWidth: 540
     readonly property bool wantsKeyboard: editingLocation
     readonly property bool capturesEscape: editingLocation
     hint: qsTr("R refresh · L location · Esc close")
@@ -20,6 +20,25 @@ WidgetSurface {
     readonly property string weatherState: WeatherData.state === "empty" ? "loading" : WeatherData.state
     readonly property var w: WeatherData.w
     property bool editingLocation: false
+
+    readonly property string comfortNote: {
+        const temp = root.w.temp ?? 0
+        const feels = root.w.feels ?? 0
+        const diff = feels - temp
+        if (Math.abs(diff) <= 1)
+            return qsTr("Exact")
+        return diff > 0 ? qsTr("Warmer") : qsTr("Cooler")
+    }
+
+    readonly property real rangeFraction: {
+        const lo = root.w.lo ?? 0
+        const hi = root.w.hi ?? 0
+        const now = root.w.temp ?? 0
+        const span = hi - lo
+        if (span <= 0)
+            return 0.5
+        return Math.max(0, Math.min(1, (now - lo) / span))
+    }
 
     dataLoading: weatherState === "loading"
     compact: weatherState !== "ok" && !editingLocation
@@ -102,8 +121,8 @@ WidgetSurface {
     Card {
         visible: root.weatherState === "ok"
         width: parent.width
-        horizontalPadding: Tokens.space.xl
-        verticalPadding: Tokens.space.lg
+        horizontalPadding: Tokens.space.lg
+        verticalPadding: Tokens.space.md
         implicitHeight: heroCol.implicitHeight + verticalPadding * 2
 
         ColumnLayout {
@@ -118,7 +137,7 @@ WidgetSurface {
 
                 Icon {
                     icon: root.mapWeatherIcon(root.w.icon ?? "cloud")
-                    size: Tokens.size.iconXl
+                    size: Tokens.size.iconLg
                     tone: root.w.icon === "sun" ? "warning" : "accent"
                     framed: true
                 }
@@ -145,7 +164,13 @@ WidgetSurface {
                         role: "sm"
                         tone: "muted"
                         tabular: true
-                        text: qsTr("Feels like %1° · %2").arg(root.w.feels ?? 0).arg(root.w.place ?? "")
+                        text: {
+                            const place = root.w.place || (IslandState.weatherLocation !== "" ? IslandState.weatherLocation : qsTr("Auto IP"))
+                            const ageText = WeatherData.age < 120000
+                                ? qsTr("Updated just now")
+                                : qsTr("Updated %1m ago").arg(Math.round(WeatherData.age / 60000))
+                            return place + " · " + ageText
+                        }
                     }
                 }
 
@@ -192,7 +217,7 @@ WidgetSurface {
         }
     }
 
-    // Multi-layer metrics row
+    // Balanced 3-Column Metrics Strip
     RowLayout {
         visible: root.weatherState === "ok"
         width: parent.width
@@ -200,7 +225,8 @@ WidgetSurface {
 
         Card {
             Layout.fillWidth: true
-            horizontalPadding: Tokens.space.md
+            Layout.fillHeight: true
+            horizontalPadding: Tokens.space.lg
             verticalPadding: Tokens.space.md
             implicitHeight: feelsCol.implicitHeight + verticalPadding * 2
 
@@ -224,17 +250,18 @@ WidgetSurface {
                 }
 
                 TextLabel {
+                    Layout.fillWidth: true
                     role: "caption"
                     tone: "muted"
-                    tabular: true
-                    text: qsTr("High %1° · Low %2°").arg(root.w.hi ?? 0).arg(root.w.lo ?? 0)
+                    text: root.comfortNote
                 }
             }
         }
 
         Card {
             Layout.fillWidth: true
-            horizontalPadding: Tokens.space.md
+            Layout.fillHeight: true
+            horizontalPadding: Tokens.space.lg
             verticalPadding: Tokens.space.md
             implicitHeight: humCol.implicitHeight + verticalPadding * 2
 
@@ -267,12 +294,13 @@ WidgetSurface {
 
         Card {
             Layout.fillWidth: true
-            horizontalPadding: Tokens.space.md
+            Layout.fillHeight: true
+            horizontalPadding: Tokens.space.lg
             verticalPadding: Tokens.space.md
-            implicitHeight: ageCol.implicitHeight + verticalPadding * 2
+            implicitHeight: rangeCol.implicitHeight + verticalPadding * 2
 
             ColumnLayout {
-                id: ageCol
+                id: rangeCol
 
                 width: parent.width
                 spacing: Tokens.space.xs
@@ -280,62 +308,74 @@ WidgetSurface {
                 RowLayout {
                     spacing: Tokens.space.xs
 
-                    Icon { icon: "wind"; size: Tokens.size.iconSm; tone: "muted" }
-                    TextLabel { role: "caption"; tone: "muted"; text: qsTr("UPDATED") }
+                    Icon { icon: "sun"; size: Tokens.size.iconSm; tone: "warning" }
+                    TextLabel { role: "caption"; tone: "muted"; text: qsTr("TODAY'S RANGE") }
                 }
 
                 TextLabel {
                     role: "h2"
                     tabular: true
-                    text: WeatherData.age < 120000 ? qsTr("Now") : Math.round(WeatherData.age / 60000) + "m"
+                    text: (root.w.lo ?? 0) + "° – " + (root.w.hi ?? 0) + "°"
                 }
 
-                TextLabel {
-                    role: "caption"
-                    tone: "muted"
-                    text: IslandState.weatherLocation !== "" ? IslandState.weatherLocation : qsTr("Auto IP")
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Tokens.space.xxs
+
+                    Rectangle {
+                        id: rangeTrack
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Tokens.px(6)
+                        radius: Tokens.radius.pill
+                        color: Tokens.veilHoverOf(Tokens.surfaceStyle)
+                        border.width: Tokens.hairlineWidth
+                        border.color: Tokens.veilBorderOf(Tokens.surfaceStyle)
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            width: Math.max(parent.height, parent.width * root.rangeFraction)
+                            radius: Tokens.radius.pill
+                            color: Tokens.color.accent
+
+                            Behavior on width {
+                                enabled: !Tokens.reducedMotion && !Tokens.gameMode
+                                NumberAnimation { duration: Tokens.motion.normal; easing.type: Tokens.motion.easeOut }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        TextLabel {
+                            role: "caption"
+                            tone: "muted"
+                            tabular: true
+                            text: qsTr("Lo %1°").arg(root.w.lo ?? 0)
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        TextLabel {
+                            role: "caption"
+                            tone: "accent"
+                            tabular: true
+                            text: qsTr("Now %1°").arg(root.w.temp ?? 0)
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        TextLabel {
+                            role: "caption"
+                            tone: "muted"
+                            tabular: true
+                            text: qsTr("Hi %1°").arg(root.w.hi ?? 0)
+                        }
+                    }
                 }
-            }
-        }
-    }
-
-    // Temperature range strip
-    Card {
-        visible: root.weatherState === "ok"
-        width: parent.width
-        horizontalPadding: Tokens.space.lg
-        verticalPadding: Tokens.space.md
-        implicitHeight: rangeCol.implicitHeight + verticalPadding * 2
-
-        ColumnLayout {
-            id: rangeCol
-
-            width: parent.width
-            spacing: Tokens.space.xs
-
-            TextLabel {
-                role: "caption"
-                tone: "muted"
-                text: qsTr("TODAY'S RANGE")
-            }
-
-            BarChart {
-                Layout.fillWidth: true
-                implicitHeight: Tokens.px(54)
-                values: [
-                    Math.max(0, (root.w.lo ?? 0) + 20),
-                    Math.max(0, (root.w.feels ?? 0) + 20),
-                    Math.max(0, (root.w.temp ?? 0) + 20),
-                    Math.max(0, (root.w.hi ?? 0) + 20)
-                ]
-                maxValue: Math.max(40, (root.w.hi ?? 0) + 25)
-                labels: [
-                    qsTr("Low %1°").arg(root.w.lo ?? 0),
-                    qsTr("Feels %1°").arg(root.w.feels ?? 0),
-                    qsTr("Now %1°").arg(root.w.temp ?? 0),
-                    qsTr("High %1°").arg(root.w.hi ?? 0)
-                ]
-                barColor: Tokens.color.accent
             }
         }
     }

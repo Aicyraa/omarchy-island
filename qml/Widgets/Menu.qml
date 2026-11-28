@@ -17,10 +17,13 @@ WidgetSurface {
   id: root
 
   preferredWidth: dmenu && MenuData.request.width > 0
-    ? Math.max(580, Math.min(Tokens.px(720), MenuData.request.width))
-    : 580
+    ? Math.max(600, Math.min(Tokens.px(760), MenuData.request.width))
+    : 660
   scrollTarget: list
   hint: "type to search · ↑/↓ move · ↵ open · Tab category · Ctrl+P pin · Esc back"
+
+  Accessible.role: Accessible.Pane
+  Accessible.name: qsTr("Command menu")
 
   readonly property bool wantsKeyboard: true
   readonly property bool dmenu: MenuData.request.active === true
@@ -156,22 +159,41 @@ WidgetSurface {
     return out
   }
 
+  function headerIcon() {
+    if (query !== "" || dmenu) return "search"
+    if (route !== "root") return svgForEntry({ id: route })
+    if (activeTab === "apps") return "layout-grid"
+    if (activeTab === "trigger") return "zap"
+    if (activeTab === "packages") return "package"
+    if (activeTab === "setup") return "wrench"
+    if (activeTab === "docs") return "book-open"
+    return "search"
+  }
+
   function svgForEntry(e) {
-    var id = String(e.id || "")
+    var id = String((e && e.id) || "")
+    if (id === "apps" || id.indexOf("apps.") === 0) return "layout-grid"
     if (id.indexOf("install") === 0) return "download"
     if (id.indexOf("remove") === 0) return "trash-2"
     if (id.indexOf("update") === 0) return "refresh-cw"
     if (id.indexOf("trigger.capture") === 0) return "camera"
     if (id.indexOf("trigger.clipboard") === 0) return "clipboard"
     if (id.indexOf("trigger.share") === 0) return "external-link"
+    if (id.indexOf("trigger.hardware") === 0) return "cpu"
+    if (id.indexOf("trigger.toggle") === 0) return "sliders-horizontal"
+    if (id.indexOf("trigger") === 0) return "zap"
     if (id.indexOf("setup.monitors") === 0) return "monitor"
     if (id.indexOf("setup.network") === 0) return "wifi"
     if (id.indexOf("setup.security") === 0) return "shield"
     if (id.indexOf("setup.keybindings") === 0 || id.indexOf("learn.keybindings") === 0) return "key"
+    if (id.indexOf("setup.power") === 0) return "power"
+    if (id.indexOf("setup.audio") === 0) return "volume"
+    if (id.indexOf("setup.bluetooth") === 0) return "bluetooth"
+    if (id.indexOf("setup") === 0) return "wrench"
     if (id.indexOf("learn") === 0) return "book-open"
     if (id === "about") return "info"
-    if (id.indexOf("setup") === 0) return "wrench"
     if (id.indexOf("appearance") === 0) return "palette"
+    if (id.indexOf("system") === 0) return "settings"
     return "sparkles"
   }
 
@@ -311,17 +333,14 @@ WidgetSurface {
     }
   }
 
-  // ---- Search Row ----
-  Surface {
+  // ---- Borderless Hero Search Header ----
+  Column {
     width: parent.width
-    height: Tokens.size.controlMd
-    role: "card"
-    radius: Tokens.radius.pill
-    horizontalPadding: Tokens.space.md
-    verticalPadding: 0
+    spacing: 0
 
     RowLayout {
-      anchors.fill: parent
+      width: parent.width
+      height: Tokens.px(46)
       spacing: Tokens.space.sm
 
       Button {
@@ -335,19 +354,19 @@ WidgetSurface {
       }
 
       Icon {
-        name: "search"
-        size: Tokens.size.iconSm
+        name: root.headerIcon()
+        size: Tokens.size.iconMd
         tone: root.query !== "" ? "accent" : "muted"
       }
 
       TextLabel {
         Layout.fillWidth: true
-        role: "body"
+        font.pixelSize: Tokens.px(15)
         tone: root.query === "" ? "muted" : "primary"
         font.weight: root.query === "" ? Font.Normal : Font.Medium
         text: root.query !== "" ? root.query
             : (root.dmenu && root.dmenuPrompt !== "" ? root.dmenuPrompt
-            : qsTr("Search apps, commands, or / to filter..."))
+            : qsTr("Search apps, commands, or / to filter…"))
       }
 
       Badge {
@@ -357,14 +376,20 @@ WidgetSurface {
       }
 
       Badge {
-        visible: !root.dmenuInput
+        visible: !root.dmenuInput && root.query !== ""
         text: root.rows.length + (root.rows.length === 1 ? " item" : " items")
         tone: "neutral"
       }
     }
+
+    Rectangle {
+      width: parent.width
+      height: Tokens.hairlineWidth
+      color: Tokens.color.hairline
+    }
   }
 
-  // ---- 6-Category Tab Strip ----
+  // ---- Airy Category Strip ----
   ColumnLayout {
     visible: !root.dmenu
     width: parent.width
@@ -386,23 +411,25 @@ WidgetSurface {
     SegmentedControl {
       visible: root.activeTab === "packages" && root.route === "root" && root.query === ""
       Layout.fillWidth: true
+      stretch: true
       options: root.pkgTabs
       current: root.pkgSubTab
       onSelected: function (id) { root.pkgSubTab = id; root.sel = 0 }
     }
   }
 
-  // ---- Results List ----
-  Card {
+  // ---- Content-Fitted Borderless Results List ----
+  Item {
     width: parent.width
-    height: (root.activeTab === "packages" && root.route === "root" && root.query === "" && !root.dmenu) ? Tokens.px(268) : Tokens.px(300)
-    horizontalPadding: Tokens.space.xs
-    verticalPadding: Tokens.space.xs
+    height: list.count > 0
+      ? Math.min(6 * (Tokens.px(52) + Tokens.space.xs) - Tokens.space.xs, Math.max(Tokens.px(96), list.contentHeight))
+      : Tokens.px(120)
 
     ListView {
       id: list
       anchors.fill: parent
       clip: true
+      spacing: Tokens.space.xs
       model: root.rows
       currentIndex: root.sel
       boundsBehavior: Flickable.StopAtBounds
@@ -433,15 +460,32 @@ WidgetSurface {
 
         readonly property bool isSelected: root.sel === rowCard.index
         width: list.width
-        height: Tokens.px(44)
-        role: isSelected ? "elevated" : "bare"
-        radius: Tokens.radius.sm
+        height: Tokens.px(52)
+        role: "bare"
+        radius: Tokens.radius.md
         hovered: rowHover.hovered
-        showBorder: isSelected
-        horizontalPadding: Tokens.space.md
-        verticalPadding: 0
+        showBorder: false
+        color: (rowCard.isSelected || rowHover.hovered)
+          ? Tokens.veilHoverOf(Tokens.surfaceStyle)
+          : "transparent"
+        horizontalPadding: Tokens.space.lg
+        verticalPadding: Tokens.space.sm
 
-        FocusRing { active: rowCard.isSelected; ringRadius: Tokens.radius.sm }
+        Accessible.role: Accessible.ListItem
+        Accessible.name: rowCard.modelData.label || ""
+
+        FocusRing { active: rowCard.isSelected; ringRadius: Tokens.radius.md }
+
+        Rectangle {
+          anchors.left: parent.left
+          anchors.leftMargin: Tokens.space.xs - rowCard.horizontalPadding
+          anchors.verticalCenter: parent.verticalCenter
+          width: Tokens.px(3)
+          height: Tokens.px(22)
+          radius: Tokens.radius.pill
+          color: Tokens.color.accent
+          visible: rowCard.isSelected
+        }
 
         HoverHandler {
           id: rowHover
@@ -460,17 +504,17 @@ WidgetSurface {
           anchors.fill: parent
           spacing: Tokens.space.md
 
-          // Leading Icon (real app icon or 24x24 vector SVG)
+          // Leading Icon (28 px crisp app icon or vector SVG)
           Item {
-            Layout.preferredWidth: Tokens.px(26)
-            Layout.preferredHeight: Tokens.px(26)
+            Layout.preferredWidth: Tokens.px(28)
+            Layout.preferredHeight: Tokens.px(28)
             visible: rowCard.modelData.kind !== "dmenu" || (rowCard.modelData.icon || "") !== ""
 
             Image {
               anchors.fill: parent
               visible: rowCard.modelData.kind === "app" && (rowCard.modelData.icon || "") !== ""
               source: visible ? (Quickshell.iconPath(rowCard.modelData.icon, true) || "") : ""
-              sourceSize: Qt.size(Math.ceil(26 * Tokens.dpr), Math.ceil(26 * Tokens.dpr))
+              sourceSize: Qt.size(Math.ceil(28 * Tokens.dpr), Math.ceil(28 * Tokens.dpr))
               fillMode: Image.PreserveAspectFit
               asynchronous: true
               smooth: true
@@ -487,7 +531,7 @@ WidgetSurface {
 
           ColumnLayout {
             Layout.fillWidth: true
-            spacing: 1
+            spacing: Tokens.space.xxs
 
             TextLabel {
               Layout.fillWidth: true
@@ -499,10 +543,13 @@ WidgetSurface {
 
             TextLabel {
               Layout.fillWidth: true
-              visible: text !== ""
-              role: "caption"
+              readonly property string desc: String(rowCard.modelData.description || "").trim()
+              readonly property string lbl: String(rowCard.modelData.label || "").trim()
+              visible: desc !== "" && desc.toLowerCase() !== lbl.toLowerCase()
+              role: "sm"
               tone: "muted"
-              text: rowCard.modelData.description || ""
+              textFormat: Text.PlainText
+              text: desc
             }
           }
 
@@ -542,41 +589,6 @@ WidgetSurface {
       icon: "search"
       title: root.query !== "" ? qsTr("No matching results") : qsTr("Nothing here yet")
       description: root.query !== "" ? qsTr("Try a different search term") : qsTr("Pin actions with Ctrl+P")
-    }
-  }
-
-  // ---- Footer Keycap Hints ----
-  RowLayout {
-    width: parent.width
-    spacing: Tokens.space.md
-
-    Row {
-      spacing: Tokens.space.xs
-      Keycap { text: "↑↓" }
-      TextLabel { role: "caption"; tone: "muted"; text: qsTr("Move"); anchors.verticalCenter: parent.verticalCenter }
-    }
-    Row {
-      spacing: Tokens.space.xs
-      Keycap { text: "↵" }
-      TextLabel { role: "caption"; tone: "muted"; text: qsTr("Open"); anchors.verticalCenter: parent.verticalCenter }
-    }
-    Row {
-      visible: !root.dmenu
-      spacing: Tokens.space.xs
-      Keycap { text: "Tab" }
-      TextLabel { role: "caption"; tone: "muted"; text: qsTr("Category"); anchors.verticalCenter: parent.verticalCenter }
-    }
-    Row {
-      visible: !root.dmenu
-      spacing: Tokens.space.xs
-      Keycap { text: "Ctrl+P" }
-      TextLabel { role: "caption"; tone: "muted"; text: qsTr("Pin"); anchors.verticalCenter: parent.verticalCenter }
-    }
-    Item { Layout.fillWidth: true }
-    Row {
-      spacing: Tokens.space.xs
-      Keycap { text: "Esc" }
-      TextLabel { role: "caption"; tone: "muted"; text: root.capturesEscape ? qsTr("Back") : qsTr("Close"); anchors.verticalCenter: parent.verticalCenter }
     }
   }
 }
